@@ -1,9 +1,7 @@
 import json
-import pytest
 
-import connector
 from connector.metadata import aws
-from connector.metadata.app import MetadataService
+from connector.metadata.app import ConnectorService
 
 metadata_request = {
     "connector_id": "0",
@@ -15,13 +13,14 @@ metadata_request = {
     "data_source": "gcs"
 }
 
-connector.metadata.__init__()
+
 class TestMetadataService:
 
     def test_add_metadata(self):
         response = json.loads(aws.create_metadata({'body': json.dumps(metadata_request)})['body'])
         print(response)
         assert response['connector_id']
-        metadata = MetadataService().get(response['connector_id'])
+        metadata = ConnectorService().get(response['connector_id'])
         print(metadata)
         assert metadata.creation_date
+        assert metadata.connector_id
