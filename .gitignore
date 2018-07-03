@@ -5,3 +5,5 @@ venv
 .terraform
 terraform.tfstate
 terraform.tfstate.backup
+lambda*
+lambda_package

@@ -95,21 +95,21 @@ EOF
 }
 
 resource "aws_lambda_function" "create_metadata_lambda" {
-  filename = "metadata.zip"
+  filename = "lambda_package.zip"
   function_name = "create_metadata_function"
   role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connector.metadata.aws_lambda.create_metadata"
-  source_code_hash = "${base64sha256(file("metadata.zip"))}"
+  handler = "connector.metadata.aws.create_metadata"
+  source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
 }
 
 resource "aws_lambda_function" "auth_lambda" {
-  filename = "metadata.zip"
+  filename = "lambda_package.zip"
   function_name = "auth_function"
   role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connector.metadata.aws_lambda.auth"
-  source_code_hash = "${base64sha256(file("metadata.zip"))}"
+  handler = "connector.metadata.aws.auth"
+  source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
 }
