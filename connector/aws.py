@@ -1,6 +1,6 @@
 import json
 
-from connector.metadata.app import ConnectorService
+from connector.service import ConnectorService
 
 
 def response(message, status_code):
@@ -10,7 +10,7 @@ def response(message, status_code):
     }
 
 
-def create_connector(event, context=None):
+def add(event, context=None):
     print(event)
     print(context)
     return response(ConnectorService().add(json.loads(event['body'])), 200)

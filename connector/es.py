@@ -1,6 +1,6 @@
 from elasticsearch import Elasticsearch
 
-from connector.metadata.model import Connector
+from connector import Connector
 
 
 class MetadataRepo:

@@ -1,5 +1,5 @@
-from connector.metadata import make_repo
-from connector.metadata.model import Connector
+from connector import make_repo
+from connector.model import Connector
 
 
 class ConnectorService:
