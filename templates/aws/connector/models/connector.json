@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Connector",
+  "type": "object",
+  "properties": {
+    "connector_id": {
+      "type": "string"
+    },
+    "account_id": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "data_source": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "report_id": {
+      "type": "number"
+    },
+    "profile_id": {
+      "type": "number"
+    }
+  }
+}

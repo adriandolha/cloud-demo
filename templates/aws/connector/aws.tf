@@ -66,6 +66,7 @@ resource "aws_iam_role_policy" "ddb_policy" {
 }
 EOF
 }
+
 resource "aws_iam_role_policy" "basic_execution_policy" {
   name = "basic_policy"
   role = "${aws_iam_role.iam_for_lambda.id}"
@@ -159,6 +160,26 @@ resource "aws_lambda_permission" "apigw_lambda" {
   action = "lambda:InvokeFunction"
   function_name = "${aws_lambda_function.create_connector_lambda.arn}"
   principal = "apigateway.amazonaws.com"
-source_arn = "${aws_api_gateway_rest_api.connector_api.execution_arn}/*/*/*"
+  source_arn = "${aws_api_gateway_rest_api.connector_api.execution_arn}/*/*/*"
   //  source_arn = "${aws_api_gateway_deployment.connector_api_deployment.execution_arn}/*/*/*"
+}
+
+// Models
+resource "aws_api_gateway_model" "connector_model" {
+  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
+  name = "connector"
+  description = "Connector JSON schema"
+  content_type = "application/json"
+
+  schema = "${file("models/connector.json")}"
+}
+
+resource "aws_api_gateway_method_response" "create_connector_response" {
+  http_method = "POST"
+  resource_id = "${aws_api_gateway_resource.connector_resource.id}"
+  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
+  response_models = {
+    "application/json" = "${aws_api_gateway_model.connector_model.name}"
+  }
+  status_code = "200"
 }
