@@ -7,6 +7,7 @@ class ConnectorService:
     Connector service. It will handle requests from all clouds: AWS, Azure and Google. This is the place where they meet.
     Domain specific logic should be handled in domain specific classes.
     """
+
     def __init__(self):
         self.repo = make_repo()
 

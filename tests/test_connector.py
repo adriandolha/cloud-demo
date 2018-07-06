@@ -65,4 +65,6 @@ class TestConnector:
         assert validate_date_format(entity['updated'])
 
     def test_connector_serialization(self, model_valid):
-        assert json.dumps(make_resource(model_valid).entity)
+        dumps = json.dumps(make_resource(model_valid).entity).encode()
+        print(dumps)
+        assert dumps

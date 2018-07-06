@@ -31,7 +31,7 @@ def model_new():
            }
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def mock_ddb_table():
     with mock.patch('boto3.resource'):
-        yield boto3.resource('dynamodb').Table('connector')
+        yield boto3.resource('dynamodb').Table('connectors')
