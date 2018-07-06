@@ -13,4 +13,4 @@ class MetadataRepo:
 
     def get(self, connector_id):
         print('get')
-        return Connector(**self.es.get(index="metadata", doc_type='metadata', id=connector_id)['_source'])
+        return Connector(**self.es.get(index="metadata", doc_type='metadata', connector_id=connector_id)['_source'])

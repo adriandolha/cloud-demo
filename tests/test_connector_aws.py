@@ -1,31 +1,14 @@
 import json
-import pytest
-import mock
-from connector import aws
-from connector.model import Connector
-from connector.service import ConnectorService
 
-add_connector_request = {
-    "client_id": "1",
-    "user_id": "2",
-    "account_id": "3",
-    "report_id": "4",
-    "profile_id": "5",
-    "data_source": "gcs",
-    "metadata": {"pid": 1}
-}
+from connector import aws
+from connector import domain
 
 
 class TestConnectorAWS:
-
-    def test_add_connector(self):
-        response = json.loads(aws.add({'body': json.dumps(add_connector_request)})['body'])
-        print(response)
-        assert response['connector_id']
-        metadata = ConnectorService().get(response['connector_id'])
-        assert metadata.creation_date
-        assert metadata.connector_id
-
-    def test_resource(self):
-        connector = Connector(json.loads(aws.add({'body': json.dumps(add_connector_request)})['body']))
-        print(connector.__repr__())
+    def test_add_connector(self, model_valid, mock_ddb_table):
+        request = {'body': json.dumps(model_valid)}
+        response = aws.add(request)
+        assert response['statusCode'] == '200'
+        assert response['body']
+        body = json.loads(response['body'])
+        assert domain.validate_uuid(body['connector_id'])

@@ -6,7 +6,7 @@ variable "accountId" {
 }
 
 provider "aws" {
-  version = "~> 1.0"
+  version = "~> 1.26.0"
   region = "us-east-1"
 }
 

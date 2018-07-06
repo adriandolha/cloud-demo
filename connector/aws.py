@@ -11,6 +11,4 @@ def response(message, status_code):
 
 
 def add(event, context=None):
-    print(event)
-    print(context)
     return response(ConnectorService().add(json.loads(event['body'])), 200)

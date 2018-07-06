@@ -1,6 +1,12 @@
+"""
+Dynamodb repo implementation. Dynamodb seems the best NoSQL choice for AWS. It integrates very well with API Gateway and
+Lambda as well.
+It doesn't seem to be a standard solution (managed service) that would work for all clouds, therefore
+Similar modules should be added for the chosen solution on Azure and Google.
+"""
 import boto3
 
-from connector.model import Connector
+from connector.domain import Connector
 
 
 class ConnectorRepo:
