@@ -10,6 +10,12 @@ from connector.domain import Connector
 
 
 class ConnectorRepo:
+    """
+    Persistent store for connectors. Currently, we only need one store as it's only one table.
+    Future plans might require further isolation and one table per connector might be required. Even then, one repo
+    should do it.
+    Keep the repo simple, just to abstract persistence details and put all the logic in the domain.
+    """
     def __init__(self):
         self.ddb = boto3.resource('dynamodb')
 
