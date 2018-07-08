@@ -24,6 +24,7 @@ def handle_exceptions():
     Handle common exceptions.
     :return: Decorated function.
     """
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -31,6 +32,8 @@ def handle_exceptions():
                 return response(f(*args, *kwargs), 200)
             except ResourceNotFoundException as e:
                 return response(str(e), 404)
+            except ValueError as e:
+                return response(str(e), 412)
 
         return wrapper
 

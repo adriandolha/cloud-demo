@@ -20,3 +20,8 @@ class TestConnectorApi:
         response = ConnectorRestApi().add(to_json(model_new))
         assert response['status_code'] == '200'
         assert validate_uuid(from_json(response['body'])['connector_id'])
+
+    def test_add_connector_when_connector_id_provided(self, mock_ddb_table, model_valid):
+        response = ConnectorRestApi().add(to_json(model_valid))
+        assert response['status_code'] == '412'
+        assert 'Expected empty' in from_json(response['body'])

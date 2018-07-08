@@ -12,6 +12,8 @@ class ConnectorService:
         self.repo = make_repo()
 
     def add(self, request):
+        if 'connector_id' in request:
+            raise ValueError(f'Invalid argument: connector_id. Expected empty but actual {request["connector_id"]}')
         connector = Connector(request)
         self.repo.save(connector)
         return {'connector_id': connector.connector_id}
