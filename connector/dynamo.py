@@ -4,9 +4,12 @@ Lambda as well.
 It doesn't seem to be a standard solution (managed service) that would work for all clouds, therefore
 Similar modules should be added for the chosen solution on Azure and Google.
 """
+import uuid
+
 import boto3
 
 from connector.domain import Connector
+from connector.serializers import to_dynamo
 
 
 class ConnectorRepo:
@@ -16,11 +19,19 @@ class ConnectorRepo:
     should do it.
     Keep the repo simple, just to abstract persistence details and put all the logic in the domain.
     """
+
     def __init__(self):
         self.ddb = boto3.resource('dynamodb')
 
-    def save(self, connector):
-        self.ddb.Table('connectors').put_item(Item=connector.__repr__())
+    def save(self, connector: Connector):
+        if not connector.connector_id:
+            connector.connector_id = str(uuid.uuid4())
+        model = connector.model
+        model.update(connector.audit)
+        self.ddb.Table('connectors').put_item(Item=to_dynamo(model))
 
     def get(self, connector_id):
-        return Connector(self.ddb.Table('connectors').get_item(Key={'connector_id': connector_id})['Item'])
+        response = self.ddb.Table('connectors').get_item(Key={'connector_id': connector_id})
+        if 'Item' not in response:
+            return None
+        return Connector(response['Item'])

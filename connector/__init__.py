@@ -3,13 +3,14 @@ import os
 
 import logme
 
-date_format = '%Y%m%d'
+from connector import serializers
 
+date_format = '%Y%m%d'
+datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z'
 repos = {}
 
-
 def make_repo():
-    dbtype = os.environ.get('dbtype') or 'ddb'
+    dbtype = os.environ.get('dbtype') or 'dynamo'
     if 'connector' not in repos:
         module = importlib.import_module(f'connector.{dbtype}')
         repo = getattr(module, 'ConnectorRepo')()

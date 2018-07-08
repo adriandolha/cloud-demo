@@ -1,10 +1,12 @@
 import copy
 import json
+import uuid
 
 import pytest
 
 from connector import make_resource
 from connector.domain import validate_date_format
+from connector.serializers import to_dynamo
 
 
 class TestConnector:
@@ -52,7 +54,7 @@ class TestConnector:
 
     def test_created_date_format(self, model_new):
         connector = make_resource(model_new)
-        entity = connector.entity
+        entity = to_dynamo(connector.audit)
         assert entity['created']
         assert validate_date_format(entity['created'])
         assert entity['updated']
@@ -60,11 +62,19 @@ class TestConnector:
 
     def test_updated_date_format(self, model_valid):
         connector = make_resource(model_valid)
-        entity = connector.entity
+        entity = to_dynamo(connector.audit)
         assert entity['updated']
         assert validate_date_format(entity['updated'])
 
     def test_connector_serialization(self, model_valid):
-        dumps = json.dumps(make_resource(model_valid).entity).encode()
+        dumps = json.dumps(make_resource(model_valid).model).encode()
         print(dumps)
         assert dumps
+
+    def test_connector_id_setter(self, model_new):
+        model = copy.deepcopy(model_new)
+        connector = make_resource(model)
+        cid = str(uuid.uuid4())
+        connector.connector_id = cid
+        assert connector.connector_id == cid
+        assert connector.model['connector_id'] == cid

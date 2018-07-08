@@ -5,6 +5,7 @@ import abc
 import datetime
 import uuid
 
+import dateutil
 import logme as logme
 
 from connector import date_format
@@ -38,27 +39,45 @@ class Connector(metaclass=abc.ABCMeta):
         self.name = model['name']
         self.instance_type = model['instance_type']
         self.data_source = model['data_source']
+        self._connector_id = model.get('connector_id')
         if 'connector_id' in model:
             validate_uuid(self.connector_id)
 
     @property
-    def entity(self):
+    def connector_id(self):
+        return self._connector_id
+
+    @connector_id.setter
+    def connector_id(self, value):
+        validate_uuid(value)
+        self._connector_id = value
+
+    @property
+    def model(self) -> dict:
         """
-        It returns connector representation. We should carefully validate the model from which
+        It returns connector public model. We should carefully validate the model from which
         it's built or be more specific in the representation in order to make sure that no
         additional fields are included by mistake. This could result in persistence or API contract
         failure.
-        In the future we might have different representations for different storage. E.g. dynamodb
-        uses number or string to represent dates while this is not true for mysql.
-        :return: Connector entity.
+        Be careful not to leak internal state.
+        This could be achieved by specifying the public fields instead of copying the dictionary.
+        :return: Connector model.
         """
-        entity = self.__dict__
-        if 'connector_id' not in entity:
-            entity['created'] = format_date(datetime.datetime.utcnow().date())
-            entity['connector_id'] = str(uuid.uuid4())
-        entity['updated'] = format_date(datetime.datetime.utcnow().date())
-        # we could add here created_by and updated_by
-        return entity
+        target = {}
+        model = vars(self)
+        for key in model:
+            if not key.startswith('_'):
+                target[key] = model[key]
+        target.update({'connector_id': self.connector_id})
+        return target
+
+    @property
+    def audit(self):
+        audit = {}
+        if 'connector_id' not in audit:
+            audit['created'] = datetime.datetime.utcnow()
+        audit['updated'] = datetime.datetime.utcnow()
+        return audit
 
 
 def format_date(val: datetime.date):
@@ -84,7 +103,8 @@ def validate_required_fields(model, *fields):
 @logme.log
 def validate_date_format(val, logger=None):
     try:
-        datetime.datetime.strptime(val, date_format)
-    except ValueError:
+        dateutil.parser.parse(val)
+    except ValueError as e:
+        logger.error(e)
         raise ValueError(f'Invalid date format for value {val}. Expected date format is {date_format}.')
     return val

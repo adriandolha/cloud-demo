@@ -105,6 +105,16 @@ resource "aws_lambda_function" "add_connector_lambda" {
   timeout = 15
 }
 
+resource "aws_lambda_function" "get_connector_lambda" {
+  filename = "lambda_package.zip"
+  function_name = "get_connector_function"
+  role = "${aws_iam_role.iam_for_lambda.arn}"
+  handler = "connector.aws.get"
+  source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
+  runtime = "python3.6"
+  timeout = 15
+}
+
 resource "aws_lambda_function" "auth_lambda" {
   filename = "lambda_package.zip"
   function_name = "auth_function"

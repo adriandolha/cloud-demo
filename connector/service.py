@@ -1,5 +1,6 @@
 from connector import make_repo
-from connector.domain import Connector
+from connector.domain import Connector, validate_uuid
+from connector.exceptions import ResourceNotFoundException
 
 
 class ConnectorService:
@@ -16,5 +17,9 @@ class ConnectorService:
         self.repo.save(connector)
         return {'connector_id': connector.connector_id}
 
-    def get(self, connector_id: int) -> Connector:
-        return self.repo.get(connector_id)
+    def get(self, connector_id) -> Connector:
+        validate_uuid(connector_id)
+        connector = self.repo.get(connector_id)
+        if not connector:
+            raise ResourceNotFoundException(connector_id)
+        return connector

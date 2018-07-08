@@ -1,14 +1,18 @@
-import json
-
-from connector.service import ConnectorService
+from connector.api import ConnectorRestApi
 
 
-def response(message, status_code):
+def response(api_response):
     return {
-        'statusCode': str(status_code),
-        'body': json.dumps(message)
+        'statusCode': api_response['status_code'],
+        'body': api_response['body']
     }
 
 
 def add(event, context=None):
-    return response(ConnectorService().add(json.loads(event['body'])), 200)
+    return response(ConnectorRestApi().add(event['body']))
+
+
+def get(event, context=None):
+    print(event)
+    print(context)
+    return response(ConnectorRestApi().get(event['pathParameters'].get('id')))
