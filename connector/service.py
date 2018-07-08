@@ -5,8 +5,7 @@ from connector.exceptions import ResourceNotFoundException
 
 class ConnectorService:
     """
-    Connector service. It will handle requests from all clouds: AWS, Azure and Google. This is the place where they meet.
-    Domain specific logic should be handled in domain specific classes.
+    Connector service. Domain specific logic should be handled in domain specific classes. The service orchestrates.
     """
 
     def __init__(self):

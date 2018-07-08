@@ -1,5 +1,6 @@
 """
 REST API. Responsible for serialization, deserialization, responses and exception handlers.
+Other than this, it should be light and let the services handle the business logic.
 It should be the common entry point for all cloud platforms.
 """
 import json
