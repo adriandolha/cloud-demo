@@ -17,8 +17,8 @@ class TestConnectorService:
         with pytest.raises(ResourceNotFoundException):
             ConnectorService().get(str(uuid.uuid4()))
 
-    def test_repo_called_with_entity(self, model_valid, mock_ddb_table):
-        ConnectorService().add(model_valid)
+    def test_repo_called_with_entity(self, model_new, mock_ddb_table):
+        ConnectorService().add(model_new)
         mock_table = boto3.resource('dynamodb').Table('connectors')
         args_list = mock_table.put_item.call_args_list
         assert args_list[-1]

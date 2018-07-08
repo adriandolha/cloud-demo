@@ -41,14 +41,14 @@ class Connector(metaclass=abc.ABCMeta):
         self.data_source = model['data_source']
         self._connector_id = model.get('connector_id')
         if 'connector_id' in model:
-            validate_uuid(self.connector_id)
+            validate_uuid(self.resource_id)
 
     @property
-    def connector_id(self):
+    def resource_id(self):
         return self._connector_id
 
-    @connector_id.setter
-    def connector_id(self, value):
+    @resource_id.setter
+    def resource_id(self, value):
         validate_uuid(value)
         self._connector_id = value
 
@@ -72,23 +72,23 @@ class Connector(metaclass=abc.ABCMeta):
             else:
                 if value and hasattr(value, 'model'):
                     target[key] = value.model
-        target.update({'connector_id': self.connector_id})
+        target.update({'connector_id': self.resource_id})
         return target
 
     def is_private_field(self, name: str):
         return name.startswith('_')
 
-    @property
-    def audit(self):
-        """
-        Creates audit information. (i.e. created and updated info)
-        :return: Audit information.
-        """
-        audit = {}
-        if 'connector_id' not in audit:
-            audit['created'] = datetime.datetime.utcnow()
-        audit['updated'] = datetime.datetime.utcnow()
-        return audit
+
+def audit(model):
+    """
+    Creates audit information. (i.e. created and updated info)
+    :return: Audit information.
+    """
+    target = {}
+    if 'resource_id' not in model:
+        target['created'] = datetime.datetime.utcnow()
+    target['updated'] = datetime.datetime.utcnow()
+    return target
 
 
 def format_date(val: datetime.date):

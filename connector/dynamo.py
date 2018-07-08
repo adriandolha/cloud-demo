@@ -8,7 +8,7 @@ import uuid
 
 import boto3
 
-from connector.domain import Connector
+from connector.domain import Connector, audit
 from connector.serializers import to_dynamo
 
 
@@ -24,10 +24,10 @@ class ConnectorRepo:
         self.ddb = boto3.resource('dynamodb')
 
     def save(self, connector: Connector):
-        if not connector.connector_id:
-            connector.connector_id = str(uuid.uuid4())
+        if not connector.resource_id:
+            connector.resource_id = str(uuid.uuid4())
         model = connector.model
-        model.update(connector.audit)
+        model.update(audit(model))
         self.ddb.Table('connectors').put_item(Item=to_dynamo(model))
 
     def get(self, connector_id):

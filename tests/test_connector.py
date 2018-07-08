@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from connector import make_resource
-from connector.domain import validate_date_format
+from connector.domain import validate_date_format, audit
 from connector.serializers import to_dynamo
 
 
@@ -54,7 +54,7 @@ class TestConnector:
 
     def test_created_date_format(self, model_new):
         connector = make_resource(model_new)
-        entity = to_dynamo(connector.audit)
+        entity = to_dynamo(audit(connector.model))
         assert entity['created']
         assert validate_date_format(entity['created'])
         assert entity['updated']
@@ -62,7 +62,7 @@ class TestConnector:
 
     def test_updated_date_format(self, model_valid):
         connector = make_resource(model_valid)
-        entity = to_dynamo(connector.audit)
+        entity = to_dynamo(audit(connector.model))
         assert entity['updated']
         assert validate_date_format(entity['updated'])
 
@@ -75,6 +75,6 @@ class TestConnector:
         model = copy.deepcopy(model_new)
         connector = make_resource(model)
         cid = str(uuid.uuid4())
-        connector.connector_id = cid
-        assert connector.connector_id == cid
+        connector.resource_id = cid
+        assert connector.resource_id == cid
         assert connector.model['connector_id'] == cid

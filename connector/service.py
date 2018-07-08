@@ -16,7 +16,7 @@ class ConnectorService:
             raise ValueError(f'Invalid argument: connector_id. Expected empty but actual {request["connector_id"]}')
         connector = Connector(request)
         self.repo.save(connector)
-        return {'connector_id': connector.connector_id}
+        return {'connector_id': connector.resource_id}
 
     def get(self, connector_id) -> Connector:
         validate_uuid(connector_id)
