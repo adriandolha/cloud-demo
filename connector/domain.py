@@ -66,13 +66,24 @@ class Connector(metaclass=abc.ABCMeta):
         target = {}
         model = vars(self)
         for key in model:
-            if not key.startswith('_'):
-                target[key] = model[key]
+            value = model.get(key)
+            if not self.is_private_field(key):
+                target[key] = value
+            else:
+                if value and hasattr(value, 'model'):
+                    target[key] = value.model
         target.update({'connector_id': self.connector_id})
         return target
 
+    def is_private_field(self, name: str):
+        return name.startswith('_')
+
     @property
     def audit(self):
+        """
+        Creates audit information. (i.e. created and updated info)
+        :return: Audit information.
+        """
         audit = {}
         if 'connector_id' not in audit:
             audit['created'] = datetime.datetime.utcnow()

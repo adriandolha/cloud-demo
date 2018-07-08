@@ -1,5 +1,6 @@
 """
 REST API. Responsible for serialization, deserialization, responses and exception handlers.
+It should be the common entry point for all cloud platforms.
 """
 import json
 
@@ -18,6 +19,10 @@ def response(message, status_code):
 
 
 def handle_exceptions():
+    """
+    Handle common exceptions.
+    :return: Decorated function.
+    """
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -37,8 +42,18 @@ class ConnectorRestApi:
 
     @handle_exceptions()
     def add(self, body):
+        """
+        Add connector.
+        :param body: Add connector request.
+        :return: Added connector id.
+        """
         return self.service.add(from_json(body))
 
     @handle_exceptions()
     def get(self, connector_id):
+        """
+        Get connector.
+        :param connector_id: Connector id (path parameter)
+        :return: Connector
+        """
         return self.service.get(connector_id).model

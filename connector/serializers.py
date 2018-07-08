@@ -4,6 +4,10 @@ import json
 
 
 class Encoder(json.JSONEncoder):
+    """
+    Handles specific encoding issues. E.g. datetime's ISO 8601 formats.
+    """
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
@@ -43,13 +47,18 @@ class DynamoSerializer(BaseSerializer):
         return val
 
     def encode(self, val):
+        """
+        Convert model dict to dynamo format. E.g. dynamo doesn't support datetime which should be converted to ISO 8601 format.
+        :param val: Model dict
+        :return: Formatted dict
+        """
         target = {}
         model = val
         if not isinstance(val, dict):
             model = vars(val)
         for key in model:
             if hasattr(model, 'model'):
-                target[key] = self.serialize(model.model)
+                target[key] = self.encode(model.model)
             else:
                 _val = model[key]
                 if isinstance(_val, datetime.datetime):

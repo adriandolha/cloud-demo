@@ -42,7 +42,7 @@ class TestConnectorAWS:
         content = json.loads(response.content)
         assert 'name', 'instance_type' in content
 
-    # @pytest.mark.skip(reason='Run it only on demand')
+    @pytest.mark.skip(reason='Run it only on demand')
     def test_playground(self):
         ConnectorService().get(str(uuid.uuid4()))
 
