@@ -39,9 +39,9 @@ class Connector(metaclass=abc.ABCMeta):
         self.name = model['name']
         self.instance_type = model['instance_type']
         self.data_source = model['data_source']
-        self._connector_id = model.get('connector_id')
+        self._connector_id = None
         if 'connector_id' in model:
-            validate_uuid(self.resource_id)
+            self.resource_id = model.get('connector_id')
 
     @property
     def resource_id(self):
