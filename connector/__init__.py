@@ -25,9 +25,9 @@ def make_resource(model, logger):
     """
     Instantiates associated resource from model.
     It determines associated class from data_source. E.g. data_source=dcm -> connector.dcm.DcmConnector
-    :param model:
-    :param logger:
-    :return:
+    :param model: Resource model
+    :param logger: Logger
+    :return: Resource instance
     """
     if 'data_source' not in model:
         raise ValueError(f'Field data_source is required.')

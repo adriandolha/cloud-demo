@@ -19,7 +19,7 @@ class TestConnectorAWS:
     def setup(self):
         logging.basicConfig(level=logging.DEBUG)
 
-    # @pytest.mark.skip(reason='Run it only on demand')
+    @pytest.mark.skip(reason='Run it only on demand')
     def test_add_connector(self, model_new, api_url, basic_headers):
         add_response = requests.post(api_url, data=json.dumps(model_new), headers=basic_headers)
         assert add_response.status_code == 200

@@ -41,23 +41,23 @@ def handle_exceptions():
 
 
 class ConnectorRestApi:
-    def __init__(self):
-        self.service = ConnectorService()
+    def __init__(self, context=None):
+        self.context = context
+        self.service = ConnectorService(context)
 
     @handle_exceptions()
-    def add(self, body):
+    def add(self):
         """
         Add connector.
         :param body: Add connector request.
         :return: Added connector id.
         """
-        return self.service.add(from_json(body))
+        return self.service.add(from_json(self.context['body']))
 
     @handle_exceptions()
-    def get(self, connector_id):
+    def get(self):
         """
         Get connector.
-        :param connector_id: Connector id (path parameter)
         :return: Connector
         """
-        return self.service.get(connector_id).model
+        return self.service.get(self.context['path_parameters']['id']).model

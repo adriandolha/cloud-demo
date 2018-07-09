@@ -1,3 +1,5 @@
+import uuid
+
 from connector.api import ConnectorRestApi
 
 
@@ -8,11 +10,23 @@ def response(api_response):
     }
 
 
+def api_context(event, context):
+    if not event:
+        event = {}
+    if not context:
+        context = {}
+    return {
+        'user_id': str(uuid.uuid4()),
+        'body': event.get('body') or {},
+        'path_parameters': event.get('pathParameters') or {}
+    }
+
+
 def add(event, context=None):
-    return response(ConnectorRestApi().add(event['body']))
+    return response(ConnectorRestApi(api_context(event, context)).add())
 
 
 def get(event, context=None):
     print(event)
     print(context)
-    return response(ConnectorRestApi().get(event['pathParameters'].get('id')))
+    return response(ConnectorRestApi(api_context(event, context)).get())
