@@ -3,9 +3,9 @@ import uuid
 
 import boto3
 
-from connector.api import ConnectorRestApi
-from connector.domain import validate_uuid
-from connector.serializers import to_json, from_json
+from connection.api import ConnectorRestApi
+from connection.domain import validate_uuid
+from connection.serializers import to_json, from_json
 
 
 class TestConnectorApi:

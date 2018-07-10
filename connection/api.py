@@ -7,9 +7,9 @@ import json
 
 from functools import wraps
 
-from connector.exceptions import ResourceNotFoundException
-from connector.serializers import from_json
-from connector.service import ConnectorService
+from connection.exceptions import ResourceNotFoundException
+from connection.serializers import from_json
+from connection.service import ConnectorService
 
 
 def response(message, status_code):
@@ -19,7 +19,7 @@ def response(message, status_code):
     }
 
 
-def handle_exceptions():
+def handle_request():
     """
     Handle common exceptions.
     :return: Decorated function.
@@ -45,19 +45,30 @@ class ConnectorRestApi:
         self.context = context
         self.service = ConnectorService(context)
 
-    @handle_exceptions()
+    @handle_request()
     def add(self):
         """
-        Add connector.
-        :param body: Add connector request.
-        :return: Added connector id.
+        Add connection.
+        :param body: Add connection request.
+        :return: Added connection id.
         """
         return self.service.add(from_json(self.context['body']))
 
-    @handle_exceptions()
+    @handle_request()
     def get(self):
         """
-        Get connector.
+        Get connection.
         :return: Connector
         """
         return self.service.get(self.context['path_parameters']['id']).model
+
+    @handle_request()
+    def list(self):
+        items = [connector.model for connector in self.service.list()]
+        return {'items': items, 'count': len(items)}
+
+    @handle_request()
+    def delete(self):
+        connector_id = self.context['path_parameters']['id']
+        self.service.delete(connector_id)
+        return f'Successfully removed connection {connector_id}'

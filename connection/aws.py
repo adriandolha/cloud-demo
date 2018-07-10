@@ -1,6 +1,6 @@
 import uuid
 
-from connector.api import ConnectorRestApi
+from connection.api import ConnectorRestApi
 
 
 def response(api_response):
@@ -30,3 +30,11 @@ def get(event, context=None):
     print(event)
     print(context)
     return response(ConnectorRestApi(api_context(event, context)).get())
+
+
+def list(event, context=None):
+    return response(ConnectorRestApi(api_context(event, context)).list())
+
+
+def delete(event, context=None):
+    return response(ConnectorRestApi(api_context(event, context)).delete())

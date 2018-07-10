@@ -3,9 +3,9 @@ import uuid
 import boto3
 import pytest
 
-from connector import make_repo
-from connector.exceptions import ResourceNotFoundException
-from connector.service import ConnectorService
+from connection import make_repo
+from connection.exceptions import ResourceNotFoundException
+from connection.service import ConnectorService
 
 
 class TestConnectorService:

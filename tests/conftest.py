@@ -9,8 +9,7 @@ def model_valid():
            'client': 'my client',
            'account': 'my account',
            'name': 'DCM API Report Aggregator',
-           'data_source': 'dcm',
-           'instance_type': 'dcmapireport',
+           'connector_type': 'dcm.api.report',
            'parameters': {
                'profile_id': '1',
                'report_id': '2'
@@ -22,8 +21,7 @@ def model_new():
            'client': 'my client',
            'account': 'my account',
            'name': 'DCM API Report Aggregator',
-           'data_source': 'dcm',
-           'instance_type': 'dcmapireport',
+           'connector_type': 'dcm.api.report',
            'parameters': {
                'profile_id': '1',
                'report_id': '2'

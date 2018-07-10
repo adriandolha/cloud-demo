@@ -8,14 +8,14 @@ import uuid
 
 import boto3
 
-from connector.domain import Connector, audit
-from connector.serializers import to_dynamo
+from connection.domain import Connection, audit
+from connection.serializers import to_dynamo
 
 
 class ConnectorRepo:
     """
     Persistent store for connectors. Currently, we only need one store as it's only one table.
-    Future plans might require further isolation and one table per connector might be required. Even then, one repo
+    Future plans might require further isolation and one table per connection might be required. Even then, one repo
     should do it.
     Keep the repo simple, just to abstract persistence details and put all the logic in the domain.
     """
@@ -23,7 +23,7 @@ class ConnectorRepo:
     def __init__(self):
         self.ddb = boto3.resource('dynamodb')
 
-    def save(self, connector: Connector):
+    def save(self, connector: Connection):
         if not connector.resource_id:
             connector.resource_id = str(uuid.uuid4())
         model = connector.model
@@ -34,4 +34,10 @@ class ConnectorRepo:
         response = self.ddb.Table('connectors').get_item(Key={'connector_id': connector_id})
         if 'Item' not in response:
             return None
-        return Connector(response['Item'])
+        return Connection(response['Item'])
+
+    def list(self):
+        return [Connection(item) for item in self.ddb.Table('connectors').scan()['Items']]
+
+    def delete(self, connector_id):
+        self.ddb.delete_item(TableName='connectors', Key={'connector_id': connector_id})

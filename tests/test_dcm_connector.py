@@ -1,6 +1,6 @@
 import pytest
 
-from connector import make_resource
+from connection import make_resource
 
 
 class TestDcmConnector:

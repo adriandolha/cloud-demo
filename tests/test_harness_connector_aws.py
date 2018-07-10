@@ -6,13 +6,13 @@ import boto3
 import pytest
 import requests
 
-from connector.service import ConnectorService
+from connection.service import ConnectorService
 
 
 class TestConnectorAWS:
     """
     It requires terraform scripts to be applied and the infrastructure online.
-    Deployment scripts can be found in templates/aws/connector
+    Deployment scripts can be found in templates/aws/connection
     """
 
     @pytest.fixture
@@ -44,7 +44,8 @@ class TestConnectorAWS:
 
     @pytest.mark.skip(reason='Run it only on demand')
     def test_playground(self):
-        ConnectorService().get(str(uuid.uuid4()))
+        # ConnectorService().get(str(uuid.uuid4()))
+        print(ConnectorService().list())
 
     @pytest.fixture(scope='module')
     def basic_headers(self, api_key):
@@ -57,7 +58,7 @@ class TestConnectorAWS:
     def api_url(self, api_id):
         region = 'us-east-1'
         stage = 'test'
-        resource = 'connector'
+        resource = 'connection'
         api_url = f'https://{api_id}.execute-api.{region}.amazonaws.com/{stage}//{resource}'
         print(f'API url is {api_url}')
         return api_url
@@ -69,7 +70,7 @@ class TestConnectorAWS:
     @pytest.fixture(scope='module')
     def api_id(self, api_client):
         apis = api_client.get_rest_apis()
-        rest_api_id = [item['id'] for item in apis['items'] if item['name'] == 'connector'][0]
+        rest_api_id = [item['id'] for item in apis['items'] if item['name'] == 'connection'][0]
         return rest_api_id
 
     @pytest.fixture(scope='module')

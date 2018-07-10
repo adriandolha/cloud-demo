@@ -4,7 +4,7 @@
   "account": "my account",
   "name": "DCM API Report Aggregator",
   "data_source": "dcm",
-  "instance_type": "dcmapireport",
+  "instance_type": "dcm.api.report",
   "parameters": {
     "profile_id": "1",
     "report_id": "2"

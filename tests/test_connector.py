@@ -4,9 +4,9 @@ import uuid
 
 import pytest
 
-from connector import make_resource
-from connector.domain import validate_date_format, audit
-from connector.serializers import to_dynamo
+from connection import make_resource
+from connection.domain import validate_date_format, audit
+from connection.serializers import to_dynamo
 
 
 class TestConnector:
@@ -14,12 +14,11 @@ class TestConnector:
     def test_resource_created_when_valid_request(self, model_valid):
         connector = make_resource(model_valid)
         assert connector.name == model_valid['name']
-        assert connector.data_source == model_valid['data_source']
-        assert connector.instance_type == model_valid['instance_type']
+        assert connector.connector_type == model_valid['connector_type']
 
-    def test_data_source_required(self, model_valid):
+    def test_connector_type_required(self, model_valid):
         model = copy.deepcopy(model_valid)
-        del model['data_source']
+        del model['connector_type']
         with pytest.raises(ValueError) as err:
             make_resource(model)
 
@@ -43,12 +42,6 @@ class TestConnector:
     def test_name_required(self, model_valid):
         model = copy.deepcopy(model_valid)
         del model['name']
-        with pytest.raises(ValueError) as err:
-            make_resource(model)
-
-    def test_instance_type_required(self, model_valid):
-        model = copy.deepcopy(model_valid)
-        del model['instance_type']
         with pytest.raises(ValueError) as err:
             make_resource(model)
 

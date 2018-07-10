@@ -8,40 +8,43 @@ import uuid
 import dateutil
 import logme as logme
 
-from connector import date_format
+from connection import date_format
 
 
 class Metadata:
-    def __init__(self, name, instance_type, transaction_type, transaction_date):
+    def __init__(self, name, connector_type, transaction_type=None, transaction_date=None):
         self.name = name
-        self.instance_type = instance_type
+        self.instance_type = connector_type
         self.transaction_type = transaction_type
         self.transaction_date = transaction_date
 
+    @property
+    def model(self):
+        return vars(self)
 
-class Connector(metaclass=abc.ABCMeta):
+
+class Connection(metaclass=abc.ABCMeta):
     """
-    Models connector. It includes validation for common fields like client, account,
+    Models connection. It includes validation for common fields like client, account,
     data_source, etc.
     It may be considered the aggregate resource.
     """
 
     def __init__(self, model: dict):
         """
-        Initializes connector based on model or payload.
+        Initializes connection based on model or payload.
         It validates data input. Data input can come from API payload or database. We may want to separate
         this in the future.
         It also adds audit fields: created, updated.
         :param model: Data input dictionary with all fields and associated values.
         """
-        validate_required_fields(model, 'client', 'account', 'data_source', 'name', 'instance_type')
+        validate_required_fields(model, 'client', 'account', 'connector_type', 'name')
         self.__dict__.update(model)
         self.name = model['name']
-        self.instance_type = model['instance_type']
-        self.data_source = model['data_source']
+        self.connector_type = model['connector_type']
         self._connector_id = None
-        if 'connector_id' in model:
-            self.resource_id = model.get('connector_id')
+        self.resource_id = model.get('connector_id')
+        self.metadata = Metadata(self.name, self.connector_type)
 
     @property
     def resource_id(self):
@@ -55,7 +58,7 @@ class Connector(metaclass=abc.ABCMeta):
     @property
     def model(self) -> dict:
         """
-        It returns connector public model. We should carefully validate the model from which
+        It returns connection public model. We should carefully validate the model from which
         it's built or be more specific in the representation in order to make sure that no
         additional fields are included by mistake. This could result in persistence or API contract
         failure.
@@ -69,9 +72,9 @@ class Connector(metaclass=abc.ABCMeta):
             value = model.get(key)
             if not self.is_private_field(key):
                 target[key] = value
-            else:
                 if value and hasattr(value, 'model'):
                     target[key] = value.model
+
         target.update({'connector_id': self.resource_id})
         return target
 
@@ -97,6 +100,8 @@ def format_date(val: datetime.date):
 
 @logme.log
 def validate_uuid(val, logger=None):
+    if not val:
+        return val
     try:
         uuid.UUID(val)
         return val

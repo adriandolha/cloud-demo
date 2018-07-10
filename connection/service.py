@@ -1,6 +1,6 @@
-from connector import make_repo, make_resource
-from connector.domain import Connector, validate_uuid
-from connector.exceptions import ResourceNotFoundException
+from connection import make_repo, make_resource
+from connection.domain import Connection, validate_uuid
+from connection.exceptions import ResourceNotFoundException
 
 
 class Context:
@@ -28,7 +28,7 @@ class ConnectorService:
         self.repo = make_repo()
         self.context = context
 
-    def add(self, request):
+    def add(self, request, connector_id=None):
         if 'connector_id' in request:
             raise ValueError(f'Invalid argument: connector_id. Expected empty but actual {request["connector_id"]}')
         connector = make_resource(self.enhanced_request(request))
@@ -44,9 +44,16 @@ class ConnectorService:
         request.update({'_context': self.context})
         return request
 
-    def get(self, connector_id) -> Connector:
+    def get(self, connector_id) -> Connection:
         validate_uuid(connector_id)
         connector = self.repo.get(connector_id)
         if not connector:
             raise ResourceNotFoundException(connector_id)
         return connector
+
+    def list(self):
+        return self.repo.list()
+
+    def delete(self, connector_id):
+        validate_uuid(connector_id)
+        self.repo.delete(connector_id)
