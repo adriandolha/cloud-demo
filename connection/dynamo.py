@@ -8,13 +8,14 @@ import uuid
 
 import boto3
 
-from connection.domain import Connection, audit
+from connection import make_connection
+from connection.domain import Connection
 from connection.serializers import to_dynamo
 
 
-class ConnectorRepo:
+class ConnectionRepo:
     """
-    Persistent store for connectors. Currently, we only need one store as it's only one table.
+    Persistent store for connections. Currently, we only need one store as it's only one table.
     Future plans might require further isolation and one table per connection might be required. Even then, one repo
     should do it.
     Keep the repo simple, just to abstract persistence details and put all the logic in the domain.
@@ -22,22 +23,22 @@ class ConnectorRepo:
 
     def __init__(self):
         self.ddb = boto3.resource('dynamodb')
+        self.table = self.ddb.Table('connections')
 
     def save(self, connector: Connection):
-        if not connector.resource_id:
-            connector.resource_id = str(uuid.uuid4())
+        if not connector.connector_id:
+            connector.connector_id = str(uuid.uuid4())
         model = connector.model
-        model.update(audit(model))
-        self.ddb.Table('connectors').put_item(Item=to_dynamo(model))
+        self.table.put_item(Item=to_dynamo(model))
 
     def get(self, connector_id):
-        response = self.ddb.Table('connectors').get_item(Key={'connector_id': connector_id})
+        response = self.table.get_item(Key={'connector_id': connector_id})
         if 'Item' not in response:
             return None
-        return Connection(response['Item'])
+        return make_connection(response['Item'])
 
     def list(self):
-        return [Connection(item) for item in self.ddb.Table('connectors').scan()['Items']]
+        return [make_connection(item) for item in self.table.scan()['Items']]
 
     def delete(self, connector_id):
-        self.ddb.delete_item(TableName='connectors', Key={'connector_id': connector_id})
+        self.ddb.delete_item(TableName='connections', Key={'connector_id': connector_id})

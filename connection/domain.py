@@ -8,15 +8,18 @@ import uuid
 import dateutil
 import logme as logme
 
-from connection import date_format
+date_format = '%Y%m%d'
+datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z'
 
 
 class Metadata:
-    def __init__(self, name, connector_type, transaction_type=None, transaction_date=None):
+    def __init__(self, name, connector_type, created=None, updated=None, created_by=None, modified_by=None):
         self.name = name
-        self.instance_type = connector_type
-        self.transaction_type = transaction_type
-        self.transaction_date = transaction_date
+        self.connector_type = connector_type
+        self.created = created
+        self.updated = updated
+        self.created_by = created_by
+        self.modified_by = modified_by
 
     @property
     def model(self):
@@ -30,7 +33,7 @@ class Connection(metaclass=abc.ABCMeta):
     It may be considered the aggregate resource.
     """
 
-    def __init__(self, model: dict):
+    def __init__(self, **kwargs):
         """
         Initializes connection based on model or payload.
         It validates data input. Data input can come from API payload or database. We may want to separate
@@ -38,20 +41,30 @@ class Connection(metaclass=abc.ABCMeta):
         It also adds audit fields: created, updated.
         :param model: Data input dictionary with all fields and associated values.
         """
-        validate_required_fields(model, 'client', 'account', 'connector_type', 'name')
-        self.__dict__.update(model)
-        self.name = model['name']
-        self.connector_type = model['connector_type']
+        self.name = kwargs['name']
         self._connector_id = None
-        self.resource_id = model.get('connector_id')
-        self.metadata = Metadata(self.name, self.connector_type)
+        self.connector_id = kwargs.get('connector_id')
+        self._metadata = None
+        self._metadata = kwargs.get('metadata')
+        self.parameters = kwargs.get('parameters')
+        self.client = kwargs['client']
+        self.account = kwargs['account']
+        self.connector_type = kwargs['connector_type']
 
     @property
-    def resource_id(self):
+    def metadata(self) -> Metadata:
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, value):
+        self._metadata = value
+
+    @property
+    def connector_id(self):
         return self._connector_id
 
-    @resource_id.setter
-    def resource_id(self, value):
+    @connector_id.setter
+    def connector_id(self, value):
         validate_uuid(value)
         self._connector_id = value
 
@@ -66,32 +79,18 @@ class Connection(metaclass=abc.ABCMeta):
         This could be achieved by specifying the public fields instead of copying the dictionary.
         :return: Connector model.
         """
-        target = {}
-        model = vars(self)
-        for key in model:
-            value = model.get(key)
-            if not self.is_private_field(key):
-                target[key] = value
-                if value and hasattr(value, 'model'):
-                    target[key] = value.model
-
-        target.update({'connector_id': self.resource_id})
-        return target
+        return {
+            'connector_id': self.connector_id,
+            'name': self.name,
+            'client': self.client,
+            'account': self.account,
+            'metadata': self.metadata.model,
+            'parameters': self.parameters,
+            'connector_type': self.connector_type
+        }
 
     def is_private_field(self, name: str):
         return name.startswith('_')
-
-
-def audit(model):
-    """
-    Creates audit information. (i.e. created and updated info)
-    :return: Audit information.
-    """
-    target = {}
-    if 'resource_id' not in model:
-        target['created'] = datetime.datetime.utcnow()
-    target['updated'] = datetime.datetime.utcnow()
-    return target
 
 
 def format_date(val: datetime.date):

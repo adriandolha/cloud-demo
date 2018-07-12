@@ -1,4 +1,6 @@
-from connection import make_repo, make_resource
+import datetime
+
+from connection import make_repo, make_connection
 from connection.domain import Connection, validate_uuid
 from connection.exceptions import ResourceNotFoundException
 
@@ -31,9 +33,13 @@ class ConnectorService:
     def add(self, request, connector_id=None):
         if 'connector_id' in request:
             raise ValueError(f'Invalid argument: connector_id. Expected empty but actual {request["connector_id"]}')
-        connector = make_resource(self.enhanced_request(request))
-        self.repo.save(connector)
-        return {'connector_id': connector.resource_id}
+        connection = make_connection(self.enhanced_request(request))
+        now = datetime.datetime.utcnow()
+        connection.metadata.created = now
+        connection.metadata.updated = now
+
+        self.repo.save(connection)
+        return {'connector_id': connection.connector_id}
 
     def enhanced_request(self, request: dict):
         """

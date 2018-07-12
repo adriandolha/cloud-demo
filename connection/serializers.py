@@ -52,20 +52,25 @@ class DynamoSerializer(BaseSerializer):
         :param val: Model dict
         :return: Formatted dict
         """
+        if not val:
+            return val
         target = {}
-        model = val
-        if not isinstance(val, dict):
-            model = vars(val)
+        model = self.get_model(val)
         for key in model:
-            if hasattr(model, 'model'):
-                target[key] = self.encode(model.model)
+            _val = model[key]
+            if isinstance(_val, dict):
+                target[key] = self.encode(_val)
             else:
-                _val = model[key]
                 if isinstance(_val, datetime.datetime):
                     target[key] = _val.isoformat()
                 else:
                     target[key] = _val
         return target
+
+    def get_model(self, val):
+        if not isinstance(val, dict) and hasattr(val, '__dict__'):
+            return vars(val)
+        return val
 
 
 rest_api_serializer = RestApiSerializer()

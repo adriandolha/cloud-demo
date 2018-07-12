@@ -1,20 +1,20 @@
 import pytest
 
-from connection import make_resource
+from connection import make_connection
 
 
 class TestDcmConnector:
 
     def test_resource_created_when_valid_request(self, model_valid):
-        connector = make_resource(model_valid)
+        connector = make_connection(model_valid)
         assert connector
 
     def test_report_id_required(self, model_valid):
         del model_valid['parameters']['report_id']
-        with pytest.raises(ValueError) as err:
-            make_resource(model_valid)
+        with pytest.raises(KeyError) as err:
+            make_connection(model_valid)
 
     def test_profile_id_required(self, model_valid):
         del model_valid['parameters']['profile_id']
-        with pytest.raises(ValueError) as err:
-            make_resource(model_valid)
+        with pytest.raises(KeyError) as err:
+            make_connection(model_valid)

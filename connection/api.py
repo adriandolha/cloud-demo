@@ -34,6 +34,8 @@ def handle_request():
                 return response(str(e), 404)
             except ValueError as e:
                 return response(str(e), 412)
+            except KeyError as e:
+                return response(str(e), 412)
 
         return wrapper
 

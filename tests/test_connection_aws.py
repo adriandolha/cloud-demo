@@ -17,21 +17,20 @@ class TestConnectorAWS:
         body = json.loads(response['body'])
         assert domain.validate_uuid(body['connector_id'])
 
-    def test_get_connector(self, model_valid, mock_ddb_table):
-        model_valid.update({'created': datetime.datetime.utcnow().isoformat(),
-                            'updated': datetime.datetime.utcnow().isoformat()})
+    def test_get_connector(self, model_valid, metadata_valid, mock_ddb_table):
+        model_valid.update({'metadata': metadata_valid})
         boto3.resource('dynamodb').Table('connectors').get_item.return_value = {'Item': model_valid}
         response = aws.get({'pathParameters': {'id': model_valid['connector_id']}})
         assert response['statusCode'] == '200'
         assert response['body']
         body = json.loads(response['body'])
         assert domain.validate_uuid(body['connector_id'])
-        assert domain.validate_date_format(body['created'])
-        assert domain.validate_date_format(body['updated'])
+        assert domain.validate_date_format(body['metadata']['created'])
+        assert domain.validate_date_format(body['metadata']['updated'])
 
-    def test_list_connectors(self, model_valid, mock_ddb_table):
-        model_valid.update({'created': datetime.datetime.utcnow().isoformat(),
-                            'updated': datetime.datetime.utcnow().isoformat()})
+    def test_list_connectors(self, model_valid, metadata_valid, mock_ddb_table):
+        model_valid.update({'metadata': metadata_valid})
+
         boto3.resource('dynamodb').Table('connectors').scan.return_value = {'Items': [model_valid, model_valid]}
         response = aws.list({})
         assert response['statusCode'] == '200'
@@ -42,8 +41,8 @@ class TestConnectorAWS:
         assert body['count'] == 2
         item = body['items'][0]
         assert domain.validate_uuid(item['connector_id'])
-        assert domain.validate_date_format(item['created'])
-        assert domain.validate_date_format(item['updated'])
+        assert domain.validate_date_format(item['metadata']['created'])
+        assert domain.validate_date_format(item['metadata']['updated'])
 
     def test_delete_connector(self, model_valid, mock_ddb_table):
         model_valid.update({'created': datetime.datetime.utcnow().isoformat(),
@@ -57,7 +56,6 @@ class TestConnectorAWS:
         assert args_list
         args, kwargs = args_list[-1]
         assert kwargs['Key']['connector_id'] == model_valid['connector_id']
-        assert kwargs['TableName'] == 'connectors'
 
     @pytest.mark.skip(reason='In progress')
     def test_delete_connector_not_found(self, model_valid, mock_ddb_table):
