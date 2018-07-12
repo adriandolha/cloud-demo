@@ -11,9 +11,11 @@ repos = {}
 
 def make_repo():
     dbtype = os.environ.get('dbtype') or 'dynamo'
+    env = os.environ.get('env') or 'dev'
+    client = os.environ.get('client') or 'dan'
     if 'connection' not in repos:
         module = importlib.import_module(f'connection.{dbtype}')
-        repo = getattr(module, 'ConnectorRepo')()
+        repo = getattr(module, 'ConnectionRepo')(env, client)
         repos['connection'] = repo
         return repo
     else:

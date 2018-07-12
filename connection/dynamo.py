@@ -21,9 +21,10 @@ class ConnectionRepo:
     Keep the repo simple, just to abstract persistence details and put all the logic in the domain.
     """
 
-    def __init__(self):
+    def __init__(self, client, env):
         self.ddb = boto3.resource('dynamodb')
-        self.table = self.ddb.Table('connections')
+        self.table_name = f'connections_{env}_{client}'
+        self.table = self.ddb.Table(self.table_name)
 
     def save(self, connector: Connection):
         if not connector.connector_id:
@@ -41,4 +42,4 @@ class ConnectionRepo:
         return [make_connection(item) for item in self.table.scan()['Items']]
 
     def delete(self, connector_id):
-        self.ddb.delete_item(TableName='connections', Key={'connector_id': connector_id})
+        self.ddb.delete_item(TableName=self.table_name, Key={'connector_id': connector_id})
