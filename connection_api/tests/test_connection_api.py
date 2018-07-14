@@ -12,7 +12,7 @@ class TestConnectionApi:
     def test_get_connection_not_found(self, mock_ddb_table):
         boto3.resource('dynamodb').Table('connections').get_item.return_value = {'status_code': '200'}
         connection_id = str(uuid.uuid4())
-        response = ConnectionRestApi({'path_parameters': {'id': connection_id}}).get()
+        response = ConnectionRestApi({'path_parameters': {'connection_id': connection_id}}).get()
         assert response['status_code'] == '404'
         assert response['body'] == json.dumps(f'Resource {connection_id} not found.')
 

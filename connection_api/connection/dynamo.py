@@ -21,7 +21,7 @@ class ConnectionRepo:
     Keep the repo simple, just to abstract persistence details and put all the logic in the domain.
     """
 
-    def __init__(self, client, env):
+    def __init__(self, env, client):
         self.ddb = boto3.resource('dynamodb')
         self.table_name = f'connections_{env}_{client}'
         self.table = self.ddb.Table(self.table_name)

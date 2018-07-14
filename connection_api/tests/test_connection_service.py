@@ -25,14 +25,14 @@ class TestConnectionService:
     def test_repo_table_name(self, model_valid, mock_ddb_table):
         ConnectionService().delete(model_valid['connection_id'])
         args, kwargs = boto3.resource('dynamodb').delete_item.call_args_list[-1]
-        assert kwargs['TableName'] == 'connections_dan_dev'
+        assert kwargs['TableName'] == 'connections_dev_dan'
 
     def test_repo_table_name_from_env_variables(self, model_valid, mock_ddb_table):
         os.environ['env'] = 'my_env'
         os.environ['client'] = 'my_client'
         ConnectionService().delete(model_valid['connection_id'])
         args, kwargs = boto3.resource('dynamodb').delete_item.call_args_list[-1]
-        assert kwargs['TableName'] == 'connections_dan_dev'
+        assert kwargs['TableName'] == 'connections_dev_dan'
 
     def test_get_not_found(self, mock_ddb_table):
         boto3.resource('dynamodb').Table('connections').get_item.return_value = {'status_code': '200'}

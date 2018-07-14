@@ -12,6 +12,18 @@ date_format = '%Y%m%d'
 datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z'
 
 
+class Event(metaclass=abc.ABCMeta):
+    def __init__(self, body):
+        self.created = datetime.datetime.utcnow()
+        self.name = 'ConnectionCreated'
+        self.body = body
+
+
+class ConnectionCreated(Event):
+    def __init__(self, connection):
+        super().__init__(connection)
+
+
 class Metadata:
     def __init__(self, name, connector_type, created=None, updated=None, created_by=None, modified_by=None):
         self.name = name

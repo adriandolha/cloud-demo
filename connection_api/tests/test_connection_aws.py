@@ -20,7 +20,7 @@ class TestConnectionAWS:
     def test_get_connection(self, model_valid, metadata_valid, mock_ddb_table):
         model_valid.update({'metadata': metadata_valid})
         boto3.resource('dynamodb').Table('connections').get_item.return_value = {'Item': model_valid}
-        response = aws.get({'pathParameters': {'id': model_valid['connection_id']}})
+        response = aws.get({'pathParameters': {'connection_id': model_valid['connection_id']}})
         assert response['statusCode'] == '200'
         assert response['body']
         body = json.loads(response['body'])
@@ -47,7 +47,7 @@ class TestConnectionAWS:
     def test_delete_connection(self, model_valid, mock_ddb_table):
         model_valid.update({'created': datetime.datetime.utcnow().isoformat(),
                             'updated': datetime.datetime.utcnow().isoformat()})
-        response = aws.delete({'pathParameters': {'id': model_valid['connection_id']}})
+        response = aws.delete({'pathParameters': {'connection_id': model_valid['connection_id']}})
         assert response['statusCode'] == '200'
         assert response['body']
         body = json.loads(response['body'])

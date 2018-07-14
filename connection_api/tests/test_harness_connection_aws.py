@@ -27,7 +27,7 @@ class TestConnectionAWS:
         connection_id = body.get('connection_id')
         assert connection_id
         url = f'{api_url}/{connection_id}'
-        response = requests.get(url, headers=basic_headers)
+        response = requests.get(str(url), headers=basic_headers)
         assert response.status_code == 200
         content = json.loads(response.content)
         assert 'name', 'instance_type' in content
@@ -59,7 +59,7 @@ class TestConnectionAWS:
         region = 'us-east-1'
         stage = 'test'
         resource = 'connection'
-        api_url = f'https://{api_id}.execute-api.{region}.amazonaws.com/{stage}//{resource}'
+        api_url = f'https://{api_id}.execute-api.{region}.amazonaws.com/{stage}/{resource}'
         print(f'API url is {api_url}')
         return api_url
 

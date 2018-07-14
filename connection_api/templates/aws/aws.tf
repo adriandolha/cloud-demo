@@ -4,6 +4,12 @@ variable "region" {
 variable "accountId" {
   default = "856816586042"
 }
+variable "env" {
+  default = "dev"
+}
+variable "client" {
+  default = "myapp"
+}
 
 provider "aws" {
   version = "~> 1.26.0"
@@ -11,7 +17,7 @@ provider "aws" {
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
-  name = "connections"
+  name = "connections_${var.env}_${var.client}"
   read_capacity = 5
   write_capacity = 5
   hash_key = "connection_id"
@@ -103,6 +109,12 @@ resource "aws_lambda_function" "add_connection_lambda" {
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
+  environment {
+    variables {
+      env = "${var.env}"
+      client = "${var.client}"
+    }
+  }
 }
 resource "aws_lambda_function" "list_connection_lambda" {
   filename = "lambda_package.zip"
@@ -112,6 +124,12 @@ resource "aws_lambda_function" "list_connection_lambda" {
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
+  environment {
+    variables {
+      env = "${var.env}"
+      client = "${var.client}"
+    }
+  }
 }
 
 resource "aws_lambda_function" "get_connection_lambda" {
@@ -122,16 +140,12 @@ resource "aws_lambda_function" "get_connection_lambda" {
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
-}
-
-resource "aws_lambda_function" "auth_lambda" {
-  filename = "lambda_package.zip"
-  function_name = "auth_function"
-  role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connection.metadata.aws.auth"
-  source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
-  runtime = "python3.6"
-  timeout = 15
+  environment {
+    variables {
+      env = "${var.env}"
+      client = "${var.client}"
+    }
+  }
 }
 
 resource "aws_api_gateway_rest_api" "connection_api" {
@@ -149,11 +163,27 @@ resource "aws_api_gateway_resource" "connection_resource" {
   path_part = "connection"
 }
 
+resource "aws_api_gateway_resource" "single_connection_resource" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  parent_id = "${aws_api_gateway_resource.connection_resource.id}"
+  path_part = "{connection_id}"
+}
+
 resource "aws_api_gateway_method" "add_connection_post" {
   rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
   resource_id = "${aws_api_gateway_resource.connection_resource.id}"
   http_method = "POST"
   authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "get_connection" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  resource_id = "${aws_api_gateway_resource.single_connection_resource.id}"
+  http_method = "GET"
+  authorization = "NONE"
+  request_parameters {
+    "method.request.path.connection_id" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "connection_api_integration" {
@@ -165,9 +195,23 @@ resource "aws_api_gateway_integration" "connection_api_integration" {
   uri = "${aws_lambda_function.add_connection_lambda.invoke_arn}"
 }
 
+resource "aws_api_gateway_integration" "connection_api_integration_get" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  resource_id = "${aws_api_gateway_resource.single_connection_resource.id}"
+  http_method = "${aws_api_gateway_method.get_connection.http_method}"
+  integration_http_method = "POST"
+  type = "AWS_PROXY"
+  uri = "${aws_lambda_function.get_connection_lambda.invoke_arn}"
+  request_parameters {
+        "integration.request.path.id" = "method.request.path.connection_id"
+    }
+}
+
 resource "aws_api_gateway_deployment" "connection_api_deployment" {
   depends_on = [
-    "aws_api_gateway_integration.connection_api_integration"
+    "aws_api_gateway_integration.connection_api_integration",
+    "aws_api_gateway_integration.connection_api_integration_get"
+
   ]
 
   rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"

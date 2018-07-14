@@ -62,7 +62,7 @@ class ConnectionRestApi:
         Get connection.
         :return: Connection
         """
-        return self.service.get(self.context['path_parameters']['id']).model
+        return self.service.get(self.context['path_parameters']['connection_id']).model
 
     @handle_request()
     def list(self):
@@ -71,6 +71,6 @@ class ConnectionRestApi:
 
     @handle_request()
     def delete(self):
-        connection_id = self.context['path_parameters']['id']
+        connection_id = self.context['path_parameters']['connection_id']
         self.service.delete(connection_id)
         return f'Successfully removed connection {connection_id}'
