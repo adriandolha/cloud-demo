@@ -31,8 +31,8 @@ def make_connection(model, logger):
     :param logger: Logger
     :return: Resource instance
     """
-    connection_type = model['connection_type']
-    packages = connection_type.split('.')
+    connector_type = model['connector_type']
+    packages = connector_type.split('.')
     module_name = ''.join(packages)
     connection_name = ''.join([word.capitalize() for word in packages])
     class_name = f'{connection_name}Connection'
@@ -40,9 +40,9 @@ def make_connection(model, logger):
     module = importlib.import_module(f'connection.{module_name}')
     connection = getattr(module, class_name)(name=model['name'], client=model['client'],
                                              account=model['account'], connection_id=model.get('connection_id'),
-                                             connection_type=model['connection_type'], parameters=model.get('parameters'))
+                                             connector_type=model['connector_type'], parameters=model.get('parameters'))
     if 'metadata' not in model:
-        connection.metadata = Metadata(name=model['name'], connection_type=model['connection_type'],
+        connection.metadata = Metadata(name=model['name'], connector_type=model['connector_type'],
                                        created=model.get('created'), updated=model.get('updated'),
                                        created_by=model.get('created_by'), modified_by=model.get('modified_by'))
     else:

@@ -193,7 +193,7 @@ resource "aws_api_gateway_model" "connection_model" {
   schema = "${file("models/connection.json")}"
 }
 
-resource "aws_api_gateway_method_response" "add_connection_response" {
+resource "aws_api_gateway_method_response" "200" {
   http_method = "POST"
   resource_id = "${aws_api_gateway_resource.connection_resource.id}"
   rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
@@ -212,4 +212,14 @@ resource "aws_api_gateway_documentation_part" "add_connection_doc" {
   }
   properties = "${file("docs/connection/POST.json")}"
   rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+}
+
+resource "aws_api_gateway_api_key" "mykey" {
+  name = "mykey"
+  stage_key {
+    rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+    stage_name = "test"
+
+  }
+
 }

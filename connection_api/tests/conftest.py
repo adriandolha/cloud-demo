@@ -11,7 +11,7 @@ def model_valid():
            'client': 'my client',
            'account': 'my account',
            'name': 'DCM API Report Aggregator',
-           'connection_type': 'dcm.api.report',
+           'connector_type': 'dcm.api.report',
            'parameters': {
                'profile_id': '1',
                'report_id': '2'
@@ -22,7 +22,7 @@ def model_valid():
 def metadata_valid():
     yield {
         'name': 'name',
-        'connection_type': 'ct',
+        'connector_type': 'ct',
         'created': datetime.datetime.utcnow().isoformat(),
         'updated': datetime.datetime.utcnow().isoformat()}
 
@@ -33,7 +33,7 @@ def model_new():
         'client': 'my client',
         'account': 'my account',
         'name': 'DCM API Report Aggregator',
-        'connection_type': 'dcm.api.report',
+        'connector_type': 'dcm.api.report',
         'parameters': {
             'profile_id': '1',
             'report_id': '2'

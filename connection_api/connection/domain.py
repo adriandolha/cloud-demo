@@ -13,9 +13,9 @@ datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z'
 
 
 class Metadata:
-    def __init__(self, name, connection_type, created=None, updated=None, created_by=None, modified_by=None):
+    def __init__(self, name, connector_type, created=None, updated=None, created_by=None, modified_by=None):
         self.name = name
-        self.connection_type = connection_type
+        self.connector_type = connector_type
         self.created = created
         self.updated = updated
         self.created_by = created_by
@@ -49,7 +49,7 @@ class Connection(metaclass=abc.ABCMeta):
         self.parameters = kwargs.get('parameters')
         self.client = kwargs['client']
         self.account = kwargs['account']
-        self.connection_type = kwargs['connection_type']
+        self.connector_type = kwargs['connector_type']
 
     @property
     def metadata(self) -> Metadata:
@@ -86,7 +86,7 @@ class Connection(metaclass=abc.ABCMeta):
             'account': self.account,
             'metadata': self.metadata.model,
             'parameters': self.parameters,
-            'connection_type': self.connection_type
+            'connector_type': self.connector_type
         }
 
     def is_private_field(self, name: str):

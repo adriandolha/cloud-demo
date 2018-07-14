@@ -12,11 +12,11 @@ class TestConnection:
     def test_resource_created_when_valid_request(self, model_valid):
         connection = make_connection(model_valid)
         assert connection.name == model_valid['name']
-        assert connection.connection_type == model_valid['connection_type']
+        assert connection.connector_type == model_valid['connector_type']
 
-    def test_connection_type_required(self, model_valid):
+    def test_connector_type_required(self, model_valid):
         model = copy.deepcopy(model_valid)
-        del model['connection_type']
+        del model['connector_type']
         with pytest.raises(KeyError) as err:
             make_connection(model)
 
