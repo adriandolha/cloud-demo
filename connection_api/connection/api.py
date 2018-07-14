@@ -9,7 +9,7 @@ from functools import wraps
 
 from connection.exceptions import ResourceNotFoundException
 from connection.serializers import from_json
-from connection.service import ConnectorService
+from connection.service import ConnectionService
 
 
 def response(message, status_code):
@@ -42,10 +42,10 @@ def handle_request():
     return decorator
 
 
-class ConnectorRestApi:
+class ConnectionRestApi:
     def __init__(self, context=None):
         self.context = context
-        self.service = ConnectorService(context)
+        self.service = ConnectionService(context)
 
     @handle_request()
     def add(self):
@@ -60,17 +60,17 @@ class ConnectorRestApi:
     def get(self):
         """
         Get connection.
-        :return: Connector
+        :return: Connection
         """
         return self.service.get(self.context['path_parameters']['id']).model
 
     @handle_request()
     def list(self):
-        items = [connector.model for connector in self.service.list()]
+        items = [connection.model for connection in self.service.list()]
         return {'items': items, 'count': len(items)}
 
     @handle_request()
     def delete(self):
-        connector_id = self.context['path_parameters']['id']
-        self.service.delete(connector_id)
-        return f'Successfully removed connection {connector_id}'
+        connection_id = self.context['path_parameters']['id']
+        self.service.delete(connection_id)
+        return f'Successfully removed connection {connection_id}'

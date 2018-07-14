@@ -26,14 +26,14 @@ class ConnectionRepo:
         self.table_name = f'connections_{env}_{client}'
         self.table = self.ddb.Table(self.table_name)
 
-    def save(self, connector: Connection):
-        if not connector.connector_id:
-            connector.connector_id = str(uuid.uuid4())
-        model = connector.model
+    def save(self, connection: Connection):
+        if not connection.connection_id:
+            connection.connection_id = str(uuid.uuid4())
+        model = connection.model
         self.table.put_item(Item=to_dynamo(model))
 
-    def get(self, connector_id):
-        response = self.table.get_item(Key={'connector_id': connector_id})
+    def get(self, connection_id):
+        response = self.table.get_item(Key={'connection_id': connection_id})
         if 'Item' not in response:
             return None
         return make_connection(response['Item'])
@@ -41,5 +41,5 @@ class ConnectionRepo:
     def list(self):
         return [make_connection(item) for item in self.table.scan()['Items']]
 
-    def delete(self, connector_id):
-        self.ddb.delete_item(TableName=self.table_name, Key={'connector_id': connector_id})
+    def delete(self, connection_id):
+        self.ddb.delete_item(TableName=self.table_name, Key={'connection_id': connection_id})

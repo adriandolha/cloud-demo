@@ -3,11 +3,11 @@ import pytest
 from connection import make_connection
 
 
-class TestDcmConnector:
+class TestDcmConnection:
 
     def test_resource_created_when_valid_request(self, model_valid):
-        connector = make_connection(model_valid)
-        assert connector
+        connection = make_connection(model_valid)
+        assert connection
 
     def test_report_id_required(self, model_valid):
         del model_valid['parameters']['report_id']

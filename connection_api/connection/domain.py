@@ -13,9 +13,9 @@ datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z'
 
 
 class Metadata:
-    def __init__(self, name, connector_type, created=None, updated=None, created_by=None, modified_by=None):
+    def __init__(self, name, connection_type, created=None, updated=None, created_by=None, modified_by=None):
         self.name = name
-        self.connector_type = connector_type
+        self.connection_type = connection_type
         self.created = created
         self.updated = updated
         self.created_by = created_by
@@ -42,14 +42,14 @@ class Connection(metaclass=abc.ABCMeta):
         :param model: Data input dictionary with all fields and associated values.
         """
         self.name = kwargs['name']
-        self._connector_id = None
-        self.connector_id = kwargs.get('connector_id')
+        self._connection_id = None
+        self.connection_id = kwargs.get('connection_id')
         self._metadata = None
         self._metadata = kwargs.get('metadata')
         self.parameters = kwargs.get('parameters')
         self.client = kwargs['client']
         self.account = kwargs['account']
-        self.connector_type = kwargs['connector_type']
+        self.connection_type = kwargs['connection_type']
 
     @property
     def metadata(self) -> Metadata:
@@ -60,13 +60,13 @@ class Connection(metaclass=abc.ABCMeta):
         self._metadata = value
 
     @property
-    def connector_id(self):
-        return self._connector_id
+    def connection_id(self):
+        return self._connection_id
 
-    @connector_id.setter
-    def connector_id(self, value):
+    @connection_id.setter
+    def connection_id(self, value):
         validate_uuid(value)
-        self._connector_id = value
+        self._connection_id = value
 
     @property
     def model(self) -> dict:
@@ -77,16 +77,16 @@ class Connection(metaclass=abc.ABCMeta):
         failure.
         Be careful not to leak internal state.
         This could be achieved by specifying the public fields instead of copying the dictionary.
-        :return: Connector model.
+        :return: Connection model.
         """
         return {
-            'connector_id': self.connector_id,
+            'connection_id': self.connection_id,
             'name': self.name,
             'client': self.client,
             'account': self.account,
             'metadata': self.metadata.model,
             'parameters': self.parameters,
-            'connector_type': self.connector_type
+            'connection_type': self.connection_type
         }
 
     def is_private_field(self, name: str):

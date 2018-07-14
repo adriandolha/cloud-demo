@@ -6,10 +6,10 @@ import boto3
 import pytest
 import requests
 
-from connection.service import ConnectorService
+from connection.service import ConnectionService
 
 
-class TestConnectorAWS:
+class TestConnectionAWS:
     """
     It requires terraform scripts to be applied and the infrastructure online.
     Deployment scripts can be found in templates/aws/connection
@@ -20,13 +20,13 @@ class TestConnectorAWS:
         logging.basicConfig(level=logging.DEBUG)
 
     @pytest.mark.skip(reason='Run it only on demand')
-    def test_add_connector(self, model_new, api_url, basic_headers):
+    def test_add_connection(self, model_new, api_url, basic_headers):
         add_response = requests.post(api_url, data=json.dumps(model_new), headers=basic_headers)
         assert add_response.status_code == 200
         body = json.loads(add_response.content)
-        connector_id = body.get('connector_id')
-        assert connector_id
-        url = f'{api_url}/{connector_id}'
+        connection_id = body.get('connection_id')
+        assert connection_id
+        url = f'{api_url}/{connection_id}'
         response = requests.get(url, headers=basic_headers)
         assert response.status_code == 200
         content = json.loads(response.content)
@@ -34,9 +34,9 @@ class TestConnectorAWS:
         assert model_new['name'] == content['name']
 
     @pytest.mark.skip(reason='Run it only on demand')
-    def test_get_connector_not_found(self, api_url, basic_headers):
-        connector_id = '99999999-547b-4f0d-8034-00000000000'
-        url = f'{api_url}/{connector_id}'
+    def test_get_connection_not_found(self, api_url, basic_headers):
+        connection_id = '99999999-547b-4f0d-8034-00000000000'
+        url = f'{api_url}/{connection_id}'
         response = requests.get(url, headers=basic_headers)
         assert response.status_code == 200
         content = json.loads(response.content)
@@ -44,8 +44,8 @@ class TestConnectorAWS:
 
     @pytest.mark.skip(reason='Run it only on demand')
     def test_playground(self):
-        # ConnectorService().get(str(uuid.uuid4()))
-        print(ConnectorService().list())
+        # ConnectionService().get(str(uuid.uuid4()))
+        print(ConnectionService().list())
 
     @pytest.fixture(scope='module')
     def basic_headers(self, api_key):

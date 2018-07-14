@@ -3,7 +3,7 @@
   "title": "Connector",
   "type": "object",
   "properties": {
-    "connector_id": {
+    "connection_id": {
       "type": "string"
     },
     "account_id": {

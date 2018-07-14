@@ -21,25 +21,25 @@ class Context:
         return self._user
 
 
-class ConnectorService:
+class ConnectionService:
     """
-    Connector service. Domain specific logic should be handled in domain specific classes. The service orchestrates.
+    Connection service. Domain specific logic should be handled in domain specific classes. The service orchestrates.
     """
 
     def __init__(self, context=None):
         self.repo = make_repo()
         self.context = context
 
-    def add(self, request, connector_id=None):
-        if 'connector_id' in request:
-            raise ValueError(f'Invalid argument: connector_id. Expected empty but actual {request["connector_id"]}')
+    def add(self, request, connection_id=None):
+        if 'connection_id' in request:
+            raise ValueError(f'Invalid argument: connection_id. Expected empty but actual {request["connection_id"]}')
         connection = make_connection(self.enhanced_request(request))
         now = datetime.datetime.utcnow()
         connection.metadata.created = now
         connection.metadata.updated = now
 
         self.repo.save(connection)
-        return {'connector_id': connection.connector_id}
+        return {'connection_id': connection.connection_id}
 
     def enhanced_request(self, request: dict):
         """
@@ -50,16 +50,16 @@ class ConnectorService:
         request.update({'_context': self.context})
         return request
 
-    def get(self, connector_id) -> Connection:
-        validate_uuid(connector_id)
-        connector = self.repo.get(connector_id)
-        if not connector:
-            raise ResourceNotFoundException(connector_id)
-        return connector
+    def get(self, connection_id) -> Connection:
+        validate_uuid(connection_id)
+        connection = self.repo.get(connection_id)
+        if not connection:
+            raise ResourceNotFoundException(connection_id)
+        return connection
 
     def list(self):
         return self.repo.list()
 
-    def delete(self, connector_id):
-        validate_uuid(connector_id)
-        self.repo.delete(connector_id)
+    def delete(self, connection_id):
+        validate_uuid(connection_id)
+        self.repo.delete(connection_id)

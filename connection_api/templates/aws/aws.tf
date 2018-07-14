@@ -11,14 +11,14 @@ provider "aws" {
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
-  name = "connectors"
+  name = "connections"
   read_capacity = 5
   write_capacity = 5
-  hash_key = "connector_id"
+  hash_key = "connection_id"
 
 
   attribute {
-    name = "connector_id"
+    name = "connection_id"
     type = "S"
   }
 }
@@ -87,7 +87,7 @@ resource "aws_iam_role_policy" "basic_execution_policy" {
                 "logs:PutLogEvents"
             ],
             "Resource": [
-                "arn:aws:logs:us-east-1:${var.accountId}:log-group:/aws/lambda/create-connector_lambda:*"
+                "arn:aws:logs:us-east-1:${var.accountId}:log-group:/aws/lambda/create-connection_lambda:*"
             ]
         }
     ]
@@ -95,30 +95,30 @@ resource "aws_iam_role_policy" "basic_execution_policy" {
 EOF
 }
 
-resource "aws_lambda_function" "add_connector_lambda" {
+resource "aws_lambda_function" "add_connection_lambda" {
   filename = "lambda_package.zip"
-  function_name = "add_connector_function"
+  function_name = "add_connection_function"
   role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connector.aws.add"
+  handler = "connection.aws.add"
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
 }
-resource "aws_lambda_function" "list_connector_lambda" {
+resource "aws_lambda_function" "list_connection_lambda" {
   filename = "lambda_package.zip"
-  function_name = "list_connector_function"
+  function_name = "list_connection_function"
   role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connector.aws.list"
+  handler = "connection.aws.list"
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
 }
 
-resource "aws_lambda_function" "get_connector_lambda" {
+resource "aws_lambda_function" "get_connection_lambda" {
   filename = "lambda_package.zip"
-  function_name = "get_connector_function"
+  function_name = "get_connection_function"
   role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connector.aws.get"
+  handler = "connection.aws.get"
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
@@ -128,14 +128,14 @@ resource "aws_lambda_function" "auth_lambda" {
   filename = "lambda_package.zip"
   function_name = "auth_function"
   role = "${aws_iam_role.iam_for_lambda.arn}"
-  handler = "connector.metadata.aws.auth"
+  handler = "connection.metadata.aws.auth"
   source_code_hash = "${base64sha256(file("lambda_package.zip"))}"
   runtime = "python3.6"
   timeout = 15
 }
 
-resource "aws_api_gateway_rest_api" "connector_api" {
-  name = "connector"
+resource "aws_api_gateway_rest_api" "connection_api" {
+  name = "connection"
   description = "Connector API"
   endpoint_configuration {
     types = [
@@ -143,73 +143,73 @@ resource "aws_api_gateway_rest_api" "connector_api" {
   }
 }
 
-resource "aws_api_gateway_resource" "connector_resource" {
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
-  parent_id = "${aws_api_gateway_rest_api.connector_api.root_resource_id}"
-  path_part = "connector"
+resource "aws_api_gateway_resource" "connection_resource" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  parent_id = "${aws_api_gateway_rest_api.connection_api.root_resource_id}"
+  path_part = "connection"
 }
 
-resource "aws_api_gateway_method" "add_connector_post" {
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
-  resource_id = "${aws_api_gateway_resource.connector_resource.id}"
+resource "aws_api_gateway_method" "add_connection_post" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  resource_id = "${aws_api_gateway_resource.connection_resource.id}"
   http_method = "POST"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "connector_api_integration" {
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
-  resource_id = "${aws_api_gateway_resource.connector_resource.id}"
-  http_method = "${aws_api_gateway_method.add_connector_post.http_method}"
+resource "aws_api_gateway_integration" "connection_api_integration" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  resource_id = "${aws_api_gateway_resource.connection_resource.id}"
+  http_method = "${aws_api_gateway_method.add_connection_post.http_method}"
   integration_http_method = "POST"
   type = "AWS_PROXY"
-  uri = "${aws_lambda_function.add_connector_lambda.invoke_arn}"
+  uri = "${aws_lambda_function.add_connection_lambda.invoke_arn}"
 }
 
-resource "aws_api_gateway_deployment" "connector_api_deployment" {
+resource "aws_api_gateway_deployment" "connection_api_deployment" {
   depends_on = [
-    "aws_api_gateway_integration.connector_api_integration"
+    "aws_api_gateway_integration.connection_api_integration"
   ]
 
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
   stage_name = "test"
 }
 
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id = "AllowExecutionFromAPIGateway"
   action = "lambda:InvokeFunction"
-  function_name = "${aws_lambda_function.add_connector_lambda.arn}"
+  function_name = "${aws_lambda_function.add_connection_lambda.arn}"
   principal = "apigateway.amazonaws.com"
-  source_arn = "${aws_api_gateway_rest_api.connector_api.execution_arn}/*/*/*"
-  //  source_arn = "${aws_api_gateway_deployment.connector_api_deployment.execution_arn}/*/*/*"
+  source_arn = "${aws_api_gateway_rest_api.connection_api.execution_arn}/*/*/*"
+  //  source_arn = "${aws_api_gateway_deployment.connection_api_deployment.execution_arn}/*/*/*"
 }
 
 // Models
-resource "aws_api_gateway_model" "connector_model" {
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
-  name = "connector"
+resource "aws_api_gateway_model" "connection_model" {
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
+  name = "connection"
   description = "Connector JSON schema"
   content_type = "application/json"
 
-  schema = "${file("models/connector.json")}"
+  schema = "${file("models/connection.json")}"
 }
 
-resource "aws_api_gateway_method_response" "add_connector_response" {
+resource "aws_api_gateway_method_response" "add_connection_response" {
   http_method = "POST"
-  resource_id = "${aws_api_gateway_resource.connector_resource.id}"
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
+  resource_id = "${aws_api_gateway_resource.connection_resource.id}"
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
   response_models = {
-    "application/json" = "${aws_api_gateway_model.connector_model.name}"
+    "application/json" = "${aws_api_gateway_model.connection_model.name}"
   }
   status_code = "200"
 }
 
 // docs
-resource "aws_api_gateway_documentation_part" "add_connector_doc" {
+resource "aws_api_gateway_documentation_part" "add_connection_doc" {
   location {
     type = "METHOD"
     method = "POST"
-    path = "/connector"
+    path = "/connection"
   }
-  properties = "${file("docs/connector/POST.json")}"
-  rest_api_id = "${aws_api_gateway_rest_api.connector_api.id}"
+  properties = "${file("docs/connection/POST.json")}"
+  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
 }

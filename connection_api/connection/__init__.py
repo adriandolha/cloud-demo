@@ -26,23 +26,23 @@ def make_repo():
 def make_connection(model, logger):
     """
     Instantiates associated connection from model.
-    It determines associated class from data_source. E.g. data_source=dcm -> connection.dcm.DcmConnector
+    It determines associated class from data_source. E.g. data_source=dcm -> connection.dcm.DcmConnection
     :param model: Resource model
     :param logger: Logger
     :return: Resource instance
     """
-    connector_type = model['connector_type']
-    packages = connector_type.split('.')
+    connection_type = model['connection_type']
+    packages = connection_type.split('.')
     module_name = ''.join(packages)
-    connector_name = ''.join([word.capitalize() for word in packages])
-    class_name = f'{connector_name}Connection'
-    logger.debug(f'Initializing connection {connector_name} from class {class_name}.')
+    connection_name = ''.join([word.capitalize() for word in packages])
+    class_name = f'{connection_name}Connection'
+    logger.debug(f'Initializing connection {connection_name} from class {class_name}.')
     module = importlib.import_module(f'connection.{module_name}')
     connection = getattr(module, class_name)(name=model['name'], client=model['client'],
-                                             account=model['account'], connector_id=model.get('connector_id'),
-                                             connector_type=model['connector_type'], parameters=model.get('parameters'))
+                                             account=model['account'], connection_id=model.get('connection_id'),
+                                             connection_type=model['connection_type'], parameters=model.get('parameters'))
     if 'metadata' not in model:
-        connection.metadata = Metadata(name=model['name'], connector_type=model['connector_type'],
+        connection.metadata = Metadata(name=model['name'], connection_type=model['connection_type'],
                                        created=model.get('created'), updated=model.get('updated'),
                                        created_by=model.get('created_by'), modified_by=model.get('modified_by'))
     else:

@@ -1,6 +1,6 @@
 import uuid
 
-from connection.api import ConnectorRestApi
+from connection.api import ConnectionRestApi
 
 
 def response(api_response):
@@ -23,18 +23,18 @@ def api_context(event, context):
 
 
 def add(event, context=None):
-    return response(ConnectorRestApi(api_context(event, context)).add())
+    return response(ConnectionRestApi(api_context(event, context)).add())
 
 
 def get(event, context=None):
     print(event)
     print(context)
-    return response(ConnectorRestApi(api_context(event, context)).get())
+    return response(ConnectionRestApi(api_context(event, context)).get())
 
 
 def list(event, context=None):
-    return response(ConnectorRestApi(api_context(event, context)).list())
+    return response(ConnectionRestApi(api_context(event, context)).list())
 
 
 def delete(event, context=None):
-    return response(ConnectorRestApi(api_context(event, context)).delete())
+    return response(ConnectionRestApi(api_context(event, context)).delete())

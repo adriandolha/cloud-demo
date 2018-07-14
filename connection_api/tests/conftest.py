@@ -7,11 +7,11 @@ from mock import mock
 
 @pytest.fixture()
 def model_valid():
-    yield {'connector_id': '5ee7dcd0-547b-4f0d-8034-31e5fd430a83',
+    yield {'connection_id': '5ee7dcd0-547b-4f0d-8034-31e5fd430a83',
            'client': 'my client',
            'account': 'my account',
            'name': 'DCM API Report Aggregator',
-           'connector_type': 'dcm.api.report',
+           'connection_type': 'dcm.api.report',
            'parameters': {
                'profile_id': '1',
                'report_id': '2'
@@ -22,7 +22,7 @@ def model_valid():
 def metadata_valid():
     yield {
         'name': 'name',
-        'connector_type': 'ct',
+        'connection_type': 'ct',
         'created': datetime.datetime.utcnow().isoformat(),
         'updated': datetime.datetime.utcnow().isoformat()}
 
@@ -33,7 +33,7 @@ def model_new():
         'client': 'my client',
         'account': 'my account',
         'name': 'DCM API Report Aggregator',
-        'connector_type': 'dcm.api.report',
+        'connection_type': 'dcm.api.report',
         'parameters': {
             'profile_id': '1',
             'report_id': '2'
@@ -44,4 +44,4 @@ def model_new():
 @pytest.fixture(scope='session')
 def mock_ddb_table():
     with mock.patch('boto3.resource'):
-        yield boto3.resource('dynamodb').Table('connectors')
+        yield boto3.resource('dynamodb').Table('connections')
