@@ -5,10 +5,11 @@ from time import sleep
 
 import boto3
 
-from connection import make_repo, make_connection, sqs
+from connection import make_repo, make_connection
+from connector_notification import sqs
 from connection.domain import Connection, validate_uuid, ConnectionCreated
 from connection.exceptions import ResourceNotFoundException
-from connection.serializers import to_json, from_json, to_dynamo
+from connection.serializers import to_json, from_json
 import logme
 
 

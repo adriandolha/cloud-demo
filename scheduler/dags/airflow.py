@@ -7,6 +7,8 @@ from airflow import DAG
 from datetime import datetime, timedelta
 
 from airflow.operators.bash_operator import BashOperator
+from airflow.operators.python_operator import PythonOperator
+from connector_notification import sqs
 
 default_args = {
     'owner': 'airflow',
@@ -23,10 +25,26 @@ default_args = {
     # 'end_date': datetime(2016, 1, 1),
 }
 
+
+def connector_started(ds, **kwargs):
+    print(ds)
+    print(kwargs)
+    sqs.publish('connector started')
+    return 'Whatever you return gets printed in the logs'
+
+
 dag = DAG('connector_task', default_args=default_args)
 
+connector_started_task = PythonOperator(
+    task_id='connector_started',
+    provide_context=True,
+    python_callable=connector_started,
+    dag=dag
+)
 run_some_docker_job = BashOperator(
     task_id='connector_job',
-    env={'RUN_AS': 'adrian', 'AIRFLOW_ENV': {}},
-    bash_command='sudo docker run --rm  hello',
+    env={'RUN_AS': 'adrian', 'AIRFLOW_ENV': ''},
+    bash_command='docker run --rm  hello',
     dag=dag)
+
+run_some_docker_job.set_upstream(connector_started_task)

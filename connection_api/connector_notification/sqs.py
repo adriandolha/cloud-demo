@@ -1,5 +1,4 @@
 import boto3
-import logme
 
 sqs = boto3.client('sqs')
 
@@ -41,9 +40,10 @@ def receive():
             return [response]
     return None
 
-@logme.log
+
 def delete(message, logger=None):
     if message and 'ReceiptHandle' in message:
         sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=message['ReceiptHandle'])
     else:
-        logger.debug(f'Could not delete {message}')
+        print('Could not delete ')
+        print(message)
