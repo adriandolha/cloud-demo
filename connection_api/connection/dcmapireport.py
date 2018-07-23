@@ -12,4 +12,9 @@ class DcmApiReportConnection(Connection):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._profile_id = self.parameters['profile_id']
+        if not self._profile_id:
+            raise KeyError('profile_id')
         self._report_id = self.parameters['report_id']
+        if not self._report_id:
+            raise KeyError('report_id')
+
