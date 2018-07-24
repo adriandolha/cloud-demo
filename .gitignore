@@ -7,3 +7,4 @@ terraform.tfstate
 terraform.tfstate.backup
 lambda*
 lambda_package
+schedulerec2.pem.txt
