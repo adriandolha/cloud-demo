@@ -13,7 +13,8 @@ from connector_notification import sqs
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2018, 7, 18),
+    'start_date': datetime.utcnow(),
+    'schedule_interval': '@once',
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -33,16 +34,18 @@ def connector_started(ds, **kwargs):
     return 'Whatever you return gets printed in the logs'
 
 
-dag = DAG('connector_task', default_args=default_args)
+dag = DAG('just_run', default_args=default_args)
 
 connector_started_task = PythonOperator(
     task_id='connector_started',
+    schedule_interval='@once',
     provide_context=True,
     python_callable=connector_started,
     dag=dag
 )
 run_some_docker_job = BashOperator(
     task_id='connector_job',
+    schedule_interval='@once',
     env={'RUN_AS': 'adrian', 'AIRFLOW_ENV': ''},
     bash_command='docker run --rm  856816586042.dkr.ecr.us-east-1.amazonaws.com/hello',
     dag=dag)
