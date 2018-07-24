@@ -1,0 +1,2 @@
+sc delete PulseSecureDisconnectService
+sc create PulseSecureDisconnectService binpath= "C:\apps\cloud_demo\pulse_secure\python.exe C:\apps\cloud_demo\pulse_secure\pulse_secure_mail_service.py" DisplayName= "Pulse Secure Disconnect Service" start= auto
