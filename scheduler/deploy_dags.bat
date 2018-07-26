@@ -1,0 +1,1 @@
+aws s3 cp dags/connector_hello.py s3://dev-connector-tasks/

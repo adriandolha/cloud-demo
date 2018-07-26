@@ -43,7 +43,7 @@ connector_started_task = PythonOperator(
     dag=dag
 )
 run_some_docker_job = BashOperator(
-    task_id='connector_job',
+    task_id='connection_job',
     env={'RUN_AS': 'adrian', 'AIRFLOW_ENV': ''},
     bash_command='docker run --rm  856816586042.dkr.ecr.us-east-1.amazonaws.com/hello',
     dag=dag)

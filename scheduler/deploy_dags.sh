@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-cp dags/airflow.py ~/airflow/dags
+aws s3 cp dags/hello_connector s3://dev-connector-tasks/
