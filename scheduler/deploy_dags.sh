@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-
-aws s3 cp dags/hello_connector s3://dev-connector-tasks/
+pip install awscli
+aws s3 cp dags/connector_hello.py s3://cloud-demo-airflow-dags/

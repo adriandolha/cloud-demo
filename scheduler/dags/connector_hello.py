@@ -30,7 +30,7 @@ default_args = {
 def connector_started(ds, **kwargs):
     print(ds)
     print(kwargs)
-    sqs.queue_url = 'https://sqs.us-east-1.amazonaws.com/933886674506/connector_task_dev_dan'
+    sqs.queue_url = 'https://sqs.us-east-1.amazonaws.com/856816586042/connection_dev_myapp'
     print('Publishing connector started event on queue {}'.format(sqs.queue_url))
     event = json.dumps(
         {'next_execution_date': kwargs['next_execution_date'].isoformat(),
@@ -54,7 +54,7 @@ connector_started_task = PythonOperator(
 run_some_docker_job = BashOperator(
     task_id='run_report',
     env={'RUN_AS': 'root', 'AIRFLOW_ENV': ''},
-    bash_command='docker run 933886674506.dkr.ecr.us-east-1.amazonaws.com/connectors/hello:dev',
+    bash_command='docker run hello',
     dag=dag)
 
 
