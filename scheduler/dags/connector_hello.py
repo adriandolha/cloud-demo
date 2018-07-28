@@ -50,12 +50,13 @@ connector_started_task = PythonOperator(
     python_callable=connector_started,
     dag=dag
 )
-
+connector_arguments = {'a': 'b', 'c': 'd'}
+connector_arguments_command = ' '.join(['{}={}'.format(k, v) for k, v in connector_arguments.items()])
 run_some_docker_job = BashOperator(
     task_id='run_report',
     env={'RUN_AS': 'root', 'AIRFLOW_ENV': ''},
-    bash_command='docker run hello',
+    bash_command='docker run 856816586042.dkr.ecr.us-east-1.amazonaws.com/hello:latest {}'.format(
+        connector_arguments_command),
     dag=dag)
-
 
 run_some_docker_job.set_upstream(connector_started_task)

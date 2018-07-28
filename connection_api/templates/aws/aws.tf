@@ -151,69 +151,15 @@ resource "aws_lambda_function" "get_connection_lambda" {
 resource "aws_api_gateway_rest_api" "connection_api" {
   name = "connection"
   description = "Connector API"
+  body = "${file("api.json")}"
   endpoint_configuration {
     types = [
       "REGIONAL"]
   }
 }
 
-resource "aws_api_gateway_resource" "connection_resource" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  parent_id = "${aws_api_gateway_rest_api.connection_api.root_resource_id}"
-  path_part = "connection"
-}
-
-resource "aws_api_gateway_resource" "single_connection_resource" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  parent_id = "${aws_api_gateway_resource.connection_resource.id}"
-  path_part = "{connection_id}"
-}
-
-resource "aws_api_gateway_method" "add_connection_post" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  resource_id = "${aws_api_gateway_resource.connection_resource.id}"
-  http_method = "POST"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_method" "get_connection" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  resource_id = "${aws_api_gateway_resource.single_connection_resource.id}"
-  http_method = "GET"
-  authorization = "NONE"
-  request_parameters {
-    "method.request.path.connection_id" = true
-  }
-}
-
-resource "aws_api_gateway_integration" "connection_api_integration" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  resource_id = "${aws_api_gateway_resource.connection_resource.id}"
-  http_method = "${aws_api_gateway_method.add_connection_post.http_method}"
-  integration_http_method = "POST"
-  type = "AWS_PROXY"
-  uri = "${aws_lambda_function.add_connection_lambda.invoke_arn}"
-}
-
-resource "aws_api_gateway_integration" "connection_api_integration_get" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  resource_id = "${aws_api_gateway_resource.single_connection_resource.id}"
-  http_method = "${aws_api_gateway_method.get_connection.http_method}"
-  integration_http_method = "POST"
-  type = "AWS_PROXY"
-  uri = "${aws_lambda_function.get_connection_lambda.invoke_arn}"
-  request_parameters {
-        "integration.request.path.id" = "method.request.path.connection_id"
-    }
-}
 
 resource "aws_api_gateway_deployment" "connection_api_deployment" {
-  depends_on = [
-    "aws_api_gateway_integration.connection_api_integration",
-    "aws_api_gateway_integration.connection_api_integration_get"
-
-  ]
-
   rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
   stage_name = "test"
 }
@@ -225,45 +171,4 @@ resource "aws_lambda_permission" "apigw_lambda" {
   principal = "apigateway.amazonaws.com"
   source_arn = "${aws_api_gateway_rest_api.connection_api.execution_arn}/*/*/*"
   //  source_arn = "${aws_api_gateway_deployment.connection_api_deployment.execution_arn}/*/*/*"
-}
-
-// Models
-resource "aws_api_gateway_model" "connection_model" {
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  name = "connection"
-  description = "Connector JSON schema"
-  content_type = "application/json"
-
-  schema = "${file("models/connection.json")}"
-}
-
-resource "aws_api_gateway_method_response" "200" {
-  http_method = "POST"
-  resource_id = "${aws_api_gateway_resource.connection_resource.id}"
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-  response_models = {
-    "application/json" = "${aws_api_gateway_model.connection_model.name}"
-  }
-  status_code = "200"
-}
-
-// docs
-resource "aws_api_gateway_documentation_part" "add_connection_doc" {
-  location {
-    type = "METHOD"
-    method = "POST"
-    path = "/connection"
-  }
-  properties = "${file("docs/connection/POST.json")}"
-  rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-}
-
-resource "aws_api_gateway_api_key" "mykey" {
-  name = "mykey"
-  stage_key {
-    rest_api_id = "${aws_api_gateway_rest_api.connection_api.id}"
-    stage_name = "test"
-
-  }
-
 }

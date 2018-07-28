@@ -1,0 +1,47 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "2018-07-28T09:32:40Z",
+    "title": "connection"
+  },
+  "host": "uzy1gto71h.execute-api.us-east-1.amazonaws.com",
+  "basePath": "/test",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/connection": {
+      "post": {
+        "responses": {},
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:856816586042:function:add_connection_function/invocations",
+          "passthroughBehavior": "when_no_match",
+          "httpMethod": "POST",
+          "type": "aws_proxy"
+        }
+      }
+    },
+    "/connection/{connection_id}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {},
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:856816586042:function:get_connection_function/invocations",
+          "requestParameters": {
+            "integration.request.path.id": "method.request.path.connection_id"
+          },
+          "passthroughBehavior": "when_no_match",
+          "httpMethod": "POST",
+          "type": "aws_proxy"
+        }
+      }
+    }
+  }
+}
