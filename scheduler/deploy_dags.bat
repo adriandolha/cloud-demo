@@ -1,1 +1,1 @@
-aws s3 cp dags/connector_hello.py s3://dev-connector-tasks/
+aws s3 cp dags/dcmapireport-012ad701-57ca-453f-9733-1de1d77d2840.py s3://dev-connector-tasks/
