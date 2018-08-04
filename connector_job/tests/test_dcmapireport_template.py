@@ -21,9 +21,7 @@ def test_docker_command_valid(mock_job_valid, mock_airflow):
            'region=eu-west-1 ' \
            'download_delay=300 ' \
            'profile_id=22340723 ' \
-           'report_id=138567177 ' \
-           'aws_access_key_id= ' \
-           'aws_secret_access_key=' == kwargs['bash_command']
+           'report_id=138567177 ' in kwargs['bash_command']
 
 
 def test_connector_started_call_valid(mock_job_valid, mock_airflow):
