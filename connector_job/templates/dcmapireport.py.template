@@ -1,0 +1,99 @@
+"""
+DCM Api Report connector job. Besides status events, it has only one task to run the connector (06:00 BST time, i.e.
+05:00 UTC).
+"""
+import os
+from datetime import datetime, timedelta
+
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from airflow.operators.python_operator import PythonOperator
+
+from job import service
+
+
+def get_aws_credentials():
+    """
+    Read aws credentials and pass them to connector docker. This should be eventually replaced with more proper AWS
+    credentials management.
+    :return: AWS credentials
+    """
+    with open(os.path.expanduser('~/.aws/credentials'), 'r') as file:
+        content = file.readlines()
+    configuration_properties = [line.split('=') for line in content if '=' in line]
+    aws_credentials = {}
+    for config in configuration_properties:
+        aws_credentials[config[0].strip()] = config[1].strip()
+    return aws_credentials
+
+
+account_id = '933886674506'
+region = 'us-east-1'
+connection = $connection
+schedule_interval = connection.get('frequency') or '0 5 * *'
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime.utcnow(),
+    'email': ['airflow@example.com'],
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 0,
+    'retry_delay': timedelta(seconds=60),
+    'schedule_interval': schedule_interval,
+    # 'queue': 'bash_queue',
+    # 'pool': 'backfill',
+    # 'priority_weight': 10,
+    # 'end_date': datetime(2016, 1, 1),
+}
+
+client = os.environ.get('client') or 'dan'
+env = os.environ.get('env') or 'dev'
+connector_id = connection['connector']['connector_id']
+connection_id = connection['connection_id']
+dag_id = '{}-{}'.format(connector_id, connection_id)
+dag = DAG(dag_id, default_args=default_args)
+download_delay = connection.get('download_delay') or 300
+connector_started_task = PythonOperator(
+    task_id='connector_started',
+    provide_context=True,
+    python_callable=service.job_running(connection_id, connector_id),
+    dag=dag
+)
+
+arguments = {
+    'program': '/app/{}_connector/{}_connector.py'.format(connector_id, connector_id),
+    'credential_store': 'aws',
+    'account': connector_id,
+    'data_source': 'gcs',
+    'client': client,
+    'env': env,
+    'destination_storage': 'aws.s3',
+    'envname': 'nonprod',
+    'region': 'eu-west-1',
+    'download_delay': download_delay
+}
+arguments.update(connection['parameters'])
+arguments.update(get_aws_credentials())
+docker_command_arguments = ' '.join(['{}={}'.format(k, v) for k, v in arguments.items()])
+
+connector_run_task = BashOperator(
+    task_id='{}_connector'.format(connector_id),
+    env={'RUN_AS': 'root', 'AIRFLOW_ENV': ''},
+    bash_command="docker run {}.dkr.ecr.{}.amazonaws.com/{}_connector:{}_{} {}".format(
+        account_id,
+        region,
+        connector_id,
+        env,
+        client,
+        docker_command_arguments),
+    on_failure_callback=service.job_failed(connection_id, connector_id),
+    dag=dag)
+connector_stopped_task = PythonOperator(
+    task_id='connector_stopped',
+    provide_context=True,
+    python_callable=service.job_success(connection_id, connector_id),
+    dag=dag
+)
+connector_run_task.set_upstream(connector_started_task)
+connector_stopped_task.set_upstream(connector_run_task)
