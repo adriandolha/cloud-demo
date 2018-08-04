@@ -22,8 +22,8 @@ def test_docker_command_valid(mock_job_valid, mock_airflow):
            'download_delay=300 ' \
            'profile_id=22340723 ' \
            'report_id=138567177 ' \
-           'aws_access_key_id=AKIAJI6R4FLITV7GYVGQ ' \
-           'aws_secret_access_key=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' == kwargs['bash_command']
+           'aws_access_key_id= ' \
+           'aws_secret_access_key=' == kwargs['bash_command']
 
 
 def test_connector_started_call_valid(mock_job_valid, mock_airflow):
