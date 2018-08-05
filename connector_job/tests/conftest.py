@@ -56,7 +56,15 @@ def reload_module():
 
 
 @pytest.fixture()
-def mock_airflow():
+def mock_service():
+    with mock.patch('job.service.job_running'):
+        with mock.patch('job.service.job_failed'):
+            with mock.patch('job.service.job_success'):
+                yield ''
+
+
+@pytest.fixture()
+def mock_airflow(mock_service):
     with mock.patch('airflow.DAG'):
         with mock.patch('airflow.operators.python_operator.PythonOperator'):
             with mock.patch('airflow.operators.bash_operator.BashOperator'):

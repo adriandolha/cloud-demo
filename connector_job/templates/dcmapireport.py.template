@@ -54,8 +54,8 @@ connection_id = connection['connection_id']
 dag_id = '{}-{}'.format(connector_id, connection_id)
 dag = DAG(dag_id, default_args=default_args)
 download_delay = connection.get('download_delay') or 300
-connector_started_task = PythonOperator(
-    task_id='connector_started',
+connector_running_task = PythonOperator(
+    task_id='connector_running',
     provide_context=True,
     python_callable=service.job_running(connection_id, connector_id),
     dag=dag
@@ -89,11 +89,11 @@ connector_run_task = BashOperator(
         docker_command_arguments),
     on_failure_callback=service.job_failed(connection_id, connector_id),
     dag=dag)
-connector_stopped_task = PythonOperator(
-    task_id='connector_stopped',
+connector_success_task = PythonOperator(
+    task_id='connector_success',
     provide_context=True,
     python_callable=service.job_success(connection_id, connector_id),
     dag=dag
 )
-connector_run_task.set_upstream(connector_started_task)
-connector_stopped_task.set_upstream(connector_run_task)
+connector_run_task.set_upstream(connector_running_task)
+connector_success_task.set_upstream(connector_run_task)
