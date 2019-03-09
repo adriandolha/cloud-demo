@@ -2,7 +2,7 @@ import boto3
 
 sqs = boto3.client('sqs')
 
-queue_url = 'https://sqs.us-east-1.amazonaws.com/856816586042/connection_dev_myapp'
+queue_url = 'https://sqs.us-east-1.amazonaws.com/103050589342/sqs-test'
 
 
 def publish(event):
