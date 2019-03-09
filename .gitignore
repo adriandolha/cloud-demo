@@ -9,3 +9,5 @@ lambda*
 lambda_package
 schedulerec2.pem.txt
 jobs
+values.yaml
+aws-auth-cm.yaml
