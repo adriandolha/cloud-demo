@@ -1,0 +1,25 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: connector-lorem-ipsum-tasks
+  namespace: airflow
+spec:
+  selector:
+    matchLabels:
+      app: connector-lorem-ipsum-tasks
+  template:
+    metadata:
+      labels:
+        app: connector-lorem-ipsum-tasks
+    spec:
+      containers:
+      - image: 103050589342.dkr.ecr.eu-central-1.amazonaws.com/connector-lorem-ipsum-tasks:1.7
+        name: connector-lorem-ipsum-tasks
+        env:
+          # Use secret in real usage
+        - name: CELERY_BROKER_URL
+          value: "redis://:airflow@airflow-redis-master:6379/0"
+        - name: REDIS_HOST
+          value: "airflow-redis-master"
+        - name: REDIS_PASSWORD
+          value: "airflow"

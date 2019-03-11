@@ -1,10 +1,10 @@
-from datetime import datetime
-
-from airflow import DAG
 from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
-from airflow.models import Variable
+from airflow.contrib.kubernetes.secret import Secret
+from datetime import datetime, timedelta
+from airflow import DAG
+import uuid
 
-redis_password = Variable.get("redis-password")
+
 
 default_args = {
     'owner': 'airflow',
@@ -28,7 +28,7 @@ KubernetesPodOperator(namespace='airflow',
                       image="103050589342.dkr.ecr.eu-central-1.amazonaws.com/connector-lorem-ipsum:1.15",
                       env_vars={'CELERY_BROKER_URL': 'redis://:airflow@airflow-redis-master:6379/0',
                                 'REDIS_HOST': 'airflow-redis-master',
-                                'REDIS_PASSWORD': redis_password},
+                                'REDIS_PASSWORD': 'airflow'},
                       arguments=["action=download-book", 'job_id=book_1'],
                       name="download-book",
                       task_id="download-book",
