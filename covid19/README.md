@@ -1,0 +1,1 @@
+# COVID-19 app to collect and monitor pacients data.
