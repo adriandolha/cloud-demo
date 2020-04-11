@@ -1,2 +1,2 @@
 # cloud-demo
-Cloud demo ground to play with AWS/Azure cloud services.
+Cloud demo play ground for AWS/Azure cloud services.
