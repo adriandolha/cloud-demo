@@ -1,0 +1,12 @@
+[
+  {
+    "contact": "false",
+    "red zone travel": "false",
+    "fever": "false",
+    "cough": "true",
+    "tiredness": "true",
+    "difficulty breathing": "false"
+  }
+
+]
+
