@@ -30,12 +30,15 @@ mkdir -p ${BUILD_DIR}/lambda_package
 
 echo Install app from $BUILD_DIR_APP ...
 ls $BUILD_DIR_APP
-pip install -q ${BUILD_DIR_APP}/ -U -r ${BUILD_DIR_APP}/requirements.txt -t ${BUILD_DIR}/lambda_package
+pip install -q ${BUILD_DIR_APP}/ -U -r ${BUILD_DIR_APP}/aws_requirements.txt -t ${BUILD_DIR}/lambda_package
 
 #rsync -aP  ${BUILD_DIR_APP}/ ${BUILDIR}/lambda_package/
 rsync -aP  ../$APP/app.py ${BUILD_DIR}/lambda_package/
-
+ls -al ${BUILD_DIR}/lambda_package/
+chmod -R 777 ${BUILD_DIR}/lambda_package/
+ls -al ${BUILD_DIR}/lambda_package/
     #CREATE ARCHIVE
-( cd ${BUILD_DIR}/lambda_package && zip -q -r9 ${BUILD_DIR}/${ARCHIVENAME}.zip . )
+( cd ${BUILD_DIR}/lambda_package && zip -q -r ${BUILD_DIR}/${ARCHIVENAME}.zip . )
 
 cp ${BUILD_DIR}/${ARCHIVENAME}.zip ./${ARCHIVENAME}.zip
+chmod 777 ./${ARCHIVENAME}.zip

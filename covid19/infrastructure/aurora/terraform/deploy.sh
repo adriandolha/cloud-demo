@@ -6,16 +6,6 @@ set -e
 
 ENV="dev"
 
-
-
-
-# call the build script
-function build {
-  # ./build.sh branch
-  ./build.sh "${BRANCH}"
-}
-
-
 function terraform_init {
   # init terraform
   echo "%b⚓Terraform init...%b\n" 
@@ -28,8 +18,10 @@ function terraform_init {
 
 case "$1" in
   apply)
-    build
-    BUILD_DIR="/tmp/lambdabuild/covid19"
+    ENV=dev
+    BUILD_DIR="/tmp/lambdabuild/covid19/infrastructure"
+    mkdir -p $BUILD_DIR
+    python3 -m venv ${BUILD_DIR}/virtualenv
     source ${BUILDIR}/virtualenv/bin/activate
     pip install terraform_external_data
     terraform_init

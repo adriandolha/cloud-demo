@@ -1,7 +1,7 @@
 [
   {
     "contact": "false",
-    "red zone travel": "false",
+    "red_zone_travel": "false",
     "fever": "false",
     "cough": "true",
     "tiredness": "true",
