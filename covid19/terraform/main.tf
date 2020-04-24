@@ -108,7 +108,7 @@ resource "aws_api_gateway_integration" "symptom_api_integration_list" {
 
 resource "aws_api_gateway_deployment" "symptom_api_deployment" {
   depends_on = [
-    aws_api_gateway_integration.symptom_api_integration_list]
+    "aws_api_gateway_integration.symptom_api_integration_list"]
 
   rest_api_id = aws_api_gateway_rest_api.symptom_api.id
   stage_name = "test"

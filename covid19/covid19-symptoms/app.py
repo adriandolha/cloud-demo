@@ -104,12 +104,11 @@ def get_connection(config):
 
 def add(event, context=None):
     LOGGER.info(f'event = {event}')
-    LOGGER.info(context)
+    LOGGER.info(f'context={context}')
     config = get_config()
 
     setup()
-    data = event
-    # from_json(event['body'])
+    data = from_json(event['body'])
     LOGGER.info(f'data = {data}')
 
     connection = get_connection(config)
@@ -117,7 +116,11 @@ def add(event, context=None):
     try:
         cursor.execute(
             "INSERT INTO symptoms(id, contact, red_zone_travel, fever, cough, tiredness,difficulty_breathing) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (str(uuid.uuid4()), data['contact'], data['red_zone_travel'], data['fever'], data['cough'],
+            (str(uuid.uuid4()),
+             data['contact'],
+             data['red_zone_travel'],
+             data['fever'],
+             data['cough'],
              data['tiredness'],
              data['difficulty_breathing']))
         connection.commit()
@@ -125,4 +128,4 @@ def add(event, context=None):
         cursor.close()
         connection.close()
 
-    return response({"status_code": '200', 'body': event})
+    return response({"status_code": '200', 'body': to_json(data)})

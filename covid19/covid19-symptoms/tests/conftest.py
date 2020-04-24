@@ -17,14 +17,13 @@ def config_valid():
 
 @pytest.fixture()
 def symptom_valid():
-    yield {
-        "contact": False,
-        "red_zone_travel": False,
-        "fever": False,
-        "cough": True,
-        "tiredness": True,
-        "difficulty_breathing": False
-    }
+    yield {"contact": False,
+           "red_zone_travel": False,
+           "fever": False,
+           "cough": True,
+           "tiredness": True,
+           "difficulty_breathing": False
+           }
 
 
 @pytest.fixture(scope='session')

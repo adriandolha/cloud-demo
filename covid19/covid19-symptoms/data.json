@@ -5,8 +5,68 @@
     "fever": "false",
     "cough": "true",
     "tiredness": "true",
-    "difficulty breathing": "false"
+    "difficulty_breathing": "false"
   }
-
 ]
 
+
+
+{
+  'resource': '/symptoms',
+  'path': '/symptoms',
+  'httpMethod': 'POST',
+  'headers': None,
+  'multiValueHeaders': None,
+  'queryStringParameters': None,
+  'multiValueQueryStringParameters': None,
+  'pathParameters': None,
+  'stageVariables': None,
+  'requestContext': {
+    'resourceId': 'wdj3ju',
+    'resourcePath': '/symptoms',
+    'httpMethod': 'POS
+     {
+  'resource': '/symptoms',
+  'path': '/symptoms',
+  'httpMethod': 'POST',
+  'headers': None,
+  'multiValueHeaders': None,
+  'queryStringParameters': None,
+  'multiValueQueryStringParameters': None,
+  'pathParameters': None,
+  'stageVariables': None,
+  'requestContext': {
+    'resourceId': 'wdj3ju',
+    'resourcePath': '/symptoms',
+    'httpMethod': 'POST',
+    'extendedRequestId': 'Ler4vE--liAFWhA=',
+    'requestTime': '24/Apr/2020:06:53:56 +0000',
+    'path': '/symptoms',
+    'accountId': '103050589342',
+    'protocol': 'HTTP/1.1',
+    'stage': 'test-invoke-stage',
+    'domainPrefix': 'testPrefix',
+    'requestTimeEpoch': 1587711236618,
+    'requestId': 'b19160f8-90e6-4a8d-bb02-ac57a3c06582',
+    'identity': {
+      'cognitoIdentityPoolId': None,
+      'cognitoIdentityId': None,
+      'apiKey': 'test-invoke-api-key',
+      'principalOrgId': None,
+      'cognitoAuthenticationType': None,
+      'userArn': 'arn:aws:iam::103050589342:root',
+      'apiKeyId': 'test-invoke-api-key-id',
+      'userAgent': 'aws-internal/3 aws-sdk-java/1.11.749 Linux/4.9.184-0.1.ac.235.83.329.metal1.x86_64 OpenJDK_64-Bit_Server_VM/25.242-b08 java/1.8.0_242 vendor/Oracle_Corporation',
+      'accountId': '103050589342',
+      'caller': '103050589342',
+      'sourceIp': 'test-invoke-source-ip',
+      'accessKey': 'ASIARP7SLGSPESFXPAVI',
+      'cognitoAuthenticationProvider': None,
+      'user': '103050589342'
+    },
+    'domainName': 'testPrefix.testDomainName',
+    'apiId': '0q0o8nz4xe'
+  },
+  'body': '{\n    "contact": "false",\n    "red_zone_travel": "false",\n    "fever": "false",\n    "cough": "true",\n    "tiredness": "true",\n    "difficulty_breathing": "false"\n  }',
+  'isBase64Encoded': False
+}

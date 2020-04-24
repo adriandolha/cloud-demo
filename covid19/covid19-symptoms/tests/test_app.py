@@ -13,6 +13,6 @@ class TestSymptomApi:
         assert '200' == response['statusCode']
 
     def test_symptom_add(self, symptom_valid, config_valid):
-        response = app.add(symptom_valid)
-        # assert not from_json(response['body'])['contact']
+        response = app.add({'body': to_json(symptom_valid)})
+        assert not from_json(response['body'])['contact']
         assert '200' == response['statusCode']
