@@ -12,3 +12,5 @@ variable "accountId" {
 variable "aurora_db_name" {
   default = "aurora-covid19"
 }
+
+variable "env" {default = "dev"}

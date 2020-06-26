@@ -8,6 +8,7 @@ import uuid
 from covid19_symptoms.serializers import to_json, from_json
 import psycopg2
 import logging
+from psycopg2.extras import RealDictCursor
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 
@@ -57,15 +58,6 @@ def api_context(event, context):
     }
 
 
-def list(event, context=None):
-    print(event)
-    print(context)
-    return response("symptoms")
-
-
-setup_done = False
-
-
 @lru_cache()
 def setup():
     LOGGER.debug('Running database setup...')
@@ -98,7 +90,8 @@ def get_connection(config):
                                   password=config['aurora_password'],
                                   host=config['aurora_host'],
                                   port=5432,
-                                  database="covid19")
+                                  database="covid19",
+                                  cursor_factory=RealDictCursor)
     return connection
 
 
@@ -110,13 +103,13 @@ def add(event, context=None):
     setup()
     data = from_json(event['body'])
     LOGGER.info(f'data = {data}')
-
+    data['id'] = str(uuid.uuid4())
     connection = get_connection(config)
     cursor = connection.cursor()
     try:
         cursor.execute(
             "INSERT INTO symptoms(id, contact, red_zone_travel, fever, cough, tiredness,difficulty_breathing) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (str(uuid.uuid4()),
+            (data['id'],
              data['contact'],
              data['red_zone_travel'],
              data['fever'],
@@ -129,3 +122,31 @@ def add(event, context=None):
         connection.close()
 
     return response({"status_code": '200', 'body': to_json(data)})
+
+
+def list(event, context=None):
+    print(event)
+    print(context)
+    connection = get_connection(get_config())
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
+    query_params = event.get('queryStringParameters')
+    items = []
+    try:
+        LOGGER.debug('Reading items...')
+        if query_params and query_params.get('id'):
+            cursor.execute(
+                'select *'
+                'from symptoms where id = %s',
+                (query_params['id'],))
+            items.append(cursor.fetchone())
+            count = 1
+        else:
+            cursor.execute('select count(*) from symptoms')
+            result = cursor.fetchone()
+            count = result['count']
+
+
+    finally:
+        cursor.close()
+        connection.close()
+    return response({"status_code": '200', 'body': to_json({"items": items, "total": count})})
