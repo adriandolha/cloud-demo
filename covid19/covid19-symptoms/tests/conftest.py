@@ -1,18 +1,24 @@
 import os
 
 import boto3
+import flask
 import pytest
-from mock import mock
+import mock
+# from mock import mock
+
+import covid19_symptoms
+from covid19_symptoms.serializers import to_json
 
 
 @pytest.fixture()
 def config_valid():
     import json
-    with open(f"{os.path.expanduser('~')}/.cloud-projects/covid19.json", "r") as _file:
+    with open(f"{os.path.expanduser('~')}/.cloud-projects/covid19-local.json", "r") as _file:
         json = dict(json.load(_file))
         print(json)
         for k, v in json.items():
-            os.environ[k] = v
+            os.environ[k] = str(v)
+    covid19_symptoms.create_app()
 
 
 @pytest.fixture()
@@ -24,6 +30,14 @@ def symptom_valid():
            "tiredness": True,
            "difficulty_breathing": False
            }
+
+
+@pytest.fixture()
+def symptom_valid_request(symptom_valid):
+    # from flask import request
+    with mock.patch('flask.request'):
+        flask.request.data.return_value = to_json(symptom_valid)
+        yield ''
 
 
 @pytest.fixture(scope='session')

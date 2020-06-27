@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: covid19
+  namespace: demo
+  labels:
+    app: covid19
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: covid19
+  template:
+    metadata:
+      labels:
+        app: covid19
+    spec:
+      containers:
+      - name: covid19
+        image: covid19:dev
+        env:
+          - name: app_env
+            value: "kube"
+          - name: aurora_user
+            value: "postgres"
+          - name: aurora_host
+            value: "torrid-zebra-postgresql.default.svc.cluster.local"
+          - name: aurora_port
+            value: "5432"
+          - name: aurora_password
+            valueFrom:
+              secretKeyRef:
+                name: torrid-zebra-postgresql
+                key: postgresql-password

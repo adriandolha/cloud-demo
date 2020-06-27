@@ -13,20 +13,26 @@ model_new = {
 }
 ids = []
 
+ENV = 'kube'
+
 
 class SymptomsApi(TaskSet):
     def on_start(self):
         """ on_start is called when a Locust start before any task is scheduled """
         self._client = self.get_api_client()
-        self.api_url = self.get_api_url(self.get_api_id(self._client))
-        self.api_key = self.get_api_key(self._client)
+        if ENV == 'kube':
+            self.api_url = "http://localhost:30101/symptoms"
+            self.api_key = "no-key"
+        else:
+            self.api_url = self.get_api_url(self.get_api_id(self._client))
+            self.api_key = self.get_api_key(self._client)
 
     @task(1)
     def add(self):
-        response = self.client.post(self.api_url, data=json.dumps(model_new), headers=self.basic_headers(self.api_key))
+        response = self.client.post(self.api_url, data=json.dumps([model_new]), headers=self.basic_headers(self.api_key))
         print(response)
         print(response.content)
-        ids.append(json.loads(response.content)['id'])
+        ids.append(json.loads(response.content)['items'][0]['id'])
         symptom_id = ids.pop(-1)
         self.client.get(f'{self.api_url}?id={symptom_id}', name='/symptoms',
                         headers=self.basic_headers(self.api_key))
