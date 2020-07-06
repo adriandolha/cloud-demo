@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import uuid
 
 from flask import Flask, request
@@ -33,6 +34,19 @@ def health():
     return response({'body': 'all_good', 'status_code': '200'})
 
 
+@app.route('/symptoms/metrics', methods=['GET'])
+def metrics():
+    LOGGER.info('Metrics...')
+    metrics = {}
+    try:
+        metrics = to_json(app_context().metrics_service.metrics())
+    except:
+        e = sys.exc_info()[0]
+        LOGGER.exception('Could not get metrics...')
+        print(e)
+    return response({'body': metrics, 'status_code': '200'})
+
+
 @app.route('/symptoms/<id>', methods=['GET'])
 def get(id):
     LOGGER.debug('Get all data...')
@@ -59,6 +73,7 @@ def app_context():
     return covid19_symptoms.AppContext()
 
 
+print(f'Name is {__name__}')
 if __name__ == 'app' and os.getenv('env') != 'test':
     covid19_symptoms.create_app()
-    LOGGER = logging.getLogger('c19')
+    LOGGER = logging.getLogger('symptoms')

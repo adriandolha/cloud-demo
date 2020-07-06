@@ -2,9 +2,9 @@ import base64
 import logging
 import os
 from functools import lru_cache
-
-import binascii
 import boto3
+import platform
+import datetime
 
 
 @lru_cache()
@@ -46,25 +46,30 @@ def configure_logging():
 
 class AppContext:
     def __init__(self):
-        from covid19_symptoms.repo import transaction, SymptomRepo, TransactionManager
-        from covid19_symptoms.service import SymptomService
+        from lorem_ipsum.repo import transaction, SymptomRepo, TransactionManager
+        from lorem_ipsum.service import BookService, MetricsService
         self.config = get_config()
         self.transaction_manager = TransactionManager(self)
-        self.symptom_repo = SymptomRepo(self)
-        self.symptom_service = SymptomService(self)
+        self.book_repo = BookRepo(self)
+        self.symptom_service = BookService(self)
+        self.metrics_service = MetricsService(self)
 
 
 def setup(app_context: AppContext):
     LOGGER = logging.getLogger('symptoms')
     LOGGER.debug('Running database setup...')
     with app_context.transaction_manager.transaction as transaction:
-        app_context.symptom_repo.create_table()
+        app_context.book_repo.create_table()
 
 
 @lru_cache()
 def create_app() -> AppContext:
-    print('Application init...')
     configure_logging()
+    LOGGER = logging.getLogger('symptoms')
+    LOGGER.info('Application init...')
+    LOGGER.info(f'Platform: {platform.python_implementation()}')
+    now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    LOGGER.info(f'Start time: {now}')
     app_context = AppContext()
     setup(app_context)
     return app_context

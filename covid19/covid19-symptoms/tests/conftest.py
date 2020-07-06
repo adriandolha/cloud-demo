@@ -1,3 +1,4 @@
+import logging
 import os
 
 import boto3
@@ -19,7 +20,8 @@ def config_valid():
         for k, v in json.items():
             os.environ[k] = str(v)
     covid19_symptoms.create_app()
-
+    LOGGER = logging.getLogger('symptoms')
+    LOGGER.setLevel(logging.DEBUG)
 
 @pytest.fixture()
 def symptom_valid():

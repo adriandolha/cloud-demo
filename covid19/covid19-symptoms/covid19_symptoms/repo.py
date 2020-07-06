@@ -1,7 +1,9 @@
 import logging
 import uuid
+from functools import lru_cache
 
 import psycopg2
+from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 
 import covid19_symptoms
@@ -10,20 +12,18 @@ from covid19_symptoms import AppContext
 LOGGER = logging.getLogger('symptoms')
 
 
-class TransactionManager:
-    def __init__(self, app_context: AppContext):
-        self._transaction = Transaction(app_context)
-
-    @property
-    def transaction(self):
-        return self._transaction
-
-
 class Transaction:
+    _connection_pool = None
+    _connection_pool_stats = {'usedconn': 0}
+
     def __init__(self, app_context: covid19_symptoms.AppContext):
         self.connection = None
         self._cursor = None
         self.config = app_context.config
+
+    @staticmethod
+    def connection_pool() -> psycopg2.pool.ThreadedConnectionPool:
+        return Transaction._connection_pool
 
     def __new_connection(self):
         connection = psycopg2.connect(user=self.config['aurora_user'],
@@ -34,6 +34,11 @@ class Transaction:
                                       cursor_factory=RealDictCursor)
         return connection
 
+    def __new_connection_from_pool(self):
+        connection = Transaction.connection_pool().getconn()
+        Transaction._connection_pool_stats['usedconn'] = Transaction._connection_pool_stats['usedconn'] + 1
+        return connection
+
     @property
     def cursor(self):
         if self._cursor is None:
@@ -41,7 +46,7 @@ class Transaction:
         return self._cursor
 
     def __enter__(self):
-        self.connection = self.__new_connection()
+        self.connection = self.__new_connection_from_pool()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
@@ -49,10 +54,35 @@ class Transaction:
         except:
             self.connection.rollback()
         finally:
-            self.connection.close()
+            # self.connection.close()
+            Transaction.connection_pool().putconn(self.connection)
+            Transaction._connection_pool_stats['usedconn'] = Transaction._connection_pool_stats['usedconn'] - 1
+
             if self._cursor is not None:
                 LOGGER.debug(f'Closing cursor {self._cursor}')
                 self._cursor.close()
+
+
+class TransactionManager:
+    def __init__(self, app_context: AppContext):
+        self.config = app_context.config
+        if Transaction._connection_pool is None:
+            Transaction._connection_pool = psycopg2.pool.ThreadedConnectionPool(user=self.config['aurora_user'],
+                                                                                password=self.config['aurora_password'],
+                                                                                host=self.config['aurora_host'],
+                                                                                port=self.config['aurora_port'],
+                                                                                database="covid19",
+                                                                                cursor_factory=RealDictCursor,
+                                                                                minconn=self.config.get(
+                                                                                    'connection_pool_minconn', 1),
+                                                                                maxconn=self.config.get(
+                                                                                    'connection_pool_maxconn', 50))
+            LOGGER.debug(f'Created connection pool {Transaction._connection_pool}')
+        self._transaction = Transaction(app_context)
+
+    @property
+    def transaction(self) -> Transaction:
+        return self._transaction
 
 
 def transaction(function):
