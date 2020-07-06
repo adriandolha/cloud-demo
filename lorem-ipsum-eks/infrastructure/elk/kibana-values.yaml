@@ -1,0 +1,4 @@
+kibanaConfig:
+  kibana.yml: |
+    server.basePath: "/kbn"
+    elasticsearch.hosts: ["http://elasticsearch-master.default.svc.cluster.local:9200"]

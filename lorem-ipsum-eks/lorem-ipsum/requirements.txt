@@ -1,0 +1,8 @@
+boto3
+pytest
+mock
+psycopg2==2.7.5
+gunicorn
+flask
+gevent
+Faker
