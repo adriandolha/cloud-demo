@@ -43,3 +43,21 @@ def book_valid_add_request(book_valid):
         book_valid = book_valid
         flask.request.data = to_json([book_valid]).encode('utf-8')
         yield book_valid
+
+
+@pytest.fixture()
+def book_valid_get_request(config_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {'limit': '2'}
+        yield book_valid
+
+
+@pytest.fixture()
+def book_valid_get_default_limit(config_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {}
+        yield book_valid

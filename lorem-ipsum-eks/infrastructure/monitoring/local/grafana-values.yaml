@@ -1,0 +1,8 @@
+namespaceOverride: "monitoring"
+labels:
+  app: grafana
+podLabels:
+  app: grafana
+grafana.ini:
+  server:
+    root_url: https://localhost:31862/grafana # this host can be localhost

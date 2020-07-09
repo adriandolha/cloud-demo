@@ -8,8 +8,8 @@ from flask import Flask, request
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json, from_json
 
-app = Flask('C19')
-LOGGER = logging.getLogger('c19')
+app = Flask('lorem-ipsum')
+LOGGER = logging.getLogger('lorem-ipsum')
 
 
 def response(api_response):
@@ -51,13 +51,14 @@ def metrics():
 def get(id):
     LOGGER.debug('Get all data...')
     result = app_context().book_service.get(id)
-    return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+    return response({"status_code": '200', 'body': to_json(result)})
 
 
 @app.route('/books', methods=['GET'])
 def get_all():
     LOGGER.debug('Get all data...')
-    result = app_context().book_service.get()
+    _limit = int(request.args.get('limit', 1))
+    result = app_context().book_service.get_all(limit=_limit)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
@@ -76,4 +77,4 @@ def app_context():
 print(f'Name is {__name__}')
 if __name__ == 'app' and os.getenv('env') != 'test':
     lorem_ipsum.create_app()
-    LOGGER = logging.getLogger('symptoms')
+    LOGGER = logging.getLogger('lorem-ipsum')

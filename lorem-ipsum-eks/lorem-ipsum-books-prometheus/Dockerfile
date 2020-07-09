@@ -17,4 +17,4 @@ RUN chown -R demo:demo /home/demo
 USER demo
 
 EXPOSE 8081
-CMD ["python","app.py","8081","http://localhost:8000/symptoms/metrics"]
+CMD ["python","app.py","8081","http://localhost:8000/books/metrics"]

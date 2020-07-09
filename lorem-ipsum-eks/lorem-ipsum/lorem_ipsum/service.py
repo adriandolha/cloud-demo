@@ -6,7 +6,7 @@ from lorem_ipsum.repo import transaction
 from lorem_ipsum.repo import Transaction
 import logging
 
-LOGGER = logging.getLogger('symptoms')
+LOGGER = logging.getLogger('lorem-ipsum')
 
 
 class MetricsService:
@@ -54,6 +54,11 @@ class BookService:
     def get(self, id=None):
         LOGGER.debug(f'using connection pool {Transaction.connection_pool()}')
         return self._app_context.book_repo.get(id)
+
+    @transaction
+    def get_all(self, id=None, limit=1):
+        LOGGER.debug(f'using connection pool {Transaction.connection_pool()}')
+        return self._app_context.book_repo.get_all(limit=limit)
 
     @transaction
     def save(self, data_records):

@@ -20,7 +20,7 @@ def get_config():
         'aurora_port': int(os.getenv('aurora_port', default=5432)),
         'aurora_password': aurora_password
     }
-    LOGGER = logging.getLogger('symptoms')
+    LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.debug('Configuration:')
     for config_name in _config.keys():
         if 'password' not in config_name:
@@ -56,7 +56,7 @@ class AppContext:
 
 
 def setup(app_context: AppContext):
-    LOGGER = logging.getLogger('symptoms')
+    LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.debug('Running database setup...')
     with app_context.transaction_manager.transaction as transaction:
         app_context.book_repo.db_setup()

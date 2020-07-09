@@ -6,7 +6,7 @@ import time
 import logging
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger('lorem-ipsum')
 # LOGGER.setLevel(logging.DEBUG)
 
 
@@ -19,17 +19,17 @@ class JsonCollector(object):
         response = json.loads(requests.get(self._endpoint).content.decode('UTF-8'))
         LOGGER.debug(response)
         # Convert requests and duration to a summary in seconds
-        metric = Metric('symptoms_metric',
+        metric = Metric('lorem_ipsum_metric',
                         'Requests time taken in seconds', 'summary')
-        metric.add_sample('symptoms_metric_connection_pool_maxconn',
+        metric.add_sample('lorem_ipsum_metric_connection_pool_maxconn',
                           value=response['connection_pool.maxconn'], labels={})
-        metric.add_sample('symptoms_metric_connection_pool_usedconn',
+        metric.add_sample('lorem_ipsum_metric_connection_pool_usedconn',
                           value=response['connection_pool.usedconn'], labels={})
-        metric.add_sample('symptoms_metric_connection_pool_rusedconn',
+        metric.add_sample('lorem_ipsum_metric_connection_pool_rusedconn',
                           value=response['connection_pool.rusedconn'], labels={})
-        metric.add_sample('symptoms_metric_connection_pool_size',
+        metric.add_sample('lorem_ipsum_metric_connection_pool_size',
                           value=response['connection_pool.size'], labels={})
-        metric.add_sample('symptoms_metric_thread_count',
+        metric.add_sample('lorem_ipsum_metric_thread_count',
                           value=response['thread_count'], labels={})
         yield metric
 

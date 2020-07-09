@@ -9,7 +9,7 @@ from psycopg2.extras import RealDictCursor
 import lorem_ipsum
 from lorem_ipsum import AppContext
 
-LOGGER = logging.getLogger('symptoms')
+LOGGER = logging.getLogger('lorem-ipsum')
 
 
 class Transaction:
@@ -125,27 +125,28 @@ class BookRepo:
                 CONSTRAINT book_pk PRIMARY KEY (id)\
             )')
 
-    def get(self, id=None, limit=10):
-        items = []
-        count = 0
+    def get(self, id=None):
         _cursor = self._transaction_manager.transaction.cursor
-        if id is not None:
-            _cursor.execute(
-                'select *'
-                'from books where id = %s',
-                (id,))
+        # LOGGER.debug(f'Get book with id {id}')
+        _cursor.execute(
+            'select *'
+            'from books where id = %s',
+            (id,))
+        result = _cursor.fetchone()
+        if result is None:
+            result = {}
 
-            result = _cursor.fetchone()
-            if result is not None:
-                items.append(result)
-                count = 1
-        else:
-            _cursor.execute('select count(*) from books')
-            count = _cursor.fetchone()['count']
-            _cursor.execute(f'select * from books limit {limit}')
-            records = _cursor.fetchall()
-            for record in records:
-                items.append(record)
+        return result
+
+    def get_all(self, limit=10):
+        items = []
+        _cursor = self._transaction_manager.transaction.cursor
+        _cursor.execute('select count(*) from books')
+        count = _cursor.fetchone()['count']
+        _cursor.execute(f'select * from books limit {limit}')
+        records = _cursor.fetchall()
+        for record in records:
+            items.append(record)
         return {"total": count, "items": items}
 
     def save(self, data=None):

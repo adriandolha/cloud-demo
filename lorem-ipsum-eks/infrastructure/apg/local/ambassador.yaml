@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ambassador-np
+  namespace: ambassador
+  labels:
+    product: aes
+    app.kubernetes.io/component: ambassador-service
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  - name: https
+    port: 443
+    targetPort: https
+    nodePort: 31862
+  selector:
+    service: ambassador
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: ambassador-admin
+    product: aes
+  name: ambassador-admin-np
+  namespace: ambassador
+spec:
+  type: NodePort
+  ports:
+  - name: ambassador-admin
+    port: 8877
+    targetPort: admin
+    nodePort: 31863
+  selector:
+    service: ambassador
+---
+apiVersion: getambassador.io/v2
+kind: Host
+metadata:
+  name: wildcard-host
+spec:
+  hostname: "*"
+  acmeProvider:
+    authority: none
+  tlsSecret:
+    name: tls-cert
+  selector:
+    matchLabels:
+      hostname: wildcard-host

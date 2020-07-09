@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     # s3 should be terraform-state-$accountid/$client/$component
-    bucket = "terraform-state-103050589342-covid19"
+    bucket = "terraform-state-103050589342-lorem-ipsum"
     key = "dev"
     region = "eu-central-1"
   }
@@ -15,7 +15,7 @@ data "external" "secrets" {
   query = {
     # arbitrary map from strings to strings, passed
     # to the external program as the data query.
-    id = "covid19"
+    id = "lorem-ipsum"
   }
 }
 

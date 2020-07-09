@@ -1,0 +1,55 @@
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
+  name: kibana
+  namespace: default
+spec:
+  prefix: /kbn/
+  service: 'Kibana-kibana.default.svc.cluster.local:5601'
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
+  name: elasticsearch
+  namespace: default
+spec:
+  prefix: /elasticsearch/
+  service: 'elasticsearch-master.default.svc.cluster.local:9200'
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
+  name: grafana
+  namespace: default
+spec:
+  prefix: /grafana/
+  service: 'grafana.monitoring.svc.cluster.local'
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
+  name: lorem-ipsun
+  namespace: ambassador
+spec:
+  prefix: /lorem-ipsum/
+  service: 'lorem-ipsum.demo.svc.cluster.local:8000'
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
+  name: prometheus
+  namespace: default
+spec:
+  prefix: /prometheus/
+  service: 'prometheus.monitoring.svc.cluster.local:9090'

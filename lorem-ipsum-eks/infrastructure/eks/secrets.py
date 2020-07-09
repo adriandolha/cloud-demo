@@ -8,7 +8,7 @@ from terraform_external_data import terraform_external_data
 def get_secrets(query):
     # Terraform requires the values you return be strings,
     # so terraform_external_data will error if they aren't.
-    with open('{}/.terraform/covid19_secrets.json'.format(os.path.expanduser('~')), "r") as _file:
+    with open('{}/.terraform/lorem_ipsum_secrets.json'.format(os.path.expanduser('~')), "r") as _file:
         secrets = _file.read()
 
     return json.loads(str(secrets))

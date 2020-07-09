@@ -17,38 +17,40 @@ spec:
     spec:
       containers:
         - name: lorem-ipsum
-          image: 103050589342.dkr.ecr.eu-central-1.amazonaws.com/lorem-ipsum:dev
-          imagePullPolicy: "Always"
+          image: lorem-ipsum:dev
+#          imagePullPolicy: "Always"
           env:
             - name: app_env
               value: "kube"
             - name: aurora_user
               value: "postgres"
             - name: aurora_host
-              value: "existing-peahen-postgresql.default.svc.cluster.local"
+#              value: "existing-peahen-postgresql.default.svc.cluster.local"
+              value: torrid-zebra-postgresql.default.svc.cluster.local
             - name: aurora_port
               value: "5432"
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
-                  name: existing-peahen-postgresql
+#                  name: existing-peahen-postgresql
+                  name: torrid-zebra-postgresql
                   key: postgresql-password
           livenessProbe:
             httpGet:
-              path: /symptoms/health
+              path: /books/health
               port: 8000
             initialDelaySeconds: 3
             periodSeconds: 5
         - name: lorem-ipsum-prometheus
-          image: 103050589342.dkr.ecr.eu-central-1.amazonaws.com/lorem-ipsum-prometheus:dev
-          imagePullPolicy: "Always"
+          image: lorem-ipsum-prometheus:dev
+#          imagePullPolicy: "Always"
         - name: statsd-exporter
           image: prom/statsd-exporter:latest
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: lorem-ipsum
+  name: lorem-ipsum-np
   namespace: demo
 spec:
   type: NodePort
@@ -63,7 +65,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: pandemic-support
+  name: lorem-ipsum
   namespace: demo
 spec:
   type: ClusterIP
@@ -87,12 +89,12 @@ spec:
     - protocol: TCP
       port: 8081
       targetPort: 8081
-      nodePort: 30501
+      nodePort: 30511
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: lorem-ipsum-prometheus-cip
+  name: lorem-ipsum-prometheus
   namespace: demo
 spec:
   type: ClusterIP
@@ -114,6 +116,20 @@ spec:
     app: lorem-ipsum
   ports:
     - protocol: TCP
-      nodePort: 30502
+      nodePort: 30512
+      targetPort: 9102
+      port: 9102
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: lorem-ipsum-statsd
+  namespace: demo
+spec:
+  type: ClusterIP
+  selector:
+    app: lorem-ipsum
+  ports:
+    - protocol: TCP
       targetPort: 9102
       port: 9102
