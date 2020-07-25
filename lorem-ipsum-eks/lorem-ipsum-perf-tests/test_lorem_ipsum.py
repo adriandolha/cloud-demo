@@ -3,6 +3,7 @@ import json
 import boto3
 import faker
 import json
+import os
 from locust import HttpLocust, TaskSet, task
 
 
@@ -27,10 +28,15 @@ class LoremIpsumApi(TaskSet):
         self.client.verify = False
         self._client = self.get_api_client()
         if ENV == 'kube':
-
+            with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json", "r") as _file:
+                _json = dict(json.load(_file))
+                print(json)
+                for k, v in _json.items():
+                    os.environ[k] = str(v)
             # self.api_url = "http://localhost:30101/symptoms"
-            self.api_url = "http://localhost:30500/books"
+            self.api_url = "https://localhost:31862/lorem-ipsum/books"
             self.api_key = "no-key"
+            self.token = os.environ.get('admin_token')
         else:
             self.api_url = self.get_api_url(self.get_api_id(self._client))
             self.api_key = self.get_api_key(self._client)
@@ -50,7 +56,8 @@ class LoremIpsumApi(TaskSet):
         try:
             book_id = ids.pop()
             # client.get("/blog?id=%i" % i, name="/blog?id=[id]")
-            self.client.get(f'{self.api_url}/{book_id}', headers=self.basic_headers(self.api_key), name="/books?id=[id]")
+            self.client.get(f'{self.api_url}/{book_id}', headers=self.basic_headers(self.api_key),
+                            name="/books?id=[id]")
             self.wait()
         except IndexError:
             print('index error')
@@ -58,7 +65,8 @@ class LoremIpsumApi(TaskSet):
     def basic_headers(self, api_key):
         return {
             'Content-Type': 'application/json',
-            'x-api-key': api_key
+            'x-api-key': api_key,
+            "authorization": "Bearer " + self.token
         }
 
     def get_api_url(self, api_id):

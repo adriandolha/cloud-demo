@@ -8,7 +8,7 @@ metadata:
   namespace: default
 spec:
   prefix: /kbn/
-  service: 'Kibana-kibana.default.svc.cluster.local:5601'
+  service: 'Kibana-kibana.efk.svc.cluster.local:5601'
 ---
 apiVersion: getambassador.io/v2
 kind: Mapping
@@ -19,7 +19,7 @@ metadata:
   namespace: default
 spec:
   prefix: /elasticsearch/
-  service: 'elasticsearch-master.default.svc.cluster.local:9200'
+  service: 'elasticsearch-master.efk.svc.cluster.local:9200'
 ---
 apiVersion: getambassador.io/v2
 kind: Mapping
@@ -41,7 +41,7 @@ metadata:
   namespace: ambassador
 spec:
   prefix: /lorem-ipsum/
-  service: 'lorem-ipsum.demo.svc.cluster.local:8000'
+  service: 'lorem-ipsum.demo.svc.cluster.local'
 ---
 apiVersion: getambassador.io/v2
 kind: Mapping

@@ -48,26 +48,51 @@ def metrics():
 
 
 @app.route('/books/<id>', methods=['GET'])
-def get(id):
+def get_book(id):
     LOGGER.debug('Get all data...')
     result = app_context().book_service.get(id)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
 @app.route('/books', methods=['GET'])
-def get_all():
+def get_all_books():
     LOGGER.debug('Get all data...')
+    LOGGER.debug(request.headers)
     _limit = int(request.args.get('limit', 1))
     result = app_context().book_service.get_all(limit=_limit)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
 @app.route('/books', methods=['POST'])
-def save():
+def save_book():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
     result = app_context().book_service.save(_request)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+
+
+@app.route('/users/<username>', methods=['GET'])
+def get_user(username):
+    LOGGER.debug('Get user...')
+    result = app_context().user_service.get(username)
+    return response({"status_code": '200', 'body': to_json(result)})
+
+
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    LOGGER.debug('Get all users...')
+    LOGGER.debug(request.headers)
+    _limit = int(request.args.get('limit', 1))
+    result = app_context().user_service.get_all(limit=_limit)
+    return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+
+
+@app.route('/users/validate', methods=['POST'])
+def validate_user():
+    LOGGER.info('Validating user...')
+    _request = from_json(request.data.decode('utf-8'))
+    result = app_context().user_service.validate(_request)
+    return response({"status_code": '200', 'body': to_json(result)})
 
 
 def app_context():

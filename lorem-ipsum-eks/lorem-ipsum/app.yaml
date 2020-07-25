@@ -35,6 +35,16 @@ spec:
 #                  name: existing-peahen-postgresql
                   name: torrid-zebra-postgresql
                   key: postgresql-password
+            - name: admin_user
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: admin-user
+            - name: admin_password
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: admin-password
           livenessProbe:
             httpGet:
               path: /books/health

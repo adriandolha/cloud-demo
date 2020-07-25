@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lorem-ipsum-auth
+  namespace: demo
+  labels:
+    app: lorem-ipsum-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lorem-ipsum-auth
+  template:
+    metadata:
+      labels:
+        app: lorem-ipsum-auth
+    spec:
+      containers:
+        - name: lorem-ipsum-auth
+          image: lorem-ipsum-auth:dev
+#          imagePullPolicy: "Always"
+          env:
+            - name: app_env
+              value: "kube"
+          livenessProbe:
+            httpGet:
+              path: /auth/health
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /jwk/certs
+              name: jwk-certs
+        - name: statsd-exporter
+          image: prom/statsd-exporter:latest
+      volumes:
+        - name: jwk-certs
+          secret:
+            secretName: jwk-certs
+            items:
+              - key: public.pem
+                path: public.pem
+              - key: key.pem
+                path: private.pem
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: lorem-ipsum-auth-np
+  namespace: demo
+spec:
+  type: NodePort
+  selector:
+    app: lorem-ipsum-auth
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      nodePort: 30505
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: lorem-ipsum-auth
+  namespace: demo
+spec:
+  type: ClusterIP
+  selector:
+    app: lorem-ipsum-auth
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

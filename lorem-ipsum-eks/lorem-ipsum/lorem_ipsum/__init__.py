@@ -18,7 +18,10 @@ def get_config():
         'aurora_host': os.getenv('aurora_host'),
         'aurora_user': os.getenv('aurora_user'),
         'aurora_port': int(os.getenv('aurora_port', default=5432)),
-        'aurora_password': aurora_password
+        'aurora_password': aurora_password,
+        'password_encryption_key': os.getenv('password_encryption_key'),
+        'admin_password': os.getenv('admin_password'),
+        'admin_user': os.getenv('admin_user')
     }
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.debug('Configuration:')
@@ -46,20 +49,26 @@ def configure_logging():
 
 class AppContext:
     def __init__(self):
-        from lorem_ipsum.repo import transaction, BookRepo, TransactionManager
-        from lorem_ipsum.service import BookService, MetricsService
+        from lorem_ipsum.repo import transaction, BookRepo, UserRepo, TransactionManager
+        from lorem_ipsum.service import BookService, MetricsService, UserService
         self.config = get_config()
         self.transaction_manager = TransactionManager(self)
         self.book_repo = BookRepo(self)
         self.book_service = BookService(self)
+        self.user_repo = UserRepo(self)
+        self.user_service = UserService(self)
         self.metrics_service = MetricsService(self)
+
+    def init(self):
+        from lorem_ipsum.repo import db_setup
+        with self.transaction_manager.transaction:
+            db_setup(self)
 
 
 def setup(app_context: AppContext):
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.debug('Running database setup...')
-    with app_context.transaction_manager.transaction as transaction:
-        app_context.book_repo.db_setup()
+    app_context.init()
 
 
 @lru_cache()

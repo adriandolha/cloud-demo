@@ -6,3 +6,5 @@ gunicorn
 flask
 gevent
 Faker
+bcrypt
+sqlalchemy==1.3.18

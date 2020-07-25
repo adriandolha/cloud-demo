@@ -9,7 +9,7 @@ import mock
 
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json
-import bcrypt
+
 
 @pytest.fixture()
 def config_valid():
@@ -36,20 +36,6 @@ def book_valid():
 
 
 @pytest.fixture()
-def user_valid1():
-    yield {"username": 'test_user1',
-           "password": 'pwd'
-           }
-
-
-@pytest.fixture()
-def user_valid2():
-    yield {"username": 'test_user2',
-           "password": 'pwd'
-           }
-
-
-@pytest.fixture()
 def book_valid_add_request(book_valid):
     # from flask import request
     import app
@@ -57,41 +43,6 @@ def book_valid_add_request(book_valid):
         book_valid = book_valid
         flask.request.data = to_json([book_valid]).encode('utf-8')
         yield book_valid
-
-
-@pytest.fixture()
-def user_valid_list_one_request(user_valid1):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        flask.request.data = to_json([user_valid1]).encode('utf-8')
-        yield user_valid1
-        app.app_context().user_service.delete(user_valid1['username'])
-
-
-@pytest.fixture()
-def user_valid_list_request(user_valid2, config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid2])
-        flask.request.data = to_json([user_valid2]).encode('utf-8')
-        yield user_valid2
-        app.app_context().user_service.delete(user_valid2['username'])
-
-
-@pytest.fixture()
-def user_valid_list_default_limit(user_valid2, user_valid1, config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid1])
-        app.app_context().user_service.save([user_valid2])
-
-        flask.request.args = {}
-        yield user_valid2
-        app.app_context().user_service.delete(user_valid1['username'])
-        app.app_context().user_service.delete(user_valid2['username'])
 
 
 @pytest.fixture()

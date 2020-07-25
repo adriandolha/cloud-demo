@@ -1,0 +1,7 @@
+pyjwt
+pytest
+mock
+gunicorn
+flask
+gevent
+Authlib
