@@ -47,12 +47,14 @@ class Transaction:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
+            LOGGER.debug(f'Commit connection for session transaction {self.session.transaction}')
             self.session.commit()
         except:
             print('Database error...')
             self.session.rollback()
             raise
         finally:
+            LOGGER.debug(f'Closing connection for session {self.session.transaction}')
             self.session.close()
 
 
@@ -66,10 +68,10 @@ class TransactionManager:
             host = self.config['aurora_host']
             port = self.config['aurora_port']
             database = "lorem-ipsum"
-            minconn = self.config.get('connection_pool_minconn', 3)
-            maxconn = self.config.get('connection_pool_maxconn', 50)
+            minconn = self.config.get('connection_pool_minconn')
+            maxconn = self.config.get('connection_pool_maxconn')
             _db = create_engine(f"postgres://{user}:{password}@{host}:{port}/{database}",
-                                pool_size=minconn, max_overflow=maxconn)
+                                pool_size=minconn, max_overflow=maxconn - minconn, poolclass=QueuePool, echo=False)
             Transaction._db = _db
             Transaction._session_maker = sessionmaker(_db)
             LOGGER.debug(f'Created db {Transaction._db}')

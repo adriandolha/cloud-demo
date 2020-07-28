@@ -3,6 +3,7 @@ import os
 import sys
 import uuid
 
+import gevent_psycopg2
 from flask import Flask, request
 
 import lorem_ipsum
@@ -36,10 +37,14 @@ def health():
 
 @app.route('/books/metrics', methods=['GET'])
 def metrics():
+    fields = request.args.get('fields')
+    if fields is None:
+        fields = []
+
     LOGGER.info('Metrics...')
     metrics = {}
     try:
-        metrics = to_json(app_context().metrics_service.metrics())
+        metrics = to_json(app_context().metrics_service.metrics(fields.split(',')))
     except:
         e = sys.exc_info()[0]
         LOGGER.exception('Could not get metrics...')
@@ -56,6 +61,8 @@ def get_book(id):
 
 @app.route('/books', methods=['GET'])
 def get_all_books():
+    LOGGER.debug(app.config)
+
     LOGGER.debug('Get all data...')
     LOGGER.debug(request.headers)
     _limit = int(request.args.get('limit', 1))
@@ -69,6 +76,12 @@ def save_book():
     _request = from_json(request.data.decode('utf-8'))
     result = app_context().book_service.save(_request)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+
+
+@app.route('/config', methods=['GET'])
+def get_config():
+    public_config = {k: v for (k, v) in app_context().config.items() if 'password' not in k}
+    return response({"status_code": '200', 'body': to_json(public_config)})
 
 
 @app.route('/users/<username>', methods=['GET'])
@@ -100,6 +113,19 @@ def app_context():
 
 
 print(f'Name is {__name__}')
-if __name__ == 'app' and os.getenv('env') != 'test':
+
+
+def prepare_orm_for_gevent():
+    """
+    In order to make psycopg2 work with gevent, we need to apply this patch, otherwise all worker connections will use
+    only one connection which might cause serious issues in production.
+    Also, the patch needs to be applied before creating the db engine.
+    """
+    gevent_psycopg2.monkey_patch()
+
+
+if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
+    prepare_orm_for_gevent()
     lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
+    LOGGER.debug(app.config)

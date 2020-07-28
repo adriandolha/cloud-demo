@@ -1,34 +1,9 @@
-import base64
-import logging
-import os
-from functools import lru_cache
-import boto3
-import platform
 import datetime
+import logging
+import platform
+from functools import lru_cache
 
-
-@lru_cache()
-def get_config():
-    aurora_password = os.getenv('aurora_password')
-    if os.getenv('app_env') == 'aws':
-        session = boto3.session.Session()
-        kms = session.client('kms')
-        aurora_password = kms.decrypt(CiphertextBlob=base64.b64decode(aurora_password))['Plaintext'].decode('utf-8')
-    _config = {
-        'aurora_host': os.getenv('aurora_host'),
-        'aurora_user': os.getenv('aurora_user'),
-        'aurora_port': int(os.getenv('aurora_port', default=5432)),
-        'aurora_password': aurora_password,
-        'password_encryption_key': os.getenv('password_encryption_key'),
-        'admin_password': os.getenv('admin_password'),
-        'admin_user': os.getenv('admin_user')
-    }
-    LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.debug('Configuration:')
-    for config_name in _config.keys():
-        if 'password' not in config_name:
-            LOGGER.debug(f'{config_name}={_config[config_name]}')
-    return _config
+import boto3
 
 
 def get_ssm_secret(parameter_name, decrypt=True):
@@ -40,9 +15,10 @@ def get_ssm_secret(parameter_name, decrypt=True):
 
 
 def configure_logging():
-    logging.basicConfig(format='%(levelname)s:%(message)s')
+    logging.basicConfig(format='%(asctime)s.%(msecs)03dZ %(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.setLevel(logging.DEBUG)
+    # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
     # LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info('logging configured...')
 
@@ -51,6 +27,7 @@ class AppContext:
     def __init__(self):
         from lorem_ipsum.repo import transaction, BookRepo, UserRepo, TransactionManager
         from lorem_ipsum.service import BookService, MetricsService, UserService
+        from lorem_ipsum.config import get_config
         self.config = get_config()
         self.transaction_manager = TransactionManager(self)
         self.book_repo = BookRepo(self)

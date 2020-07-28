@@ -13,7 +13,7 @@ class MetricsService:
     def __init__(self, app_context: lorem_ipsum.AppContext):
         self._app_context = app_context
 
-    def metrics(self):
+    def metrics(self, fields: list = []):
         _metrics = {
             'connection_pool._id': "",
             'connection_pool.maxconn': 0,
@@ -26,8 +26,9 @@ class MetricsService:
         try:
             pool = Transaction.pool()
             thread_count = 0
+            threads = []
             for thread in threading.enumerate():
-                # LOGGER.debug(thread)
+                threads.append(str(thread))
                 thread_count += 1
             _metrics = {
                 'connection_pool._id': str(pool),
@@ -38,6 +39,14 @@ class MetricsService:
                 'connection_pool.size': pool.size(),
                 'thread_count': thread_count,
             }
+            if 'connections' in fields:
+                _metrics.update({
+                    'connection_pool.connections': [str(conn) for conn in pool._pool.queue]
+                })
+            if 'threads' in fields:
+                _metrics.update({
+                    'threads': threads
+                })
             LOGGER.debug(_metrics)
         except:
             e = sys.exc_info()[0]

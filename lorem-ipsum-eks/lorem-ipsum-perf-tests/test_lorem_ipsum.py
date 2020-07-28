@@ -35,6 +35,7 @@ class LoremIpsumApi(TaskSet):
                     os.environ[k] = str(v)
             # self.api_url = "http://localhost:30101/symptoms"
             self.api_url = "https://localhost:31862/lorem-ipsum/books"
+            # self.api_url = "http://localhost:5000/books"
             self.api_key = "no-key"
             self.token = os.environ.get('admin_token')
         else:
@@ -99,5 +100,5 @@ class LoremIpsumApi(TaskSet):
 
 class WebsiteUser(HttpLocust):
     task_set = LoremIpsumApi
-    min_wait = 100
-    max_wait = 1000
+    min_wait = 20
+    max_wait = 50

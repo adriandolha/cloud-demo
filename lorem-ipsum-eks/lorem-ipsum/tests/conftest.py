@@ -11,17 +11,19 @@ import lorem_ipsum
 from lorem_ipsum.serializers import to_json
 import bcrypt
 
+
 @pytest.fixture()
 def config_valid():
     import json
     with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json", "r") as _file:
-        json = dict(json.load(_file))
-        print(json)
-        for k, v in json.items():
+        _config = dict(json.load(_file))
+        print(_config)
+        for k, v in _config.items():
             os.environ[k] = str(v)
     lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.setLevel(logging.DEBUG)
+    return _config
 
 
 @pytest.fixture()
@@ -57,6 +59,22 @@ def book_valid_add_request(book_valid):
         book_valid = book_valid
         flask.request.data = to_json([book_valid]).encode('utf-8')
         yield book_valid
+
+
+@pytest.fixture()
+def metrics_request_with_fields(config_valid):
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {'fields': 'connections,threads'}
+        yield flask.request.args
+
+
+@pytest.fixture()
+def metrics_request_no_fields(config_valid):
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {'fields': 'connections,threads'}
+        yield flask.request.args
 
 
 @pytest.fixture()

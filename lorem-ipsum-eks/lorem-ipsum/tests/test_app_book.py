@@ -31,15 +31,6 @@ class TestBookApi:
         assert len(books['items']) == 1
         assert '200' == response.status
 
-    def test_metrics(self, config_valid):
-        _result = app.metrics()
-        metrics = json.loads(_result.response[0].decode('utf-8'))
-        assert metrics.get('connection_pool.maxconn')
-        assert metrics.get('connection_pool.minconn')
-        assert metrics.get('connection_pool.usedconn') is not None
-        assert metrics.get('connection_pool.size') == 3
-        assert '200' == _result.status
-
     def test_book_add(self, book_valid_add_request, config_valid):
         print(json.dumps(book_valid_add_request))
         response = app.save_book()
