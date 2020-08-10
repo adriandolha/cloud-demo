@@ -36,3 +36,9 @@ class TestBookApi:
         response = app.save_book()
         assert from_json(response.response[0].decode('utf-8'))['items'][0]['title']
         assert '200' == response.status
+
+    def test_book_add_insufficient_permissions(self, book_add_request_insufficient_permissions):
+        print(json.dumps(book_add_request_insufficient_permissions))
+        response = app.save_book()
+        assert '403' == response.status
+        assert from_json(response.response[0].decode('utf-8')) == 'Forbidden.'

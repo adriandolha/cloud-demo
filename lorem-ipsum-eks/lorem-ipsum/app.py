@@ -5,7 +5,7 @@ import uuid
 
 import gevent_psycopg2
 from flask import Flask, request
-
+from flask import g
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json, from_json
 
@@ -15,6 +15,25 @@ LOGGER = logging.getLogger('lorem-ipsum')
 
 def response(api_response):
     return app.response_class(response=api_response['body'], status=api_response['status_code'])
+
+
+def requires_role(roles: list):
+    def requires_role_decorator(function):
+        def wrapper(*args, **kwargs):
+            LOGGER.debug(request.headers)
+            user_service = app_context().user_service
+            payload = user_service.decode_auth_token(request.headers['X-Token-String'])
+            LOGGER.debug(payload)
+            user_roles = payload.get('roles', [])
+            LOGGER.debug(user_roles)
+            if not set(roles).issubset(user_roles):
+                return response({'body': to_json('Forbidden.'), 'status_code': '403'})
+            _result = function(*args, **kwargs)
+            return _result
+
+        return wrapper
+
+    return requires_role_decorator
 
 
 def api_context(event, context):
@@ -39,7 +58,7 @@ def health():
 def metrics():
     fields = request.args.get('fields')
     if fields is None:
-        fields = []
+        fields = ''
 
     LOGGER.info('Metrics...')
     metrics = {}
@@ -61,16 +80,14 @@ def get_book(id):
 
 @app.route('/books', methods=['GET'])
 def get_all_books():
-    LOGGER.debug(app.config)
-
     LOGGER.debug('Get all data...')
-    LOGGER.debug(request.headers)
     _limit = int(request.args.get('limit', 1))
     result = app_context().book_service.get_all(limit=_limit)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
 @app.route('/books', methods=['POST'])
+@requires_role(['admin'])
 def save_book():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
@@ -80,6 +97,8 @@ def save_book():
 
 @app.route('/config', methods=['GET'])
 def get_config():
+    LOGGER.debug(app.config)
+    LOGGER.debug(request.headers)
     public_config = {k: v for (k, v) in app_context().config.items() if 'password' not in k}
     return response({"status_code": '200', 'body': to_json(public_config)})
 
@@ -109,7 +128,9 @@ def validate_user():
 
 
 def app_context():
-    return lorem_ipsum.AppContext()
+    if 'app_context' not in g:
+        g.app_context = lorem_ipsum.AppContext()
+    return g.app_context
 
 
 print(f'Name is {__name__}')

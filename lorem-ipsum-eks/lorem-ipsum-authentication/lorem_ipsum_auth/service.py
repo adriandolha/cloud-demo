@@ -3,9 +3,9 @@ from functools import lru_cache
 import sys
 import threading
 
-import lorem_ipsum
-from lorem_ipsum.repo import transaction, User, Book
-from lorem_ipsum.repo import Transaction
+import lorem_ipsum_auth
+from lorem_ipsum_auth.repo import transaction, User
+from lorem_ipsum_auth.repo import Transaction
 import logging
 from authlib.jose import JsonWebKey
 from authlib.jose import JWK_ALGORITHMS
@@ -15,7 +15,7 @@ LOGGER = logging.getLogger('lorem-ipsum')
 
 
 class MetricsService:
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: lorem_ipsum_auth.AppContext):
         self._app_context = app_context
 
     def metrics(self, fields: list = []):
@@ -60,38 +60,8 @@ class MetricsService:
         return _metrics
 
 
-class BookService:
-    def __init__(self, app_context: lorem_ipsum.AppContext):
-        self._app_context = app_context
-
-    @transaction
-    def get(self, id=None):
-        LOGGER.debug(f'using connection pool {Transaction.db()}')
-        return self._app_context.book_repo.get(id).as_dict()
-
-    @transaction
-    def get_all(self, id=None, limit=1):
-        LOGGER.debug(f'using connection pool {Transaction.db()}')
-        results = self._app_context.book_repo.get_all(limit=limit)
-        results['items'] = [book.as_dict() for book in results['items']]
-        return results
-
-    @transaction
-    def save(self, data_records):
-        saved_records = []
-        for record in data_records:
-            book_repo = self._app_context.book_repo
-            book = None
-            if record.get('id') is not None:
-                book = book_repo.get(record['id'])
-            if book is None:
-                book = Book.from_dict(record)
-            saved_records.append(book_repo.save(book).as_dict())
-        return {'items': saved_records, 'total': len(saved_records)}
-
-
 class UserService:
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: lorem_ipsum_auth.AppContext):
         self._app_context = app_context
 
     @transaction

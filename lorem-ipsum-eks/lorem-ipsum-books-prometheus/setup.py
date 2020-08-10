@@ -1,11 +1,11 @@
 import setuptools
 
 setuptools.setup(
-    name="covid19_symptoms_prometheus",
+    name="lorem_ipsum_prometheus",
     version="1.0",
     author="Adrian Dolha",
     author_email="adriandolha@eyahoo.com",
-    description="Sidecar container for symptoms",
+    description="Sidecar container for metrics",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

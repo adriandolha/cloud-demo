@@ -1,7 +1,7 @@
 import json
 import os
 
-from lorem_ipsum.repo import Transaction
+from lorem_ipsum_auth.repo import Transaction
 
 os.environ['env'] = 'test'
 import app
@@ -24,7 +24,7 @@ class TestConfig:
             assert 'encryption' not in k
 
     def test_config_connection_pool_defaults(self, config_valid_request):
-        from lorem_ipsum.config import DEFAULT_CONFIGS
+        from lorem_ipsum_auth.config import DEFAULT_CONFIGS
         _result = app.get_config()
         config = json.loads(_result.response[0].decode('utf-8'))
         assert '200' == _result.status

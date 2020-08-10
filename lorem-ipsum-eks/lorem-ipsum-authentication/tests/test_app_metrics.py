@@ -1,16 +1,16 @@
 import json
 import os
 
-from lorem_ipsum.repo import Transaction
+from lorem_ipsum_auth.repo import Transaction
 
 os.environ['env'] = 'test'
-from lorem_ipsum.serializers import from_json
+from lorem_ipsum_auth.serializers import from_json
 import app
 
 
 class TestMetricsApi:
     def test_metrics_no_fields(self, metrics_request_no_fields):
-        from lorem_ipsum.config import DEFAULT_CONFIGS
+        from lorem_ipsum_auth.config import DEFAULT_CONFIGS
         _result = app.metrics()
         metrics = json.loads(_result.response[0].decode('utf-8'))
         assert metrics.get('connection_pool.maxconn')

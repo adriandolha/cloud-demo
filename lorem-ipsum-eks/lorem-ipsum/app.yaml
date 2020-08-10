@@ -51,11 +51,24 @@ spec:
               port: 8000
             initialDelaySeconds: 3
             periodSeconds: 5
+          volumeMounts:
+            - mountPath: /jwk/certs
+              name: jwk-certs
         - name: lorem-ipsum-prometheus
           image: lorem-ipsum-prometheus:dev
 #          imagePullPolicy: "Always"
         - name: statsd-exporter
           image: prom/statsd-exporter:latest
+      volumes:
+        - name: jwk-certs
+          secret:
+            secretName: jwk-certs
+            items:
+              - key: public.pem
+                path: public.pem
+              - key: key.pem
+                path: private.pem
+
 ---
 kind: Service
 apiVersion: v1

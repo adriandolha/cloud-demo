@@ -22,6 +22,29 @@ spec:
           env:
             - name: app_env
               value: "kube"
+            - name: aurora_user
+              value: "postgres"
+            - name: aurora_host
+#              value: "existing-peahen-postgresql.default.svc.cluster.local"
+              value: torrid-zebra-postgresql.default.svc.cluster.local
+            - name: aurora_port
+              value: "5432"
+            - name: aurora_password
+              valueFrom:
+                secretKeyRef:
+#                  name: existing-peahen-postgresql
+                  name: torrid-zebra-postgresql
+                  key: postgresql-password
+            - name: admin_user
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: admin-user
+            - name: admin_password
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: admin-password
           livenessProbe:
             httpGet:
               path: /auth/health
@@ -31,6 +54,8 @@ spec:
           volumeMounts:
             - mountPath: /jwk/certs
               name: jwk-certs
+        - name: lorem-ipsum-prometheus-auth
+          image: lorem-ipsum-auth-prometheus:dev
         - name: statsd-exporter
           image: prom/statsd-exporter:latest
       volumes:

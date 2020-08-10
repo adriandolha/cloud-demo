@@ -16,7 +16,9 @@ class JsonCollector(object):
 
     def collect(self):
         # Fetch the JSON
-        response = json.loads(requests.get(self._endpoint).content.decode('UTF-8'))
+        metrics = requests.get(self._endpoint)
+        # LOGGER.debug(metrics)
+        response = json.loads(metrics.content.decode('UTF-8'))
         LOGGER.debug(response)
         # Convert requests and duration to a summary in seconds
         metric = Metric('lorem_ipsum_metric',

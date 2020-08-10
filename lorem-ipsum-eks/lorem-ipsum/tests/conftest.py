@@ -27,6 +27,16 @@ def config_valid():
 
 
 @pytest.fixture()
+def admin_token_valid(config_valid):
+    yield os.getenv('admin_token')
+
+
+@pytest.fixture()
+def user_token_valid(config_valid):
+    yield os.getenv('user_token')
+
+
+@pytest.fixture()
 def book_valid():
     _faker = faker.Faker()
     _book = {f'page_{page}': [_faker.text(max_nb_chars=100) for i in range(30)] for page in range(10)}
@@ -52,13 +62,31 @@ def user_valid2():
 
 
 @pytest.fixture()
-def book_valid_add_request(book_valid):
+def book_valid_add_request(book_valid, admin_token_valid):
     # from flask import request
     import app
-    with app.app.test_request_context():
+    with app.app.test_request_context(headers={'X-Token-String': admin_token_valid}):
         book_valid = book_valid
         flask.request.data = to_json([book_valid]).encode('utf-8')
         yield book_valid
+
+
+@pytest.fixture()
+def book_add_request_insufficient_permissions(book_valid, user_token_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context(headers={'X-Token-String': user_token_valid}):
+        book_valid = book_valid
+        flask.request.data = to_json([book_valid]).encode('utf-8')
+        yield book_valid
+
+
+@pytest.fixture()
+def config_valid_request(config_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context():
+        yield True
 
 
 @pytest.fixture()
@@ -73,7 +101,6 @@ def metrics_request_with_fields(config_valid):
 def metrics_request_no_fields(config_valid):
     import app
     with app.app.test_request_context():
-        flask.request.args = {'fields': 'connections,threads'}
         yield flask.request.args
 
 
