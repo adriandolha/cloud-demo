@@ -21,7 +21,7 @@ data:
     scrape_configs:
     - job_name: loremipsum
       static_configs:
-        - targets: ['lorem-ipsum-prometheus.demo.svc.cluster.local:9090']
+        - targets: ['lorem-ipsum.demo.svc.cluster.local']
       scrape_interval: 5s
       scrape_timeout: 4s
 

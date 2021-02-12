@@ -6,6 +6,18 @@ from lorem_ipsum_auth.serializers import from_json
 import app
 
 
+class TestAuthentication:
+    def test_jwk(self, config_valid, user_valid_list_one_request):
+        app.app_context().user_service.save([user_valid_list_one_request])
+        response = app.jwk()
+        result = json.loads(response.response[0].decode('utf-8'))
+        print(result)
+        assert result['keys']
+        jwk = result['keys'][0]
+        assert jwk['kty'] == 'RSA'
+        assert '200' == response.status
+
+
 class TestUserApi:
     def test_user_list_one(self, config_valid, user_valid_list_one_request):
         app.app_context().user_service.save([user_valid_list_one_request])

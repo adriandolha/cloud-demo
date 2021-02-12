@@ -1,5 +1,8 @@
+import json
 import logging
 import os
+import time
+
 import sys
 import uuid
 
@@ -8,9 +11,14 @@ from flask import Flask, request
 from flask import g
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json, from_json
+from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask('lorem-ipsum')
+
 LOGGER = logging.getLogger('lorem-ipsum')
+from prometheus_client import make_wsgi_app, start_http_server, REGISTRY, Metric
+from wsgiref.simple_server import make_server
+from prometheus_client import CollectorRegistry, generate_latest, multiprocess
 
 
 def response(api_response):
@@ -61,14 +69,19 @@ def metrics():
         fields = ''
 
     LOGGER.info('Metrics...')
-    metrics = {}
+    return response({'body': metrics, 'status_code': '200'})
+
+
+def raw_metrics(fields=''):
+    LOGGER.info('Metrics...')
+    _metrics = {}
     try:
-        metrics = to_json(app_context().metrics_service.metrics(fields.split(',')))
+        _metrics = to_json(lorem_ipsum.create_app_context().metrics_service.metrics(fields.split(',')))
     except:
         e = sys.exc_info()[0]
         LOGGER.exception('Could not get metrics...')
         print(e)
-    return response({'body': metrics, 'status_code': '200'})
+    return _metrics
 
 
 @app.route('/books/<id>', methods=['GET'])
@@ -145,8 +158,43 @@ def prepare_orm_for_gevent():
     gevent_psycopg2.monkey_patch()
 
 
+class JsonCollector(object):
+    def __init__(self):
+        pass
+
+    def collect(self):
+        _raw_metrics = raw_metrics()
+        LOGGER.debug(_raw_metrics)
+        _metrics = json.loads(_raw_metrics)
+        # Convert requests and duration to a summary in seconds
+        _metric = Metric('lorem_ipsum_metric',
+                         'Requests time taken in seconds', 'summary')
+        _metric.add_sample('lorem_ipsum_connection_pool_maxconn',
+                           value=_metrics['connection_pool.maxconn'], labels={})
+        _metric.add_sample('lorem_ipsum_connection_pool_usedconn',
+                           value=_metrics['connection_pool.usedconn'], labels={})
+        _metric.add_sample('lorem_ipsum_connection_pool_rusedconn',
+                           value=_metrics['connection_pool.rusedconn'], labels={})
+        _metric.add_sample('lorem_ipsum_connection_pool_size',
+                           value=_metrics['connection_pool.size'], labels={})
+        _metric.add_sample('lorem_ipsum_thread_count',
+                           value=_metrics['thread_count'], labels={})
+        yield _metric
+
+
+def start_prometheus_metrics():
+    start_http_server(int('8082'))
+    REGISTRY.register(JsonCollector())
+    while True:
+        time.sleep(1)
+
+
 if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
     prepare_orm_for_gevent()
     lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.debug(app.config)
+    _prometheus_metrics = PrometheusMetrics(app=None)
+    _prometheus_metrics.init_app(app)
+    REGISTRY.register(JsonCollector())
+    # start_prometheus_metrics()

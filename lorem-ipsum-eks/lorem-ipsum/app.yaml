@@ -6,7 +6,7 @@ metadata:
   labels:
     app: lorem-ipsum
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: lorem-ipsum
@@ -26,14 +26,14 @@ spec:
               value: "postgres"
             - name: aurora_host
 #              value: "existing-peahen-postgresql.default.svc.cluster.local"
-              value: torrid-zebra-postgresql.default.svc.cluster.local
+              value: postgres-postgresql.default.svc.cluster.local
             - name: aurora_port
               value: "5432"
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
 #                  name: existing-peahen-postgresql
-                  name: torrid-zebra-postgresql
+                  name: postgres-postgresql
                   key: postgresql-password
             - name: admin_user
               valueFrom:
@@ -45,6 +45,15 @@ spec:
                 secretKeyRef:
                   name: lorem-ipsum
                   key: admin-password
+            - name: password_encryption_key
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: password-encryption-key
+            - name: pod_name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           livenessProbe:
             httpGet:
               path: /books/health
@@ -54,9 +63,6 @@ spec:
           volumeMounts:
             - mountPath: /jwk/certs
               name: jwk-certs
-        - name: lorem-ipsum-prometheus
-          image: lorem-ipsum-prometheus:dev
-#          imagePullPolicy: "Always"
         - name: statsd-exporter
           image: prom/statsd-exporter:latest
       volumes:

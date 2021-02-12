@@ -30,3 +30,4 @@ class TestConfig:
         assert '200' == _result.status
         assert config.get('connection_pool_minconn') == 30
         assert config.get('connection_pool_maxconn') == 40
+        assert config.get('pod_name') == 'pod_name'

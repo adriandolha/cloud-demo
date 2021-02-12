@@ -56,6 +56,10 @@ def create_app() -> AppContext:
     LOGGER.info(f'Platform: {platform.python_implementation()}')
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     LOGGER.info(f'Start time: {now}')
-    app_context = AppContext()
+    app_context = create_app_context()
     setup(app_context)
     return app_context
+
+
+def create_app_context() -> AppContext:
+    return AppContext()

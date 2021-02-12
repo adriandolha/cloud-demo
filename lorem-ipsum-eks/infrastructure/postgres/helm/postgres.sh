@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-echo $1
-helm install bitnami/postgresql \
-  --set postgresqlPassword=$1,postgresqlDatabase=covid19
-kubectl get secret existing-peahen-postgresql  --namespace=default --export -o yaml |\
-   kubectl apply --namespace=demo -f -
+echo Postgres password:
+read password
+helm del postgres
+helm install postgres bitnami/postgresql \
+    --set postgresqlPassword=$password,postgresqlDatabase=lorem-ipsum
+kubectl get secret postgres-postgresql  --namespace=default -o json |\
+    jq 'del(.metadata.namespace,.metadata.resourceVersion,.metadata.uid)| .metadata.creationTimestamp=null'|\
+    kubectl apply --namespace=demo -f -

@@ -7,6 +7,8 @@ spec:
   type: NodePort
   ports:
   - port: 5432
+    nodePort: 31452
     targetPort: 5432
   selector:
-    app: postgresql
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/name: postgresql

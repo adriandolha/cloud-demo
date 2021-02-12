@@ -17,6 +17,7 @@ RUN chown -R demo:demo /home/demo
 USER demo
 
 EXPOSE 8000
+EXPOSE 8082
 CMD ["gunicorn","-w","1","-b","0.0.0.0:8000","app:app","--log-level","debug",\
 "--access-logfile","-",\
 "--statsd-host=localhost:9125",\

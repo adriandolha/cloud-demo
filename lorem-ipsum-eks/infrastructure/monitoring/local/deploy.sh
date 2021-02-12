@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#helm repo add stable https://kubernetes-charts.storage.googleapis.com
 kubectl delete ns monitoring
 kubectl apply -f monitoring-namespace.yaml
 kubectl apply -f prometheus-config.yaml

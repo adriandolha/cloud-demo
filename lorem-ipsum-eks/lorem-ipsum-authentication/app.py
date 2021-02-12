@@ -3,6 +3,8 @@ import os
 import sys
 import threading
 import uuid
+from functools import lru_cache
+
 from authlib.jose import JsonWebKey
 from authlib.jose import JWK_ALGORITHMS
 from authlib.jose import jwt
@@ -60,7 +62,7 @@ def metrics():
 def jwk():
     LOGGER.debug('JWK...')
     key = get_jwk()
-    print(key)
+    LOGGER.debug(key)
     LOGGER.debug(key)
     return response({"status_code": '200', 'body': json.dumps(key)})
 
@@ -115,10 +117,11 @@ def app_context():
 print(f'Name is {__name__}')
 
 
+@lru_cache()
 def get_jwk():
     LOGGER.debug('Loading jwk from public key...')
     key_data = None
-    with open('/jwk/certs/public.pem', 'r') as _key_file:
+    with open(app_context().config['jwk_public_key_path'], 'rb') as _key_file:
         key_data = _key_file.read()
     _jwk = JsonWebKey(JWK_ALGORITHMS)
     _key_dict = _jwk.dumps(key_data, kty='RSA', use='sig', alg='RS256',
