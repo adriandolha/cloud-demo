@@ -67,9 +67,8 @@ def metrics():
     fields = request.args.get('fields')
     if fields is None:
         fields = ''
-
     LOGGER.info('Metrics...')
-    return response({'body': metrics, 'status_code': '200'})
+    return response({'body': raw_metrics(fields), 'status_code': '200'})
 
 
 def raw_metrics(fields=''):
