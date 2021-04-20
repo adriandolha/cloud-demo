@@ -6,7 +6,7 @@ from authlib.jose import jwt
 
 import lorem_ipsum
 from lorem_ipsum.repo import Transaction, transaction, Book, User
-from lorem_ipsum.service import MetricsService, LOGGER
+from lorem_ipsum.service import MetricsService, LOGGER, BookService, UserService
 
 
 class DefaultMetricsService(MetricsService):
@@ -55,7 +55,7 @@ class DefaultMetricsService(MetricsService):
         return _metrics
 
 
-class DefaultBookService:
+class DefaultBookService(BookService):
     def __init__(self, app_context: lorem_ipsum.AppContext):
         self._app_context = app_context
 
@@ -85,7 +85,7 @@ class DefaultBookService:
         return {'items': saved_records, 'total': len(saved_records)}
 
 
-class DefaultUserService:
+class DefaultUserService(UserService):
     def __init__(self, app_context: lorem_ipsum.AppContext):
         self._app_context = app_context
 

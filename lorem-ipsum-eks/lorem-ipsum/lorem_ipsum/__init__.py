@@ -6,6 +6,14 @@ from functools import lru_cache
 
 import boto3
 
+from lorem_ipsum.config import get_config
+from lorem_ipsum.repo import transaction, PostgresBookRepo, UserRepo, TransactionManager
+from lorem_ipsum.service import BookService, UserService, AppContext
+from lorem_ipsum.service_default import DefaultBookService
+from lorem_ipsum.service_default import DefaultMetricsService
+from lorem_ipsum.service_default import DefaultUserService
+from lorem_ipsum.service_default import MetricsService
+
 
 def get_ssm_secret(parameter_name, decrypt=True):
     ssm = boto3.client("ssm")
@@ -24,56 +32,11 @@ def configure_logging():
     LOGGER.info('logging configured...')
 
 
-class AppContext(ABC):
-    @property
-    @abstractmethod
-    def user_service(self):
-        pass
-
-    @property
-    @abstractmethod
-    def transaction_manager(self):
-        pass
-
-    @property
-    @abstractmethod
-    def metrics_service(self):
-        pass
-
-    @property
-    @abstractmethod
-    def book_repo(self):
-        pass
-
-    @property
-    @abstractmethod
-    def user_repo(self):
-        pass
-
-    @property
-    @abstractmethod
-    def config(self):
-        pass
-
-    @property
-    @abstractmethod
-    def book_service(self):
-        pass
-
-
 class DefaultAppContext(AppContext):
     def __init__(self):
-        from lorem_ipsum.repo import transaction, BookRepo, UserRepo, TransactionManager
-        from lorem_ipsum.service import BookService, UserService
-        from lorem_ipsum.service_default import MetricsService
-        from lorem_ipsum.service_default import DefaultMetricsService
-        from lorem_ipsum.service_default import DefaultBookService
-        from lorem_ipsum.service_default import DefaultUserService
-
-        from lorem_ipsum.config import get_config
         self._config = get_config()
         self._transaction_manager = TransactionManager(self)
-        self._book_repo = BookRepo(self)
+        self._book_repo = PostgresBookRepo(self)
         self._book_service = DefaultBookService(self)
         self._user_repo = UserRepo(self)
         self._user_service = DefaultUserService(self)

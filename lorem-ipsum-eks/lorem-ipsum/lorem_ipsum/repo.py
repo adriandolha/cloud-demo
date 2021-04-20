@@ -1,5 +1,6 @@
 import logging
 import uuid
+from abc import ABC, abstractmethod
 
 import bcrypt
 from sqlalchemy import Column, String
@@ -10,7 +11,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
 
 import lorem_ipsum
-from lorem_ipsum import AppContext
+from lorem_ipsum.service import AppContext
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
@@ -20,7 +21,7 @@ class Transaction:
     _session_maker = None
     _connection_pool_stats = {'usedconn': 0}
 
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: AppContext):
         self._session = None
         self.config = app_context.config
 
@@ -106,8 +107,22 @@ class Book(declarative_base()):
         return Book(**data)
 
 
-class BookRepo:
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+class BookRepo(ABC):
+    @abstractmethod
+    def get(self, id=None) -> Book:
+        pass
+
+    @abstractmethod
+    def get_all(self, limit=10):
+        pass
+
+    @abstractmethod
+    def save(self, book: Book):
+        pass
+
+
+class PostgresBookRepo(BookRepo):
+    def __init__(self, app_context: AppContext):
         self._transaction_manager = app_context.transaction_manager
 
     def get(self, id=None) -> Book:
@@ -145,7 +160,7 @@ class User(declarative_base()):
 
 
 class UserRepo:
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: AppContext):
         self._transaction_manager = app_context.transaction_manager
 
     def is_password_valid(self, user: User):
