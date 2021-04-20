@@ -11,4 +11,8 @@ schedulerec2.pem.txt
 jobs
 values.yaml
 aws-auth-cm.yaml
-/lorem-ipsum-eks/lorem-ipsum-ui/
+lorem-ipsum-ui
+__pycache__
+.DS_Store
+
+
