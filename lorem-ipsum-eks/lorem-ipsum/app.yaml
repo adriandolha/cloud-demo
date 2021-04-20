@@ -6,7 +6,7 @@ metadata:
   labels:
     app: lorem-ipsum
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: lorem-ipsum
@@ -18,21 +18,21 @@ spec:
       containers:
         - name: lorem-ipsum
           image: lorem-ipsum:dev
-#          imagePullPolicy: "Always"
+          #          imagePullPolicy: "Always"
           env:
             - name: app_env
               value: "kube"
             - name: aurora_user
               value: "postgres"
             - name: aurora_host
-#              value: "existing-peahen-postgresql.default.svc.cluster.local"
+              #              value: "existing-peahen-postgresql.default.svc.cluster.local"
               value: postgres-postgresql.default.svc.cluster.local
             - name: aurora_port
               value: "5432"
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
-#                  name: existing-peahen-postgresql
+                  #                  name: existing-peahen-postgresql
                   name: postgres-postgresql
                   key: postgresql-password
             - name: admin_user
@@ -68,28 +68,12 @@ spec:
       volumes:
         - name: jwk-certs
           secret:
-            secretName: jwk-certs
+            secretName: jwk-certs-auth0
             items:
               - key: public.pem
                 path: public.pem
               - key: key.pem
                 path: private.pem
-
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: lorem-ipsum-np
-  namespace: demo
-spec:
-  type: NodePort
-  selector:
-    app: lorem-ipsum
-  ports:
-    - protocol: TCP
-      port: 8000
-      targetPort: 8000
-      nodePort: 30500
 ---
 kind: Service
 apiVersion: v1
@@ -108,21 +92,6 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: lorem-ipsum-prometheus-np
-  namespace: demo
-spec:
-  type: NodePort
-  selector:
-    app: lorem-ipsum
-  ports:
-    - protocol: TCP
-      port: 8081
-      targetPort: 8081
-      nodePort: 30511
----
-kind: Service
-apiVersion: v1
-metadata:
   name: lorem-ipsum-prometheus
   namespace: demo
 spec:
@@ -133,21 +102,6 @@ spec:
     - protocol: TCP
       port: 9090
       targetPort: 8081
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: lorem-ipsum-statsd-np
-  namespace: demo
-spec:
-  type: NodePort
-  selector:
-    app: lorem-ipsum
-  ports:
-    - protocol: TCP
-      nodePort: 30512
-      targetPort: 9102
-      port: 9102
 ---
 kind: Service
 apiVersion: v1

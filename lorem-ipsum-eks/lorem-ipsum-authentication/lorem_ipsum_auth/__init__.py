@@ -5,6 +5,8 @@ from functools import lru_cache
 
 import boto3
 
+import lorem_ipsum_auth
+
 
 def get_ssm_secret(parameter_name, decrypt=True):
     ssm = boto3.client("ssm")
@@ -28,16 +30,30 @@ class AppContext:
         from lorem_ipsum_auth.repo import transaction, UserRepo, TransactionManager
         from lorem_ipsum_auth.service import MetricsService, UserService
         from lorem_ipsum_auth.config import get_config
+        from lorem_ipsum_auth.service import Authenticator
+        self._authenticator = None
+
         self.config = get_config()
         self.transaction_manager = TransactionManager(self)
         self.user_repo = UserRepo(self)
         self.user_service = UserService(self)
         self.metrics_service = MetricsService(self)
 
+    @property
+    def authenticator(self):
+        return self._authenticator
+
     def init(self):
         from lorem_ipsum_auth.repo import db_setup
         with self.transaction_manager.transaction:
             db_setup(self)
+
+    @staticmethod
+    def local_context():
+        app_context = AppContext()
+        from lorem_ipsum_auth.authentication import Auth0Authenticator
+        app_context._authenticator = Auth0Authenticator(app_context)
+        return app_context
 
 
 def setup(app_context: AppContext):
@@ -54,6 +70,6 @@ def create_app() -> AppContext:
     LOGGER.info(f'Platform: {platform.python_implementation()}')
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     LOGGER.info(f'Start time: {now}')
-    app_context = AppContext()
+    app_context = AppContext.local_context()
     setup(app_context)
     return app_context

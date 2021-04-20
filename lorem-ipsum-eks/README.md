@@ -45,6 +45,38 @@ Make sure the following are set on AWS database instance:
 * public accesibility: yes
 * Inbound rules: allow from local
 
+## Authentication and authorization
+Authentication and authorization is done using OAuth and OIDC.
+
+### Auth0
+* auth0 (https://auth0.com/docs/architecture-scenarios/spa-api)
+* use auth0 rules to add scope and custom role claim
+* JWT token contains roles and permissions
+````
+{
+  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role": [
+    "Admin"
+  ],
+  "iss": "https://dev-5z89rql0.eu.auth0.com/",
+  "sub": "google-oauth2|100541778233022946437",
+  "aud": [
+    "https://dev-5z89rql0.eu.auth0.com/api/v2/",
+    "https://dev-5z89rql0.eu.auth0.com/userinfo"
+  ],
+  "iat": 1616735582,
+  "exp": 1616821982,
+  "azp": "yZUy3dduMozo9pjFC6WLSwPySBgrBMFo",
+  "scope": "openid profile email read:books create:books update:books delete:books"
+}
+````
+### API Gateway
+* API Gateway validates token and enforces Bearer Token (JWT)
+
+### Microservices
+* decodes and validates token, checks for expiration, etc. 
+* use authlib jose (https://pypi.org/project/Authlib/) for oauth
+* enforces permissions using decorators
+
 ## Install
 Run the following command inside terraform folder:
 ````

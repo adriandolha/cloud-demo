@@ -48,6 +48,17 @@ kind: Mapping
 metadata:
   annotations:
     getambassador.io/resource-changed: 'true'
+  name: lorem-ipsun-ui
+  namespace: ambassador
+spec:
+  prefix: /lorem-ipsum-ui/
+  service: 'lorem-ipsum-ui.demo.svc.cluster.local'
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
   name: prometheus
   namespace: default
 spec:

@@ -1,15 +1,11 @@
 import logging
-import uuid
+
 import bcrypt
-from sqlalchemy import create_engine, JSON, Integer
 from sqlalchemy import Column, String
-from sqlalchemy.engine import Engine, base
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-
-import psycopg2
-from psycopg2 import pool
-from psycopg2.extras import RealDictCursor
 from sqlalchemy.pool import QueuePool
 
 import lorem_ipsum_auth

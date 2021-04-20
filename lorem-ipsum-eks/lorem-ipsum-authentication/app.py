@@ -110,7 +110,7 @@ def validate_user():
 
 def app_context():
     if 'app_context' not in g:
-        g.app_context = lorem_ipsum_auth.AppContext()
+        g.app_context = lorem_ipsum_auth.AppContext.local_context()
     return g.app_context
 
 

@@ -1,22 +1,16 @@
-from abc import ABC, abstractmethod
+import threading
 from functools import lru_cache
 
 import sys
-import threading
-
-import lorem_ipsum_auth
-from lorem_ipsum_auth.repo import transaction, User
-from lorem_ipsum_auth.repo import Transaction
-import logging
-from authlib.jose import JsonWebKey
-from authlib.jose import JWK_ALGORITHMS
 from authlib.jose import jwt
 
-LOGGER = logging.getLogger('lorem-ipsum')
+import lorem_ipsum
+from lorem_ipsum.repo import Transaction, transaction, Book, User
+from lorem_ipsum.service import MetricsService, LOGGER
 
 
-class MetricsService:
-    def __init__(self, app_context: lorem_ipsum_auth.AppContext):
+class DefaultMetricsService(MetricsService):
+    def __init__(self, app_context: lorem_ipsum.AppContext):
         self._app_context = app_context
 
     def metrics(self, fields: list = []):
@@ -61,8 +55,38 @@ class MetricsService:
         return _metrics
 
 
-class UserService:
-    def __init__(self, app_context: lorem_ipsum_auth.AppContext):
+class DefaultBookService:
+    def __init__(self, app_context: lorem_ipsum.AppContext):
+        self._app_context = app_context
+
+    @transaction
+    def get(self, id=None):
+        LOGGER.debug(f'using connection pool {Transaction.db()}')
+        return self._app_context.book_repo.get(id).as_dict()
+
+    @transaction
+    def get_all(self, id=None, limit=1):
+        LOGGER.debug(f'using connection pool {Transaction.db()}')
+        results = self._app_context.book_repo.get_all(limit=limit)
+        results['items'] = [book.as_dict() for book in results['items']]
+        return results
+
+    @transaction
+    def save(self, data_records):
+        saved_records = []
+        for record in data_records:
+            book_repo = self._app_context.book_repo
+            book = None
+            if record.get('id') is not None:
+                book = book_repo.get(record['id'])
+            if book is None:
+                book = Book.from_dict(record)
+            saved_records.append(book_repo.save(book).as_dict())
+        return {'items': saved_records, 'total': len(saved_records)}
+
+
+class DefaultUserService:
+    def __init__(self, app_context: lorem_ipsum.AppContext):
         self._app_context = app_context
 
     @transaction
@@ -107,8 +131,7 @@ class UserService:
     def secret_key(self):
         with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
             key = f.read()
-        # return key
-        return "GZqgnQYylZ8Kuf2HxB11rd50ajGlLhDa2iSZkm4ZihHLH8vd73oNbIqXdGVT7GNY"
+        return key
 
     def decode_auth_token(self, auth_token):
         """
@@ -116,10 +139,9 @@ class UserService:
         :param auth_token:
         :return: integer|string
         """
-        return self._app_context.authenticator.decode_auth_token(auth_token)
-
-
-class Authenticator(ABC):
-    @abstractmethod
-    def decode_auth_token(self, auth_token):
-        pass
+        try:
+            payload = jwt.decode(auth_token, self.secret_key())
+            return payload
+        except:
+            LOGGER.exception('token is invalid', exc_info=True)
+            raise Exception('token is invalid')

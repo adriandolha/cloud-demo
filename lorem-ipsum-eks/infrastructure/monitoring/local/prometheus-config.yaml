@@ -30,7 +30,24 @@ data:
         - targets: ['lorem-ipsum-statsd.demo.svc.cluster.local:9102']
       scrape_interval: 5s
       scrape_timeout: 4s
-
+    - job_name: 'blackbox'
+      metrics_path: /probe
+      params:
+        module: [http_2xx]  # Look for a HTTP 200 response.
+      static_configs:
+        - targets:
+          - https://localhost:31862/ambassador/v0/check_ready
+          - http://prometheus.monitoring:9090/-/healthy
+          - http://grafana.monitoring/api/health
+          - http://lorem-ipsum.demo/books/health
+          - http://lorem-ipsum-auth.demo/auth/health
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [__param_target]
+          target_label: instance
+        - target_label: __address__
+          replacement: blackbox-prometheus-blackbox-exporter.monitoring:9115  # The blackbox exporter's real hostname:port.
     - job_name: kubernetes-nodes-cadvisor
       scrape_interval: 10s
       scrape_timeout: 10s

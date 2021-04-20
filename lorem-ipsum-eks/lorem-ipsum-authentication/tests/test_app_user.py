@@ -17,6 +17,10 @@ class TestAuthentication:
         assert jwk['kty'] == 'RSA'
         assert '200' == response.status
 
+    def test_jwt_validation(self, config_valid, user_valid_list_one_request, user_token_valid):
+        payload = app.app_context().user_service.decode_auth_token(user_token_valid)
+        assert payload
+
 
 class TestUserApi:
     def test_user_list_one(self, config_valid, user_valid_list_one_request):

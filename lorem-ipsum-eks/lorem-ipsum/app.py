@@ -1,47 +1,46 @@
 import json
 import logging
 import os
-import time
-
-import sys
 import uuid
 
-import gevent_psycopg2
+import sys
+import time
 from flask import Flask, request
 from flask import g
+from prometheus_flask_exporter import PrometheusMetrics
+
+import gevent_psycopg2
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json, from_json
-from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask('lorem-ipsum')
 
 LOGGER = logging.getLogger('lorem-ipsum')
-from prometheus_client import make_wsgi_app, start_http_server, REGISTRY, Metric
-from wsgiref.simple_server import make_server
-from prometheus_client import CollectorRegistry, generate_latest, multiprocess
+from prometheus_client import start_http_server, REGISTRY, Metric
 
 
 def response(api_response):
     return app.response_class(response=api_response['body'], status=api_response['status_code'])
 
 
-def requires_role(roles: list):
-    def requires_role_decorator(function):
+def requires_permission(permissions: list):
+    def requires_permission_decorator(function):
         def wrapper(*args, **kwargs):
-            LOGGER.debug(request.headers)
+            LOGGER.debug(f'Authorization...\n{request.headers}')
             user_service = app_context().user_service
             payload = user_service.decode_auth_token(request.headers['X-Token-String'])
             LOGGER.debug(payload)
-            user_roles = payload.get('roles', [])
-            LOGGER.debug(user_roles)
-            if not set(roles).issubset(user_roles):
+            user_permissions = payload.get('scope', []).split()
+            LOGGER.debug(f'Required: {permissions} Actual: {user_permissions}')
+            if not set(permissions).issubset(user_permissions):
                 return response({'body': to_json('Forbidden.'), 'status_code': '403'})
             _result = function(*args, **kwargs)
             return _result
 
+        wrapper.__name__ = function.__name__
         return wrapper
 
-    return requires_role_decorator
+    return requires_permission_decorator
 
 
 def api_context(event, context):
@@ -84,6 +83,7 @@ def raw_metrics(fields=''):
 
 
 @app.route('/books/<id>', methods=['GET'])
+@requires_permission(['read:books'])
 def get_book(id):
     LOGGER.debug('Get all data...')
     result = app_context().book_service.get(id)
@@ -99,7 +99,7 @@ def get_all_books():
 
 
 @app.route('/books', methods=['POST'])
-@requires_role(['admin'])
+@requires_permission(['create:books'])
 def save_book():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
@@ -141,7 +141,7 @@ def validate_user():
 
 def app_context():
     if 'app_context' not in g:
-        g.app_context = lorem_ipsum.AppContext()
+        g.app_context = lorem_ipsum.create_app_context()
     return g.app_context
 
 

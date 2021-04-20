@@ -16,6 +16,18 @@ Local environment is on kubernetes and contains the following:
 * centralized logging with elastic, statsd and kibana
 * ambassador api gateway
 
+## Monitoring
+Monitoring is implemented using Prometheus and Grafana.
+Prometheus metrics:
+* server monitoring: cAdvisor
+* app metrics: prometheus-flask-exporter
+* server health status: blackbox-exporter
+
+Grafana dashboards:
+* Kubernetes cluster monitoring
+* Prometheus Blackbox Exporter
+* Lorem ipsum metrics: gunicorn requests, connection pool stats
+ 
 ## Troubleshooting
 There might be some errors that you encounter when running for the first time.
 
