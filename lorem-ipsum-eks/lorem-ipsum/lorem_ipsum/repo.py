@@ -10,7 +10,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
 
-import lorem_ipsum
 from lorem_ipsum.service import AppContext
 
 LOGGER = logging.getLogger('lorem-ipsum')
@@ -90,6 +89,20 @@ def transaction(function):
     return wrapper
 
 
+class User(declarative_base()):
+    __tablename__ = 'users'
+
+    username = Column(String, primary_key=True)
+    password = Column(String)
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns if c != User.password}
+
+    @staticmethod
+    def from_dict(data: dict):
+        return User(**data)
+
+
 class Book(declarative_base()):
     __tablename__ = 'books'
 
@@ -121,45 +134,38 @@ class BookRepo(ABC):
         pass
 
 
-class PostgresBookRepo(BookRepo):
-    def __init__(self, app_context: AppContext):
-        self._transaction_manager = app_context.transaction_manager
-
-    def get(self, id=None) -> Book:
+class UserRepo(ABC):
+    @abstractmethod
+    def is_password_valid(self, user: User):
         _session = self._transaction_manager.transaction.session
-        book = _session.query(Book).filter(Book.id == id).first()
-        return book
+        result = _session.query(User).filter(
+            User.username == user.username and User.password == user.password).first()
+        if result is None:
+            return False
+        return True
 
+    @abstractmethod
+    def get(self, username=None) -> User:
+        pass
+
+    @abstractmethod
+    def delete(self, user):
+        pass
+
+    @abstractmethod
     def get_all(self, limit=10):
-        items = []
-        _session = self._transaction_manager.transaction.session
-        count = _session.query(Book).count()
-        books = _session.query(Book).limit(limit)
-        return {"total": count, "items": books}
+        pass
 
-    def save(self, book: Book):
-        LOGGER.info(f'data = {book}')
-        _session = self._transaction_manager.transaction.session
-        book.id = str(uuid.uuid4())
-        _session.add(book)
-        return book
+    @abstractmethod
+    def save(self, user: User):
+        pass
+
+    @abstractmethod
+    def encrypt_password(self, pwd):
+        pass
 
 
-class User(declarative_base()):
-    __tablename__ = 'users'
-
-    username = Column(String, primary_key=True)
-    password = Column(String)
-
-    def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns if c != User.password}
-
-    @staticmethod
-    def from_dict(data: dict):
-        return User(**data)
-
-
-class UserRepo:
+class PostgresUserRepo(UserRepo):
     def __init__(self, app_context: AppContext):
         self._transaction_manager = app_context.transaction_manager
 
@@ -197,6 +203,30 @@ class UserRepo:
                                            salt=self._transaction_manager.config['password_encryption_key'].encode(
                                                'utf-8'))
         return encrypted_password
+
+
+class PostgresBookRepo(BookRepo):
+    def __init__(self, app_context: AppContext):
+        self._transaction_manager = app_context.transaction_manager
+
+    def get(self, id=None) -> Book:
+        _session = self._transaction_manager.transaction.session
+        book = _session.query(Book).filter(Book.id == id).first()
+        return book
+
+    def get_all(self, limit=10):
+        items = []
+        _session = self._transaction_manager.transaction.session
+        count = _session.query(Book).count()
+        books = _session.query(Book).limit(limit)
+        return {"total": count, "items": books}
+
+    def save(self, book: Book):
+        LOGGER.info(f'data = {book}')
+        _session = self._transaction_manager.transaction.session
+        book.id = str(uuid.uuid4())
+        _session.add(book)
+        return book
 
 
 def db_setup(app_context: AppContext):

@@ -1,13 +1,12 @@
 import datetime
 import logging
 import platform
-from abc import ABC, abstractmethod
 from functools import lru_cache
 
 import boto3
 
 from lorem_ipsum.config import get_config
-from lorem_ipsum.repo import transaction, PostgresBookRepo, UserRepo, TransactionManager
+from lorem_ipsum.repo import transaction, PostgresBookRepo, UserRepo, TransactionManager, PostgresUserRepo
 from lorem_ipsum.service import BookService, UserService, AppContext
 from lorem_ipsum.service_default import DefaultBookService
 from lorem_ipsum.service_default import DefaultMetricsService
@@ -38,7 +37,7 @@ class DefaultAppContext(AppContext):
         self._transaction_manager = TransactionManager(self)
         self._book_repo = PostgresBookRepo(self)
         self._book_service = DefaultBookService(self)
-        self._user_repo = UserRepo(self)
+        self._user_repo = PostgresUserRepo(self)
         self._user_service = DefaultUserService(self)
         self._metrics_service = DefaultMetricsService(self)
 
