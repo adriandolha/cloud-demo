@@ -4,43 +4,6 @@ from abc import ABC, abstractmethod
 LOGGER = logging.getLogger('lorem-ipsum')
 
 
-class AppContext(ABC):
-    @property
-    @abstractmethod
-    def user_service(self):
-        pass
-
-    @property
-    @abstractmethod
-    def transaction_manager(self):
-        pass
-
-    @property
-    @abstractmethod
-    def metrics_service(self):
-        pass
-
-    @property
-    @abstractmethod
-    def book_repo(self):
-        pass
-
-    @property
-    @abstractmethod
-    def user_repo(self):
-        pass
-
-    @property
-    @abstractmethod
-    def config(self):
-        pass
-
-    @property
-    @abstractmethod
-    def book_service(self):
-        pass
-
-
 class MetricsService(ABC):
     @abstractmethod
     def metrics(self, fields: list = []):
@@ -93,4 +56,41 @@ class UserService(ABC):
         :param auth_token:
         :return: integer|string
         """
+        pass
+
+
+class AppContext(ABC):
+    @property
+    @abstractmethod
+    def user_service(self):
+        pass
+
+    @property
+    @abstractmethod
+    def transaction_manager(self):
+        pass
+
+    @property
+    @abstractmethod
+    def metrics_service(self) -> MetricsService:
+        pass
+
+    @property
+    @abstractmethod
+    def book_repo(self):
+        pass
+
+    @property
+    @abstractmethod
+    def user_repo(self):
+        pass
+
+    @property
+    @abstractmethod
+    def config(self):
+        pass
+
+    @property
+    @abstractmethod
+    def book_service(self) -> BookService:
         pass
