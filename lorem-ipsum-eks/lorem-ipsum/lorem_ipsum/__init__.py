@@ -6,12 +6,12 @@ from functools import lru_cache
 import boto3
 
 from lorem_ipsum.config import get_config
-from lorem_ipsum.repo import transaction, PostgresBookRepo, UserRepo, TransactionManager, PostgresUserRepo
-from lorem_ipsum.service import BookService, UserService, AppContext
+from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo
+from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, AppContext
 from lorem_ipsum.service_default import DefaultBookService
 from lorem_ipsum.service_default import DefaultMetricsService
 from lorem_ipsum.service_default import DefaultUserService
-from lorem_ipsum.service_default import MetricsService
+import lorem_ipsum.model as model
 
 
 def get_ssm_secret(parameter_name, decrypt=True):
@@ -83,6 +83,7 @@ def create_app() -> AppContext:
     LOGGER.info(f'Platform: {platform.python_implementation()}')
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     LOGGER.info(f'Start time: {now}')
+    model.start_mappers()
     app_context = create_app_context()
     return app_context
 

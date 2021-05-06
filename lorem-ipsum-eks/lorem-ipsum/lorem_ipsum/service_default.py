@@ -1,16 +1,20 @@
+import logging
 import threading
 from functools import lru_cache
 
 import sys
 from authlib.jose import jwt
 
-import lorem_ipsum
-from lorem_ipsum.repo import Transaction, transaction, Book, User
-from lorem_ipsum.service import MetricsService, LOGGER, BookService, UserService
+import lorem_ipsum.model
+from lorem_ipsum import MetricsService, BookService, UserService
+from lorem_ipsum.model import User, Book
+from lorem_ipsum.repo import Transaction, transaction
+
+LOGGER = logging.getLogger('lorem-ipsum')
 
 
 class DefaultMetricsService(MetricsService):
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: lorem_ipsum.model.AppContext):
         self._app_context = app_context
 
     def metrics(self, fields: list = []):
@@ -56,7 +60,7 @@ class DefaultMetricsService(MetricsService):
 
 
 class DefaultBookService(BookService):
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: lorem_ipsum.model.AppContext):
         self._app_context = app_context
 
     @transaction
@@ -80,13 +84,14 @@ class DefaultBookService(BookService):
             if record.get('id') is not None:
                 book = book_repo.get(record['id'])
             if book is None:
+                record['id'] = self._app_context.book_repo.next_id()
                 book = Book.from_dict(record)
             saved_records.append(book_repo.save(book).as_dict())
         return {'items': saved_records, 'total': len(saved_records)}
 
 
 class DefaultUserService(UserService):
-    def __init__(self, app_context: lorem_ipsum.AppContext):
+    def __init__(self, app_context: lorem_ipsum.model.AppContext):
         self._app_context = app_context
 
     @transaction
