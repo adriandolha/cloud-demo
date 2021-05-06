@@ -8,9 +8,9 @@ import boto3
 from lorem_ipsum.config import get_config
 from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo
 from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, AppContext
-from lorem_ipsum.service_default import DefaultBookService
-from lorem_ipsum.service_default import DefaultMetricsService
-from lorem_ipsum.service_default import DefaultUserService
+from lorem_ipsum.service import DefaultBookService
+from lorem_ipsum.service import DefaultMetricsService
+from lorem_ipsum.service import DefaultUserService
 import lorem_ipsum.model as model
 
 
