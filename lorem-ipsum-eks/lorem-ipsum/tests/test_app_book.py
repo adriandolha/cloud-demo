@@ -7,7 +7,7 @@ import app
 
 
 class TestBookApi:
-    def test_book_list_one(self, config_valid, book_valid_add_request):
+    def test_book_list_one(self, book_valid_add_request):
         _response = app.save_book()
         assert _response.status_code == 200
         _book_json = from_json(_response.response[0].decode('utf-8'))
