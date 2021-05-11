@@ -14,6 +14,7 @@ from lorem_ipsum.model import BookRepo
 from lorem_ipsum.model import AppContext
 import lorem_ipsum.model as model
 
+
 LOGGER = logging.getLogger('lorem-ipsum')
 
 
@@ -236,5 +237,5 @@ def db_setup(app_context: AppContext):
     if app_context.user_repo.get(app_context.config['admin_user']) is None:
         password_plain = app_context.config['admin_password']
         password_encrypted = app_context.user_repo.encrypt_password(password_plain)
-        app_context.user_repo.save(User.from_dict(
+        app_context.user_repo.save(model.User.from_dict(
             {'username': app_context.config['admin_user'], 'password': password_encrypted}))
