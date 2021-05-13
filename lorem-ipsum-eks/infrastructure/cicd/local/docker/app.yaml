@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-registry
+  namespace: demo
+  labels:
+    app: docker-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-registry
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      containers:
+        - name: docker-registry
+          image: registry:2
+#          imagePullPolicy: "Always"
+          env:
+            - name: app_env
+              value: "kube"
+            - name: aurora_user
+              value: "postgres"
+            - name: aurora_host
+#              value: "existing-peahen-postgresql.default.svc.cluster.local"
+              value: postgres-postgresql.default.svc.cluster.local
+            - name: aurora_port
+              value: "5432"
+            - name: aurora_password
+              valueFrom:
+                secretKeyRef:
+#                  name: existing-peahen-postgresql
+                  name: postgres-postgresql
+                  key: postgresql-password
+            - name: admin_user
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: admin-user
+            - name: admin_password
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: admin-password
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: docker-registry
+  namespace: demo
+spec:
+  type: ClusterIP
+  selector:
+    app: docker-registry
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
