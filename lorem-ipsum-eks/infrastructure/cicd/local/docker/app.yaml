@@ -20,31 +20,22 @@ spec:
           image: registry:2
 #          imagePullPolicy: "Always"
           env:
-            - name: app_env
-              value: "kube"
-            - name: aurora_user
-              value: "postgres"
-            - name: aurora_host
-#              value: "existing-peahen-postgresql.default.svc.cluster.local"
-              value: postgres-postgresql.default.svc.cluster.local
-            - name: aurora_port
-              value: "5432"
-            - name: aurora_password
-              valueFrom:
-                secretKeyRef:
-#                  name: existing-peahen-postgresql
-                  name: postgres-postgresql
-                  key: postgresql-password
-            - name: admin_user
-              valueFrom:
-                secretKeyRef:
-                  name: lorem-ipsum
-                  key: admin-user
-            - name: admin_password
-              valueFrom:
-                secretKeyRef:
-                  name: lorem-ipsum
-                  key: admin-password
+            - name: REGISTRY_HTTP_TLS_CERTIFICATE
+              value: "/certs/tls.crt"
+            - name: REGISTRY_HTTP_TLS_KEY
+              value: "/certs/tls.key"
+          volumeMounts:
+            - mountPath: /certs
+              name: certs
+      volumes:
+        - name: certs
+          secret:
+            secretName: tls-cert
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
 ---
 kind: Service
 apiVersion: v1
@@ -59,3 +50,7 @@ spec:
     - protocol: TCP
       port: 5000
       targetPort: 5000
+
+#kubectl get secret tls-cert --namespace=default -o yaml  \
+#| sed s/"namespace: default"/"namespace: demo"/\
+#| kubectl apply -n demo -f -

@@ -56,3 +56,4 @@ spec:
         - --dockerfile=$(params.pathToDockerFile)
         - --destination=$(resources.outputs.builtImage.url)
         - --context=$(params.pathToContext)
+        - --insecure-skip-tls-verify
