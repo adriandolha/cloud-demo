@@ -155,8 +155,6 @@ spec:
   resources:
     - name: source-repo
       type: git
-    - name: web-image
-      type: image
   tasks:
     - name: deploy
       taskRef:
