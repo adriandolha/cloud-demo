@@ -146,3 +146,49 @@ spec:
     - name: web-image
       resourceRef:
         name: lorem-ipsum
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-pipeline-test
+spec:
+  resources:
+    - name: source-repo
+      type: git
+    - name: web-image
+      type: image
+  tasks:
+  - name: deploy
+      taskRef:
+        name: deploy-using-kubectl
+      runAfter:
+        - build-docker-image
+      resources:
+        inputs:
+          - name: source
+            resource: source-repo
+          - name: image
+            resource: web-image
+            from:
+              - build-docker-image
+      params:
+        - name: path
+          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum/app.yaml
+        - name: yamlPathToImage
+          value: "spec.template.spec.containers[0].image"
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-pipeline-run-test
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-pipeline-test
+  resources:
+    - name: source-repo
+      resourceRef:
+        name: lorem-ipsum-git
+    - name: web-image
+      resourceRef:
+        name: lorem-ipsum
