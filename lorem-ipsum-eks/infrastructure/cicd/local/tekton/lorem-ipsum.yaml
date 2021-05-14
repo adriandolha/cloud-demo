@@ -82,7 +82,7 @@ spec:
       image: mikefarah/yq
       command: ["yq"]
       args:
-        - "w"
+        - "e"
         - "-i"
         - "$(params.path)"
         - "$(params.yamlPathToImage)"
@@ -124,6 +124,8 @@ spec:
     - name: deploy
       taskRef:
         name: deploy-using-kubectl
+      runAfter:
+        - build-dcoker-image
       resources:
         inputs:
           - name: source
@@ -131,7 +133,7 @@ spec:
           - name: image
             resource: web-image
             from:
-              - build-skaffold-web
+              - lorem-ipsum
       params:
         - name: path
           value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum/app.yaml #configure: may change according to your source
