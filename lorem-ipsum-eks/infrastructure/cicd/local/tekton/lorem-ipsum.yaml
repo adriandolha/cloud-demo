@@ -57,3 +57,99 @@ spec:
         - --destination=$(resources.outputs.builtImage.url)
         - --context=$(params.pathToContext)
         - --skip-tls-verify
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy-using-kubectl
+spec:
+  params:
+    - name: path
+      type: string
+      description: Path to the manifest to apply
+    - name: yamlPathToImage
+      type: string
+      description: |
+        The path to the image to replace in the yaml manifest (arg to yq)
+  resources:
+    inputs:
+      - name: source
+        type: git
+      - name: image
+        type: image
+  steps:
+    - name: replace-image
+      image: mikefarah/yq
+      command: ["yq"]
+      args:
+        - "w"
+        - "-i"
+        - "$(params.path)"
+        - "$(params.yamlPathToImage)"
+        - "$(resources.inputs.image.url)"
+    - name: run-kubectl
+      image: lachlanevenson/k8s-kubectl
+      command: ["kubectl"]
+      args:
+        - "apply"
+        - "-f"
+        - "$(params.path)"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-pipeline
+spec:
+  resources:
+    - name: source-repo
+      type: git
+    - name: web-image
+      type: image
+  tasks:
+    - name: build-skaffold-web
+      taskRef:
+        name: build-docker-image-from-git-source
+      params:
+        - name: pathToDockerFile
+          value: Dockerfile
+        - name: pathToContext
+          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
+      resources:
+        inputs:
+          - name: docker-source
+            resource: source-repo
+        outputs:
+          - name: builtImage
+            resource: web-image
+    - name: deploy-web
+      taskRef:
+        name: deploy-using-kubectl
+      resources:
+        inputs:
+          - name: source
+            resource: source-repo
+          - name: image
+            resource: web-image
+            from:
+              - build-skaffold-web
+      params:
+        - name: path
+          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum/app.yaml #configure: may change according to your source
+        - name: yamlPathToImage
+          value: "spec.template.spec.containers[0].image"
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-pipeline-run
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-pipeline
+  resources:
+    - name: source-repo
+      resourceRef:
+        name: lorem-ipsum-git
+    - name: web-image
+      resourceRef:
+        name: lorem-ipsum
