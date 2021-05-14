@@ -125,7 +125,7 @@ spec:
       taskRef:
         name: deploy-using-kubectl
       runAfter:
-        - build-dcoker-image
+        - build-docker-image
       resources:
         inputs:
           - name: source
