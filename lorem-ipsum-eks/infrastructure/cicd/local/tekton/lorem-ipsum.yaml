@@ -158,7 +158,22 @@ spec:
     - name: web-image
       type: image
   tasks:
-  - name: deploy
+    - name: build-docker-image
+      taskRef:
+        name: build-docker-image-from-git-source
+      params:
+        - name: pathToDockerFile
+          value: Dockerfile
+        - name: pathToContext
+          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
+      resources:
+        inputs:
+          - name: docker-source
+            resource: source-repo
+        outputs:
+          - name: builtImage
+            resource: web-image
+    - name: deploy
       taskRef:
         name: deploy-using-kubectl
       runAfter:
@@ -184,7 +199,7 @@ metadata:
 spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
-    name: lorem-ipsum-pipeline-test
+    name: lorem-ipsum-pipeline
   resources:
     - name: source-repo
       resourceRef:
