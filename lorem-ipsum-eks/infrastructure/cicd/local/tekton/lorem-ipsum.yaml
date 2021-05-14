@@ -78,15 +78,6 @@ spec:
       - name: image
         type: image
   steps:
-    - name: replace-image
-      image: mikefarah/yq
-      command: ["yq"]
-      args:
-        - "e"
-        - "-i"
-        - "$(params.path)"
-        - "$(params.yamlPathToImage)"
-        - "$(resources.inputs.image.url)"
     - name: run-kubectl
       image: lachlanevenson/k8s-kubectl
       command: ["kubectl"]
@@ -136,7 +127,7 @@ spec:
               - build-docker-image
       params:
         - name: path
-          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum/app.yaml #configure: may change according to your source
+          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum/app.yaml
         - name: yamlPathToImage
           value: "spec.template.spec.containers[0].image"
 ---
