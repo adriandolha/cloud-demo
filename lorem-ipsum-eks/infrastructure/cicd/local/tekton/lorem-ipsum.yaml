@@ -181,6 +181,3 @@ spec:
     - name: source-repo
       resourceRef:
         name: lorem-ipsum-git
-    - name: web-image
-      resourceRef:
-        name: lorem-ipsum
