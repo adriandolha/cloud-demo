@@ -178,7 +178,7 @@ metadata:
 spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
-    name: lorem-ipsum-pipeline
+    name: lorem-ipsum-pipeline-test
   resources:
     - name: source-repo
       resourceRef:
