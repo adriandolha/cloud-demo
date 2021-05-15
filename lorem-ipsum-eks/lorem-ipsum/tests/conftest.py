@@ -28,10 +28,11 @@ def config_valid(db_session):
     if os.path.exists(config_file):
         with open(config_file, "r") as _file:
             _config = dict(json.load(_file))
-            print(_config)
             for k, v in _config.items():
                 os.environ[k] = str(v)
-    print(os.environ)
+    else:
+        _config = os.environ
+    print(_config)
     return _config
 
 
