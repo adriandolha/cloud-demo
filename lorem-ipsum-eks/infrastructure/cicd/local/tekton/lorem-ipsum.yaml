@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
   name: lorem-ipsum-git
+  namespace: tekton-pipelines
 spec:
   type: git
   params:
@@ -14,6 +15,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
   name: lorem-ipsum
+  namespace: tekton-pipelines
 spec:
   type: image
   params:
@@ -23,7 +25,67 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
+  name: pytest
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: PYTHON
+      description: The used Python version, more precisely the tag for the Python image
+      type: string
+      default: "latest"
+    - name: ARGS
+      description: The additional arguments to be used with pytest
+      type: string
+      default: ""
+    - name: SOURCE_PATH
+      description: The path to the source code
+      default: "."
+    - name: WORKING_DIR
+      description: The path to the source code
+      default: "/workspace/source/lorem-ipsum-eks/lorem-ipsum"
+    - name: REQUIREMENTS_FILE
+      description: The name of the requirements file inside the source location
+      default: "requirements.txt"
+  resources:
+    inputs:
+      - name: source
+        type: git
+  steps:
+    - name: unit-test
+      image: docker.io/python:$(inputs.params.PYTHON)
+      env:
+        - name: aurora_host
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: aurora_host
+      workingDir: $(inputs.params.WORKING_DIR)
+      volumeMounts:
+        - name: config
+          mountPath: /root/.cloud-projects
+      script: |
+        export PATH=$PATH:$HOME/.local/bin
+        if [ -n "$(inputs.params.REQUIREMENTS_FILE)" ] && [ -e "$(inputs.params.REQUIREMENTS_FILE)" ];then
+          pip install -r $(inputs.params.SOURCE_PATH)/$(inputs.params.REQUIREMENTS_FILE)
+          pip show pytest || {
+            echo "###\nWarning: Pytest is missing in your requirements\n###";
+            pip install pytest
+          }
+        else
+          pip install pytest
+        fi
+        ls /root/.cloud-projects
+        python -m pytest $(inputs.params.ARGS)
+  volumes:
+    - name: config
+      secret:
+        secretName: "lorem-ipsum-unit"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
   name: build-docker-image-from-git-source
+  namespace: tekton-pipelines
 spec:
   params:
     - name: pathToDockerFile
@@ -62,6 +124,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: deploy-using-kubectl
+  namespace: tekton-pipelines
 spec:
   params:
     - name: path
@@ -78,6 +141,12 @@ spec:
       - name: image
         type: image
   steps:
+    - image: ubuntu  # contains bash
+      script: |
+        #!/usr/bin/env bash
+        ls /workspace
+        ls /workspace/source
+        ls /workspace/source/lorem-ipsum-eks
     - name: run-kubectl
       image: lachlanevenson/k8s-kubectl
       command: ["kubectl"]
@@ -90,6 +159,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: lorem-ipsum-pipeline
+  namespace: tekton-pipelines
 spec:
   resources:
     - name: source-repo
@@ -97,9 +167,21 @@ spec:
     - name: web-image
       type: image
   tasks:
+    - name: unit-test
+      taskRef:
+        name: pytest
+      resources:
+        inputs:
+          - name: source
+            resource: source-repo
+      params:
+        - name: ARGS
+          value: tests
     - name: build-docker-image
       taskRef:
         name: build-docker-image-from-git-source
+      runAfter:
+        - unit-test
       params:
         - name: pathToDockerFile
           value: Dockerfile
@@ -127,7 +209,7 @@ spec:
               - build-docker-image
       params:
         - name: path
-          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum/app.yaml
+          value: /workspace/source/lorem-ipsum-eks/lorem-ipsum/app.yaml
         - name: yamlPathToImage
           value: "spec.template.spec.containers[0].image"
 ---
@@ -135,6 +217,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   name: lorem-ipsum-pipeline-run
+  namespace: tekton-pipelines
 spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
