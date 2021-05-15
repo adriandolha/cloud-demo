@@ -59,10 +59,65 @@ spec:
             secretKeyRef:
               name: lorem-ipsum-unit
               key: aurora_host
+        - name: aurora_user
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: aurora_user
+        - name: aurora_port
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: aurora_port
+        - name: aurora_password
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: aurora_password
+        - name: admin_user
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: admin_user
+        - name: admin_password
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: admin_password
+        - name: password_encryption_key
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: password_encryption_key
+        - name: jwk_public_key_path
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: jwk_public_key_path
+        - name: admin_token_permissions
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: admin_token_permissions
+        - name: user_token_permissions
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: user_token_permissions
+        - name: admin_token
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: admin_token
+        - name: user_token
+          valueFrom:
+            secretKeyRef:
+              name: lorem-ipsum-unit
+              key: user_token
       workingDir: $(inputs.params.WORKING_DIR)
       volumeMounts:
-        - name: config
-          mountPath: /root/.cloud-projects
+        - name: jwk-certs-auth0
+          mountPath: /jwk/certs
       script: |
         export PATH=$PATH:$HOME/.local/bin
         if [ -n "$(inputs.params.REQUIREMENTS_FILE)" ] && [ -e "$(inputs.params.REQUIREMENTS_FILE)" ];then
@@ -77,9 +132,15 @@ spec:
         ls /root/.cloud-projects
         python -m pytest $(inputs.params.ARGS)
   volumes:
-    - name: config
+    - name: jwk-certs
       secret:
-        secretName: "lorem-ipsum-unit"
+        secretName: jwk-certs-auth0
+        items:
+          - key: public.pem
+            path: public.pem
+          - key: key.pem
+            path: private.pem
+
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task

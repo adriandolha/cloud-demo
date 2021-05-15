@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # https://docs.ventuscloud.eu/docs/tutorials/tekton-pipelines
+
 kubectl apply --filename https://storage.googleapis.com/tekton-releases/latest/release.yaml
 kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/latest/tekton-dashboard-release.yaml
 brew install istioctl
