@@ -129,10 +129,9 @@ spec:
         else
           pip install pytest
         fi
-        ls /root/.cloud-projects
         python -m pytest $(inputs.params.ARGS)
   volumes:
-    - name: jwk-certs
+    - name: jwk-certs-auth0
       secret:
         secretName: jwk-certs-auth0
         items:
@@ -202,7 +201,8 @@ spec:
       - name: image
         type: image
   steps:
-    - image: ubuntu  # contains bash
+    - name: debugging
+      image: ubuntu  # contains bash
       script: |
         #!/usr/bin/env bash
         ls /workspace
