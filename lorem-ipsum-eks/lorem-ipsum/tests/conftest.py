@@ -32,6 +32,7 @@ def config_valid(db_session):
                 os.environ[k] = str(v)
     else:
         _config = os.environ
+    print('Config...')
     print(_config)
     return _config
 
