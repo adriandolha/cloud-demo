@@ -20,7 +20,7 @@ spec:
   type: image
   params:
     - name: url
-      value: docker-registry.demo:5000/lorem-ipsum:dev
+      value: kubernetes.docker.internal:5000/lorem-ipsum:dev
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -179,6 +179,11 @@ spec:
         - --destination=$(resources.outputs.builtImage.url)
         - --context=$(params.pathToContext)
         - --skip-tls-verify
+    - name: debugging
+      image: ubuntu  # contains bash
+      script: |
+        #!/usr/bin/env bash
+        echo $(resources.outputs.builtImage.url)
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -201,13 +206,21 @@ spec:
       - name: image
         type: image
   steps:
+    - name: update-yaml
+      image: alpine
+      command: ["sed"]
+      args:
+        - "-i"
+        - "-e"
+        - "s;lorem-ipsum:dev; kubernetes.docker.internal:5000/lorem-ipsum:dev;g"
+        - "$(params.path)"
     - name: debugging
       image: ubuntu  # contains bash
       script: |
         #!/usr/bin/env bash
         ls /workspace
         ls /workspace/source
-        ls /workspace/source/lorem-ipsum-eks
+        cat /workspace/source/lorem-ipsum-eks/lorem-ipsum/app.yaml
     - name: run-kubectl
       image: lachlanevenson/k8s-kubectl
       command: ["kubectl"]

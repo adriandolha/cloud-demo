@@ -64,3 +64,14 @@ metadata:
 spec:
   prefix: /prometheus/
   service: 'prometheus.monitoring.svc.cluster.local:9090'
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  annotations:
+    getambassador.io/resource-changed: 'true'
+  name: docker-registry
+  namespace: demo
+spec:
+  prefix: /docker-registry/
+  service: 'docker-registry.demo.svc.cluster.local:5000'
