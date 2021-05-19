@@ -20,7 +20,7 @@ spec:
   type: image
   params:
     - name: url
-      value: kubernetes.docker.internal:5000/lorem-ipsum:dev
+      value: docker-registry.demo:5000/lorem-ipsum:dev
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
