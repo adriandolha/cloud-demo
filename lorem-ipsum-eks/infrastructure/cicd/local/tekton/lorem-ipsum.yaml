@@ -9,7 +9,7 @@ spec:
     - name: revision
       value: master
     - name: url
-      value: https://github.com/adriandolha/cloud-demo.git
+      value: git@github.com:adriandolha/cloud-demo.git
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
@@ -23,6 +23,42 @@ spec:
       value: main
     - name: url
       value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: prepare
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: versionFilePath
+      type: string
+      description: Path to version output file
+      default: "/tekton/results/version.txt"
+    - name: revision
+      type: string
+      description: Source code repository revision
+      default: "origin/master"
+    - name: url
+      type: string
+      default: "git@github.com:adriandolha/cloud-demo.git"
+  steps:
+    - name: version
+      image: alpine/git:v2.26.2
+      script: |
+        #!/bin/sh
+        ls /workspace
+        ls /workspace/source
+        cd /workspace/source
+        git checkout -f $(inputs.params.revision)
+        echo "Commit count is git rev-list --count $(inputs.params.revision)"
+        git rev-list --count $(inputs.params.revision)
+        count=$(git rev-list --count $(inputs.params.revision))
+        echo "Commit count is $count"
+        echo $count > $(inputs.params.versionFilePath)
+        cat $(inputs.params.versionFilePath)
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource

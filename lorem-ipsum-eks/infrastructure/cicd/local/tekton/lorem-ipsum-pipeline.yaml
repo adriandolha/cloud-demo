@@ -1,9 +1,24 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lorem-ipsum-source-ws
+  namespace: tekton-pipelines
+spec:
+  resources:
+    requests:
+      storage: 500Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: lorem-ipsum-pipeline
   namespace: tekton-pipelines
 spec:
+  workspaces:
+    - name: source
   resources:
     - name: source-repo
       type: git
@@ -12,9 +27,17 @@ spec:
     - name: web-image
       type: image
   tasks:
+    - name: prepare
+      taskRef:
+        name: prepare
+      workspaces:
+        - name: source
+          workspace: source
     - name: unit-test
       taskRef:
         name: pytest
+      runAfter:
+        - prepare
       resources:
         inputs:
           - name: source
@@ -71,3 +94,7 @@ spec:
     - name: web-image
       resourceRef:
         name: lorem-ipsum
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
