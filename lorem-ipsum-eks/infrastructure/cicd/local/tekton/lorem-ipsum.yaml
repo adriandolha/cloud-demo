@@ -14,6 +14,19 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
+  name: lorem-ipsum-argocd-git
+  namespace: tekton-pipelines
+spec:
+  type: git
+  params:
+    - name: revision
+      value: main
+    - name: url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
   name: lorem-ipsum
   namespace: tekton-pipelines
 spec:
@@ -230,76 +243,44 @@ spec:
         - "$(params.path)"
 ---
 apiVersion: tekton.dev/v1beta1
-kind: Pipeline
+kind: Task
 metadata:
-  name: lorem-ipsum-pipeline
+  name: argocd-push
   namespace: tekton-pipelines
 spec:
+  params:
+    - name: path
+      type: string
+      description: Path to the helm chart
   resources:
-    - name: source-repo
-      type: git
-    - name: web-image
-      type: image
-  tasks:
-    - name: unit-test
-      taskRef:
-        name: pytest
-      resources:
-        inputs:
-          - name: source
-            resource: source-repo
-      params:
-        - name: ARGS
-          value: tests
-    - name: build-docker-image
-      taskRef:
-        name: build-docker-image-from-git-source
-      runAfter:
-        - unit-test
-      params:
-        - name: pathToDockerFile
-          value: Dockerfile
-        - name: pathToContext
-          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
-      resources:
-        inputs:
-          - name: docker-source
-            resource: source-repo
-        outputs:
-          - name: builtImage
-            resource: web-image
-    - name: deploy
-      taskRef:
-        name: deploy-using-kubectl
-      runAfter:
-        - build-docker-image
-      resources:
-        inputs:
-          - name: source
-            resource: source-repo
-          - name: image
-            resource: web-image
-            from:
-              - build-docker-image
-      params:
-        - name: path
-          value: /workspace/source/lorem-ipsum-eks/lorem-ipsum/app.yaml
-        - name: yamlPathToImage
-          value: "spec.template.spec.containers[0].image"
----
-apiVersion: tekton.dev/v1beta1
-kind: PipelineRun
-metadata:
-  name: lorem-ipsum-pipeline-run
-  namespace: tekton-pipelines
-spec:
-  serviceAccountName: git-push-service-account
-  pipelineRef:
-    name: lorem-ipsum-pipeline
-  resources:
-    - name: source-repo
-      resourceRef:
-        name: lorem-ipsum-git
-    - name: web-image
-      resourceRef:
-        name: lorem-ipsum
+    inputs:
+      - name: source
+        type: git
+  steps:
+    - name: update-yaml
+      image: alpine
+      command: ["sed"]
+      args:
+        - "-i"
+        - "-e"
+        - "s;dev; 1.0;g"
+        - "$(params.path)"
+    - name: git-push
+      image: alpine/git:v2.26.2
+      script: |
+        #!/bin/sh
+        ls /workspace
+        ls /workspace/source
+        pwd
+        cd /workspace/source
+        cat /workspace/source/lorem-ipsum/values.yaml
+        git config --global user.email "adriandolha@yahoo.com"
+        git config --global user.name "adriandolha"
+        git checkout main
+        count=$(git rev-list --count main)
+        echo $count
+        git add -u lorem-ipsum/values.yaml
+        git commit -m "[tekton] updating deployment"
+        git push
+        count=$(git rev-list --count main)
+        echo $count

@@ -1,0 +1,73 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-pipeline
+  namespace: tekton-pipelines
+spec:
+  resources:
+    - name: source-repo
+      type: git
+    - name: argocd-source-repo
+      type: git
+    - name: web-image
+      type: image
+  tasks:
+    - name: unit-test
+      taskRef:
+        name: pytest
+      resources:
+        inputs:
+          - name: source
+            resource: source-repo
+      params:
+        - name: ARGS
+          value: tests
+    - name: build-docker-image
+      taskRef:
+        name: build-docker-image-from-git-source
+      runAfter:
+        - unit-test
+      params:
+        - name: pathToDockerFile
+          value: Dockerfile
+        - name: pathToContext
+          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
+      resources:
+        inputs:
+          - name: docker-source
+            resource: source-repo
+        outputs:
+          - name: builtImage
+            resource: web-image
+    - name: argocd
+      taskRef:
+        name: argocd-push
+      runAfter:
+        - build-docker-image
+      resources:
+        inputs:
+          - name: source
+            resource: argocd-source-repo
+      params:
+        - name: path
+          value: /workspace/source/lorem-ipsum/values.yaml
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-pipeline-run
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-pipeline
+  resources:
+    - name: source-repo
+      resourceRef:
+        name: lorem-ipsum-git
+    - name: argocd-source-repo
+      resourceRef:
+        name: lorem-ipsum-argocd-git
+    - name: web-image
+      resourceRef:
+        name: lorem-ipsum
