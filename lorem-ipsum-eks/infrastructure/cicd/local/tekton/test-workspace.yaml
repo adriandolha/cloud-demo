@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-workspace
+  namespace: tekton-pipelines
+spec:
+  volumes:
+    - name: lorem-ipsum-source-ws
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+  containers:
+  - name: test-workspace
+    image: ubuntu
+    volumeMounts:
+    - name: lorem-ipsum-source-ws
+      mountPath: "/workspace"

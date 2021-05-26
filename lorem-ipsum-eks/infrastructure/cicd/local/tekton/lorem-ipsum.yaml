@@ -1,19 +1,6 @@
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
-  name: lorem-ipsum-git
-  namespace: tekton-pipelines
-spec:
-  type: git
-  params:
-    - name: revision
-      value: master
-    - name: url
-      value: git@github.com:adriandolha/cloud-demo.git
----
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineResource
-metadata:
   name: lorem-ipsum-argocd-git
   namespace: tekton-pipelines
 spec:
@@ -23,6 +10,31 @@ spec:
       value: main
     - name: url
       value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clean
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: workspacePath
+      type: string
+      description: Path to version output file
+      default: "/workspace"
+  steps:
+    - name: clean-workspace
+      image: alpine
+      script: |
+        #!/bin/sh
+        ls $(workspaces.source.path)
+        rm -rf $(workspaces.source.path)/*
+        echo "after rm..."
+        ls $(workspaces.source.path)
+      securityContext:
+        runAsUser: 0
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -40,23 +52,20 @@ spec:
     - name: revision
       type: string
       description: Source code repository revision
-      default: "origin/master"
+      default: "HEAD"
     - name: url
       type: string
       default: "git@github.com:adriandolha/cloud-demo.git"
   steps:
     - name: version
-      image: alpine/git:v2.26.2
+      image: docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
       script: |
         #!/bin/sh
-        ls /workspace
-        ls /workspace/source
-        cd /workspace/source
-        git checkout -f $(inputs.params.revision)
-        echo "Commit count is git rev-list --count $(inputs.params.revision)"
-        git rev-list --count $(inputs.params.revision)
+        WS_PATH=$(workspaces.source.path)
+        echo $WS_PATH
+        ls $WS_PATH
+        cd $WS_PATH
         count=$(git rev-list --count $(inputs.params.revision))
-        echo "Commit count is $count"
         echo $count > $(inputs.params.versionFilePath)
         cat $(inputs.params.versionFilePath)
 ---
@@ -77,6 +86,8 @@ metadata:
   name: pytest
   namespace: tekton-pipelines
 spec:
+  workspaces:
+    - name: source
   params:
     - name: PYTHON
       description: The used Python version, more precisely the tag for the Python image
@@ -91,14 +102,10 @@ spec:
       default: "."
     - name: WORKING_DIR
       description: The path to the source code
-      default: "/workspace/source/lorem-ipsum-eks/lorem-ipsum"
+      default: "$(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum"
     - name: REQUIREMENTS_FILE
       description: The name of the requirements file inside the source location
       default: "requirements.txt"
-  resources:
-    inputs:
-      - name: source
-        type: git
   steps:
     - name: unit-test
       image: docker.io/python:$(inputs.params.PYTHON)
@@ -168,6 +175,8 @@ spec:
         - name: jwk-certs-auth0
           mountPath: /jwk/certs
       script: |
+        ls $(workspaces.source.path)
+        ls $(inputs.params.WORKING_DIR)
         export PATH=$PATH:$HOME/.local/bin
         if [ -n "$(inputs.params.REQUIREMENTS_FILE)" ] && [ -e "$(inputs.params.REQUIREMENTS_FILE)" ];then
           pip install -r $(inputs.params.SOURCE_PATH)/$(inputs.params.REQUIREMENTS_FILE)
@@ -196,21 +205,20 @@ metadata:
   name: build-docker-image-from-git-source
   namespace: tekton-pipelines
 spec:
+  workspaces:
+    - name: source
   params:
     - name: pathToDockerFile
       type: string
       description: The path to the dockerfile to build
-      default: $(resources.inputs.docker-source.path)/Dockerfile
+      default: /workspace/source/lorem-ipsum-eks/lorem-ipsum/Dockerfile
     - name: pathToContext
       type: string
       description: |
         The build context used by Kaniko
         (https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
-      default: $(resources.inputs.docker-source.path)
+      default: /workspace/source
   resources:
-    inputs:
-      - name: docker-source
-        type: git
     outputs:
       - name: builtImage
         type: image
@@ -250,8 +258,6 @@ spec:
         The path to the image to replace in the yaml manifest (arg to yq)
   resources:
     inputs:
-      - name: source
-        type: git
       - name: image
         type: image
   steps:
@@ -284,14 +290,17 @@ metadata:
   name: argocd-push
   namespace: tekton-pipelines
 spec:
+  workspaces:
+    - name: source
   params:
     - name: path
       type: string
       description: Path to the helm chart
-  resources:
-    inputs:
-      - name: source
-        type: git
+      default: "$(workspaces.source.path)/lorem-ipsum/values.yaml"
+    - name: revision
+      type: string
+      description: Repo revision
+      default: "main"
   steps:
     - name: update-yaml
       image: alpine
@@ -305,15 +314,12 @@ spec:
       image: alpine/git:v2.26.2
       script: |
         #!/bin/sh
-        ls /workspace
-        ls /workspace/source
-        pwd
-        cd /workspace/source
-        cat /workspace/source/lorem-ipsum/values.yaml
+        ls $(workspaces.source.path)
+        cd $(workspaces.source.path)
         git config --global user.email "adriandolha@yahoo.com"
         git config --global user.name "adriandolha"
-        git checkout main
-        count=$(git rev-list --count main)
+        cat $(inputs.params.path)
+        count=$(git rev-list --count $(inputs.params.revision))
         echo $count
         git add -u lorem-ipsum/values.yaml
         git commit -m "[tekton] updating deployment"

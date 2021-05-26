@@ -1,0 +1,69 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-pipeline-test
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+    - name: argocd
+  resources:
+    - name: web-image
+      type: image
+  params:
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: branch-name
+      type: string
+      description: The git depth to clone.
+    - name: argocd-repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: argocd-branch-name
+      type: string
+      description: The git depth to clone.
+    - name: depth
+      type: string
+      description: The clone depth.
+      default: "0"
+  tasks:
+    - name: argocd
+      taskRef:
+        name: argocd-push
+      workspaces:
+        - name: source
+          workspace: argocd
+      params:
+        - name: path
+          value: /workspace/source/lorem-ipsum/values.yaml
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-pipeline-test-run
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-pipeline
+  params:
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: branch-name
+      value: master
+    - name: argocd-repo-url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+    - name: argocd-branch-name
+      value: main
+  resources:
+    - name: web-image
+      resourceRef:
+        name: lorem-ipsum
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+    - name: argocd
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-argocd-ws

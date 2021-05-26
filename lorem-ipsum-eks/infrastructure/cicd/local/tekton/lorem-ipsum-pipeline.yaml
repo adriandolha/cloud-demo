@@ -11,6 +11,19 @@ spec:
   accessModes:
     - ReadWriteOnce
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lorem-ipsum-argocd-ws
+  namespace: tekton-pipelines
+spec:
+  resources:
+    requests:
+      storage: 500Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -19,17 +32,69 @@ metadata:
 spec:
   workspaces:
     - name: source
+    - name: argocd
   resources:
-    - name: source-repo
-      type: git
-    - name: argocd-source-repo
-      type: git
     - name: web-image
       type: image
+  params:
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: branch-name
+      type: string
+      description: The git depth to clone.
+    - name: argocd-repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: argocd-branch-name
+      type: string
+      description: The git depth to clone.
+    - name: depth
+      type: string
+      description: The clone depth.
+      default: "0"
   tasks:
+    - name: clean
+      taskRef:
+        name: clean
+      workspaces:
+        - name: source
+          workspace: source
+    - name: fetch-source-repo
+      taskRef:
+        name: git-clone
+      runAfter:
+        - clean
+      workspaces:
+        - name: output
+          workspace: source
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.branch-name)
+        - name: depth
+          value: $(params.depth)
+    - name: fetch-argocd-repo
+      taskRef:
+        name: git-clone
+      runAfter:
+        - fetch-source-repo
+      workspaces:
+        - name: output
+          workspace: argocd
+      params:
+        - name: url
+          value: $(params.argocd-repo-url)
+        - name: revision
+          value: $(params.argocd-branch-name)
+        - name: depth
+          value: $(params.depth)
     - name: prepare
       taskRef:
         name: prepare
+      runAfter:
+        - fetch-argocd-repo
       workspaces:
         - name: source
           workspace: source
@@ -38,10 +103,9 @@ spec:
         name: pytest
       runAfter:
         - prepare
-      resources:
-        inputs:
-          - name: source
-            resource: source-repo
+      workspaces:
+        - name: source
+          workspace: source
       params:
         - name: ARGS
           value: tests
@@ -50,15 +114,15 @@ spec:
         name: build-docker-image-from-git-source
       runAfter:
         - unit-test
+      workspaces:
+        - name: source
+          workspace: source
       params:
         - name: pathToDockerFile
           value: Dockerfile
         - name: pathToContext
-          value: /workspace/docker-source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
+          value: /workspace/source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
       resources:
-        inputs:
-          - name: docker-source
-            resource: source-repo
         outputs:
           - name: builtImage
             resource: web-image
@@ -67,10 +131,9 @@ spec:
         name: argocd-push
       runAfter:
         - build-docker-image
-      resources:
-        inputs:
-          - name: source
-            resource: argocd-source-repo
+      workspaces:
+        - name: source
+          workspace: argocd
       params:
         - name: path
           value: /workspace/source/lorem-ipsum/values.yaml
@@ -84,13 +147,16 @@ spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
     name: lorem-ipsum-pipeline
+  params:
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: branch-name
+      value: master
+    - name: argocd-repo-url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+    - name: argocd-branch-name
+      value: main
   resources:
-    - name: source-repo
-      resourceRef:
-        name: lorem-ipsum-git
-    - name: argocd-source-repo
-      resourceRef:
-        name: lorem-ipsum-argocd-git
     - name: web-image
       resourceRef:
         name: lorem-ipsum
@@ -98,3 +164,6 @@ spec:
     - name: source
       persistentVolumeClaim:
         claimName: lorem-ipsum-source-ws
+    - name: argocd
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-argocd-ws
