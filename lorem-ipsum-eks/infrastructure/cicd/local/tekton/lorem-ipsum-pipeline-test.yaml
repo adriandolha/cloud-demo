@@ -37,6 +37,8 @@ spec:
       params:
         - name: path
           value: /workspace/source/lorem-ipsum/values.yaml
+        - name: version
+          value: "1.0.1"
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -46,7 +48,7 @@ metadata:
 spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
-    name: lorem-ipsum-pipeline
+    name: lorem-ipsum-pipeline-test
   params:
     - name: repo-url
       value: git@github.com:adriandolha/cloud-demo.git

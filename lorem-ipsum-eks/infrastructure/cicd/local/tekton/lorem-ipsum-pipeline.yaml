@@ -33,9 +33,6 @@ spec:
   workspaces:
     - name: source
     - name: argocd
-  resources:
-    - name: web-image
-      type: image
   params:
     - name: repo-url
       type: string
@@ -109,6 +106,8 @@ spec:
       params:
         - name: ARGS
           value: tests
+        - name: version
+          value: "$(tasks.prepare.results.version)"
     - name: build-docker-image
       taskRef:
         name: build-docker-image-from-git-source
@@ -122,10 +121,10 @@ spec:
           value: Dockerfile
         - name: pathToContext
           value: /workspace/source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
-      resources:
-        outputs:
-          - name: builtImage
-            resource: web-image
+        - name: imageTag
+          value: "$(tasks.prepare.results.version)"
+        - name: imageUrl
+          value: "$(tasks.prepare.results.imageUrl)"
     - name: argocd
       taskRef:
         name: argocd-push
@@ -137,6 +136,8 @@ spec:
       params:
         - name: path
           value: /workspace/source/lorem-ipsum/values.yaml
+        - name: version
+          value: "$(tasks.prepare.results.version)"
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -156,10 +157,6 @@ spec:
       value: git@github.com:adriandolha/lorem-ipsum-argocd.git
     - name: argocd-branch-name
       value: main
-  resources:
-    - name: web-image
-      resourceRef:
-        name: lorem-ipsum
   workspaces:
     - name: source
       persistentVolumeClaim:

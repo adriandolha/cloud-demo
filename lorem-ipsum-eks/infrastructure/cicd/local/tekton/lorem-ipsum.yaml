@@ -1,16 +1,3 @@
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineResource
-metadata:
-  name: lorem-ipsum-argocd-git
-  namespace: tekton-pipelines
-spec:
-  type: git
-  params:
-    - name: revision
-      value: main
-    - name: url
-      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
----
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -56,6 +43,14 @@ spec:
     - name: url
       type: string
       default: "git@github.com:adriandolha/cloud-demo.git"
+    - name: imageUrl
+      type: string
+      default: "docker-registry.demo:5000/lorem-ipsum"
+  results:
+    - name: version
+      description: The current version
+    - name: imageUrl
+      description: Image url wothout tag
   steps:
     - name: version
       image: docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
@@ -66,19 +61,10 @@ spec:
         ls $WS_PATH
         cd $WS_PATH
         count=$(git rev-list --count $(inputs.params.revision))
-        echo $count > $(inputs.params.versionFilePath)
-        cat $(inputs.params.versionFilePath)
----
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineResource
-metadata:
-  name: lorem-ipsum
-  namespace: tekton-pipelines
-spec:
-  type: image
-  params:
-    - name: url
-      value: docker-registry.demo:5000/lorem-ipsum:dev
+        echo -n "1.0.$count" > $(results.version.path)
+        echo -n "$(inputs.params.imageUrl):v1.0.$count" > $(results.imageUrl.path)
+        cat $(results.imageUrl.path)
+        cat $(results.version.path)
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -106,6 +92,9 @@ spec:
     - name: REQUIREMENTS_FILE
       description: The name of the requirements file inside the source location
       default: "requirements.txt"
+    - name: version
+      type: string
+      default: "1.0"
   steps:
     - name: unit-test
       image: docker.io/python:$(inputs.params.PYTHON)
@@ -177,6 +166,7 @@ spec:
       script: |
         ls $(workspaces.source.path)
         ls $(inputs.params.WORKING_DIR)
+        echo $(inputs.params.version)
         export PATH=$PATH:$HOME/.local/bin
         if [ -n "$(inputs.params.REQUIREMENTS_FILE)" ] && [ -e "$(inputs.params.REQUIREMENTS_FILE)" ];then
           pip install -r $(inputs.params.SOURCE_PATH)/$(inputs.params.REQUIREMENTS_FILE)
@@ -218,10 +208,14 @@ spec:
         The build context used by Kaniko
         (https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
       default: /workspace/source
-  resources:
-    outputs:
-      - name: builtImage
-        type: image
+    - name: imageTag
+      type: string
+      description: imageTag
+      default: "dev"
+    - name: imageUrl
+      type: string
+      description: image url
+      default: "docker-registry.demo:5000/lorem-ipsum:dev"
   steps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v0.16.0
@@ -233,13 +227,14 @@ spec:
         - /kaniko/executor
       args:
         - --dockerfile=$(params.pathToDockerFile)
-        - --destination=$(resources.outputs.builtImage.url)
+        - --destination=$(params.imageUrl)
         - --context=$(params.pathToContext)
         - --skip-tls-verify
     - name: debugging
       image: ubuntu  # contains bash
       script: |
         #!/usr/bin/env bash
+        echo $(inputs.params.imageTag)
         echo $(resources.outputs.builtImage.url)
 ---
 apiVersion: tekton.dev/v1beta1
@@ -256,10 +251,6 @@ spec:
       type: string
       description: |
         The path to the image to replace in the yaml manifest (arg to yq)
-  resources:
-    inputs:
-      - name: image
-        type: image
   steps:
     - name: update-yaml
       image: alpine
@@ -301,28 +292,30 @@ spec:
       type: string
       description: Repo revision
       default: "main"
+    - name: version
+      type: string
+      default: "dev"
   steps:
     - name: update-yaml
-      image: alpine
-      command: ["sed"]
-      args:
-        - "-i"
-        - "-e"
-        - "s;dev; 1.0;g"
-        - "$(params.path)"
+      image: mikefarah/yq
+      script: |
+        cd $(workspaces.source.path)
+        yq e '.image.tag = "$(inputs.params.version)"' lorem-ipsum/values.yaml > lorem-ipsum/values.yaml
     - name: git-push
       image: alpine/git:v2.26.2
       script: |
         #!/bin/sh
         ls $(workspaces.source.path)
         cd $(workspaces.source.path)
+
         git config --global user.email "adriandolha@yahoo.com"
         git config --global user.name "adriandolha"
+        git checkout $(inputs.params.revision)
         cat $(inputs.params.path)
         count=$(git rev-list --count $(inputs.params.revision))
         echo $count
         git add -u lorem-ipsum/values.yaml
         git commit -m "[tekton] updating deployment"
         git push
-        count=$(git rev-list --count main)
+        count=$(git rev-list --count $(inputs.params.revision))
         echo $count
