@@ -7,9 +7,6 @@ spec:
   workspaces:
     - name: source
     - name: argocd
-  resources:
-    - name: web-image
-      type: image
   params:
     - name: repo-url
       type: string
@@ -37,8 +34,8 @@ spec:
       params:
         - name: path
           value: /workspace/source/lorem-ipsum/values.yaml
-        - name: version
-          value: "1.0.1"
+        - name: imageTag
+          value: "v1.0.112"
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -58,10 +55,6 @@ spec:
       value: git@github.com:adriandolha/lorem-ipsum-argocd.git
     - name: argocd-branch-name
       value: main
-  resources:
-    - name: web-image
-      resourceRef:
-        name: lorem-ipsum
   workspaces:
     - name: source
       persistentVolumeClaim:

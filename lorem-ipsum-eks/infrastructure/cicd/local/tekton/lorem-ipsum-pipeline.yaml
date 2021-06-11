@@ -34,6 +34,9 @@ spec:
     - name: source
     - name: argocd
   params:
+    - name: image-url
+      type: string
+      description: Docker registry image url.
     - name: repo-url
       type: string
       description: The git repository URL to clone from.
@@ -92,6 +95,11 @@ spec:
         name: prepare
       runAfter:
         - fetch-argocd-repo
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: imageUrl
+          value: $(params.image-url)
       workspaces:
         - name: source
           workspace: source
@@ -108,6 +116,8 @@ spec:
           value: tests
         - name: version
           value: "$(tasks.prepare.results.version)"
+        - name: WORKING_DIR
+          value: "$(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum"
     - name: build-docker-image
       taskRef:
         name: build-docker-image-from-git-source
@@ -122,7 +132,7 @@ spec:
         - name: pathToContext
           value: /workspace/source/lorem-ipsum-eks/lorem-ipsum #configure: may change according to your source
         - name: imageTag
-          value: "$(tasks.prepare.results.version)"
+          value: "$(tasks.prepare.results.imageTag)"
         - name: imageUrl
           value: "$(tasks.prepare.results.imageUrl)"
     - name: argocd
@@ -136,8 +146,8 @@ spec:
       params:
         - name: path
           value: /workspace/source/lorem-ipsum/values.yaml
-        - name: version
-          value: "$(tasks.prepare.results.version)"
+        - name: imageTag
+          value: "$(tasks.prepare.results.imageTag)"
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -157,6 +167,8 @@ spec:
       value: git@github.com:adriandolha/lorem-ipsum-argocd.git
     - name: argocd-branch-name
       value: main
+    - name: image-url
+      value: "docker-registry.demo:5000/lorem-ipsum"
   workspaces:
     - name: source
       persistentVolumeClaim:
