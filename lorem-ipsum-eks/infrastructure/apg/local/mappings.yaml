@@ -30,7 +30,7 @@ metadata:
   namespace: default
 spec:
   prefix: /grafana/
-  service: 'grafana.monitoring.svc.cluster.local'
+  service: 'grafana.demo2.svc.cluster.local'
 ---
 apiVersion: getambassador.io/v2
 kind: Mapping

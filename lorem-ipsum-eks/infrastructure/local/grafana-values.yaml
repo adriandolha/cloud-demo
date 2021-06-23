@@ -1,0 +1,44 @@
+namespaceOverride: "${namespace}"
+podSecurityPolicy:
+  enabled: false
+labels:
+  app: grafana
+podLabels:
+  app: grafana
+grafana.ini:
+  server:
+    root_url: https://localhost:31862/grafana # this host can be localhost
+admin:
+  existingSecret: "grafana"
+  userKey: admin-user
+  passwordKey: admin-password
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: prometheus
+      type: prometheus
+      url: http://prometheus-server
+      access: proxy
+      isDefault: true
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+dashboards:
+  default:
+    prometheus-stats:
+      gnetId: 10000
+      revision: 1
+      datasource: prometheus
+    lorem-ipsum-dashboard:
+      json: |
+        ${lorem_ipsum_dashboard}

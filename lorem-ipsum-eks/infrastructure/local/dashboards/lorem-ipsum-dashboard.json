@@ -56,35 +56,35 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "lorem_ipsum_metric_connection_pool_usedconn",
+              "expr": "lorem_ipsum_connection_pool_usedconn",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "used_conn",
               "refId": "A"
             },
             {
-              "expr": "lorem_ipsum_metric_connection_pool_maxconn",
+              "expr": "lorem_ipsum_connection_pool_maxconn",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "max_conn",
               "refId": "B"
             },
             {
-              "expr": "lorem_ipsum_metric_thread_count",
+              "expr": "lorem_ipsum_thread_count",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "thread_count",
               "refId": "C"
             },
             {
-              "expr": "lorem_ipsum_metric_connection_pool_rusedconn",
+              "expr": "lorem_ipsum_connection_pool_rusedconn",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "rused_conn",
               "refId": "D"
             },
             {
-              "expr": "lorem_ipsum_metric_connection_pool_size",
+              "expr": "lorem_ipsum_connection_pool_size",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "size",
