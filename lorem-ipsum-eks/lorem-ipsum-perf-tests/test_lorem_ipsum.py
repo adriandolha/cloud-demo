@@ -27,6 +27,7 @@ class LoremIpsumApi(TaskSet):
         """ on_start is called when a Locust start before any task is scheduled """
         self.client.verify = False
         self._client = self.get_api_client()
+        print('Starting performance tests...')
         if ENV == 'kube':
             with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json", "r") as _file:
                 _json = dict(json.load(_file))
