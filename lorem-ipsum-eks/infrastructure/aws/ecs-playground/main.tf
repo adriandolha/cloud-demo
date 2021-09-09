@@ -20,7 +20,11 @@ locals {
       merge({
         rule_no = 500
         cidr_block = var.all_traffic_cidr
-      }, var.nacl_rule_default_params, var.nacl_allow_ephemeral_out)
+      }, var.nacl_rule_default_params, var.nacl_allow_ephemeral_out),
+      merge({
+        rule_no = 600
+        cidr_block = var.all_traffic_cidr
+      }, var.nacl_rule_default_params, var.nacl_allow_flask)
     ],
 
     ingress = [
@@ -116,6 +120,54 @@ locals {
       }
     ]
   }
+  security_group_default_params = {
+
+  }
+  security_group_allow_http = {
+    ingress = [
+      {
+        description = "https"
+        from_port = 443
+        to_port = 443
+        protocol = "tcp"
+        cidr_blocks = [
+          var.all_traffic_cidr]
+        ipv6_cidr_blocks = []
+        prefix_list_ids = []
+        security_groups = []
+        self = false
+      },
+      {
+        description = "http"
+        from_port = 80
+        to_port = 80
+        protocol = "tcp"
+        cidr_blocks = [
+          var.all_traffic_cidr]
+        ipv6_cidr_blocks = []
+        prefix_list_ids = []
+        security_groups = []
+        self = false
+      }
+    ],
+
+    egress = [
+      {
+        description = "outbound"
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = [
+          var.all_traffic_cidr]
+        ipv6_cidr_blocks = [
+          "::/0"]
+        prefix_list_ids = []
+        security_groups = []
+        self = false
+      }
+    ]
+  }
+
 }
 
 data "external" "secrets" {

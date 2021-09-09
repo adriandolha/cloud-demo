@@ -3,7 +3,7 @@ variable "region" {
 }
 
 variable "availability_zones" {
-  type = "map"
+  type = map
   default = {
     az1 = "eu-central-1a"
     az2 = "eu-central-1b"
@@ -34,8 +34,11 @@ variable "all_traffic_cidr" {
   default = "0.0.0.0/0"
 }
 
-variable "vpc_public_subnet_cidr" {
+variable "vpc_first_public_subnet_cidr" {
   default = "10.0.0.0/24"
+}
+variable "vpc_second_public_subnet_cidr" {
+  default = "10.0.3.0/24"
 }
 
 variable "vpc_private_subnet_cidr" {
@@ -54,7 +57,7 @@ variable "key_name" {
   default = "my_keys_frankfurt"
 }
 variable "nacl_rule_default_params" {
-  type = "map"
+  type = map
   default = {
     icmp_code = 0
     icmp_type = 0
@@ -63,7 +66,7 @@ variable "nacl_rule_default_params" {
 }
 
 variable "route_rule_igw_default_params" {
-  type = "map"
+  type = map
   default = {
     carrier_gateway_id = null
     destination_prefix_list_id = null
@@ -80,7 +83,7 @@ variable "route_rule_igw_default_params" {
 
 }
 variable "route_rule_nat_gw_default_params" {
-  type = "map"
+  type = map
   default = {
     gateway_id = null
     carrier_gateway_id = null
@@ -98,7 +101,7 @@ variable "route_rule_nat_gw_default_params" {
 }
 
 variable "nacl_allow_http" {
-  type = "map"
+  type = map
   default = {
     protocol = "tcp"
     action = "allow"
@@ -108,7 +111,7 @@ variable "nacl_allow_http" {
 }
 
 variable "nacl_allow_https" {
-  type = "map"
+  type = map
   default = {
     protocol = "tcp"
     action = "allow"
@@ -117,8 +120,18 @@ variable "nacl_allow_https" {
   }
 }
 
+variable "nacl_allow_flask" {
+  type = map
+  default = {
+    protocol = "tcp"
+    action = "allow"
+    from_port = 8000
+    to_port = 8000
+  }
+}
+
 variable "nacl_allow_ssh" {
-  type = "map"
+  type = map
   default = {
     protocol = "tcp"
     action = "allow"
@@ -128,7 +141,7 @@ variable "nacl_allow_ssh" {
 }
 
 variable "nacl_allow_ephemeral_in" {
-  type = "map"
+  type = map
   default = {
     protocol = "tcp"
     action = "allow"
@@ -138,11 +151,47 @@ variable "nacl_allow_ephemeral_in" {
 }
 
 variable "nacl_allow_ephemeral_out" {
-  type = "map"
+  type = map
   default = {
     protocol = "tcp"
     action = "allow"
     from_port = 32768
     to_port = 65535
   }
+}
+
+variable "app_port" {
+  default = 8000
+}
+
+variable "app_health_check_path" {
+  default = "/books/health"
+}
+
+variable "fargate_cpu" {
+  description = "Fargate instance CPU units to provision (1 vCPU = 1024 CPU units)"
+  default     = "1024"
+}
+
+variable "fargate_memory" {
+  description = "Fargate instance memory to provision (in MiB)"
+  default     = "2048"
+}
+
+variable "app_image" {
+  description = "Docker image to run in the ECS cluster"
+  default     = "103050589342.dkr.ecr.eu-central-1.amazonaws.com/lorem-ipsum:latest"
+}
+
+variable "ecs_task_execution_role_name" {
+  description = "ECS task execution role name"
+  default = "myEcsTaskExecutionRole"
+}
+
+variable "db_instance_name" {
+  default = "loremipsum"
+}
+
+variable "db_identifier" {
+  default = "lorem-ipsum"
 }

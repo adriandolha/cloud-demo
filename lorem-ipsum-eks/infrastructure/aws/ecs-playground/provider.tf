@@ -10,5 +10,4 @@ provider "kubernetes" {
 
 provider "aws" {
   region = var.region
-  version = "3.56.0"
 }

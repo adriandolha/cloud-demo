@@ -32,13 +32,26 @@ resource "aws_internet_gateway" "igw" {
     aws_vpc.demo]
 }
 
-resource "aws_subnet" "public" {
+resource "aws_subnet" "first_public" {
   vpc_id = aws_vpc.demo.id
-  cidr_block = var.vpc_public_subnet_cidr
+  cidr_block = var.vpc_first_public_subnet_cidr
   availability_zone = var.availability_zones["az1"]
 
   tags = {
-    Name = "public"
+    Name = "first_public"
+  }
+
+  depends_on = [
+    aws_internet_gateway.igw]
+}
+
+resource "aws_subnet" "second_public" {
+  vpc_id = aws_vpc.demo.id
+  cidr_block = var.vpc_second_public_subnet_cidr
+  availability_zone = var.availability_zones["az2"]
+
+  tags = {
+    Name = "second_public"
   }
 
   depends_on = [
@@ -48,7 +61,7 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "first_private" {
   vpc_id = aws_vpc.demo.id
   cidr_block = var.vpc_private_subnet_cidr
-  availability_zone = var.availability_zones["az2"]
+  availability_zone = var.availability_zones["az1"]
 
   tags = {
     Name = "first_private"
@@ -61,7 +74,7 @@ resource "aws_subnet" "first_private" {
 resource "aws_subnet" "second_private" {
   vpc_id = aws_vpc.demo.id
   cidr_block = var.vpc_second_private_subnet_cidr
-  availability_zone = var.availability_zones["az3"]
+  availability_zone = var.availability_zones["az2"]
 
   tags = {
     Name = "second_private"
@@ -93,7 +106,7 @@ resource "aws_eip" "nat_eip" {
 }
 resource "aws_nat_gateway" "nat_gw" {
   allocation_id = aws_eip.nat_eip.id
-  subnet_id = aws_subnet.public.id
+  subnet_id = aws_subnet.first_public.id
 
   tags = {
     Name = "NAT Gateway"
@@ -103,13 +116,14 @@ resource "aws_nat_gateway" "nat_gw" {
   # on the Internet Gateway for the VPC.
   depends_on = [
     aws_internet_gateway.igw,
+    aws_subnet.first_public,
     aws_eip.nat_eip]
 }
 
 resource "aws_network_acl" "public" {
   vpc_id = aws_vpc.demo.id
   subnet_ids = [
-    aws_subnet.public.id]
+    aws_subnet.first_public.id, aws_subnet.second_public.id]
   egress = local.public_nacl_rules["egress"]
   ingress = local.public_nacl_rules["ingress"]
 
@@ -132,7 +146,12 @@ resource "aws_security_group" "allow_http_ssh" {
   }
 }
 
-resource "aws_route_table_association" "public" {
-  subnet_id = aws_subnet.public.id
+resource "aws_route_table_association" "first_public_association" {
+  subnet_id= aws_subnet.first_public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "second_public_association" {
+  subnet_id= aws_subnet.second_public.id
   route_table_id = aws_route_table.public.id
 }

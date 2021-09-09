@@ -67,7 +67,7 @@ class TransactionManager:
             password = self.config['aurora_password']
             host = self.config['aurora_host']
             port = self.config['aurora_port']
-            database = "lorem-ipsum"
+            database = self.config.get("database_name")
             minconn = self.config.get('connection_pool_minconn')
             maxconn = self.config.get('connection_pool_maxconn')
             _db = create_engine(f"postgres://{user}:{password}@{host}:{port}/{database}",

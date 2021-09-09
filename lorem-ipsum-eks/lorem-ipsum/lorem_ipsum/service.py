@@ -134,8 +134,10 @@ class DefaultUserService(UserService):
 
     @lru_cache()
     def secret_key(self):
-        with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
-            key = f.read()
+        key = self._app_context.config.get('auth0_public_key')
+        if not key:
+            with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
+                key = f.read()
         return key
 
     def decode_auth_token(self, auth_token):
