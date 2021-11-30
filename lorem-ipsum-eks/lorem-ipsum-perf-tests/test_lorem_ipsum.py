@@ -35,7 +35,8 @@ class LoremIpsumApi(TaskSet):
                 for k, v in _json.items():
                     os.environ[k] = str(v)
             # self.api_url = "http://localhost:30101/symptoms"
-            self.api_url = "https://localhost:31862/lorem-ipsum/books"
+            # self.api_url = "https://localhost:31862/lorem-ipsum/books"
+            self.api_url = "http://lorem-load-balancer-1158992226.eu-central-1.elb.amazonaws.com/books"
             # self.api_url = "http://localhost:5000/books"
             self.api_key = "no-key"
             self.token = os.environ.get('admin_token')
@@ -68,7 +69,8 @@ class LoremIpsumApi(TaskSet):
         return {
             'Content-Type': 'application/json',
             'x-api-key': api_key,
-            "authorization": "Bearer " + self.token
+            "authorization": "Bearer " + self.token,
+            "X-Token-String": self.token
         }
 
     def get_api_url(self, api_id):

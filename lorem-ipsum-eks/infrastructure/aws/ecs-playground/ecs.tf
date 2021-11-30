@@ -93,3 +93,31 @@ resource "aws_instance" "public" {
   ]
 }
 
+resource "aws_appautoscaling_policy" "ecs_policy" {
+  name               = "ecs_auto_scaling_policy"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = 10
+    disable_scale_in   = false
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = "${aws_alb.alb.arn_suffix}/${aws_alb_target_group.app.arn_suffix}"
+    }
+  }
+  depends_on = [aws_appautoscaling_target.scale_target]
+}
+
+resource "aws_appautoscaling_target" "scale_target" {
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  min_capacity       = 1
+  max_capacity       = 5
+}

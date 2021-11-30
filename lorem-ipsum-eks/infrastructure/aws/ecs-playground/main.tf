@@ -88,7 +88,7 @@ locals {
         ipv6_cidr_blocks = []
         prefix_list_ids = []
         security_groups = []
-        self = true
+        self = false
       },
       {
         description = "ssh"
@@ -100,7 +100,7 @@ locals {
         ipv6_cidr_blocks = []
         prefix_list_ids = []
         security_groups = []
-        self = true
+        self = false
       }
     ],
 
