@@ -25,6 +25,7 @@ spec:
         whoami
         mkdir $(workspaces.secrets.path)/.kube
         cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
+        cat $(inputs.params.path)/vars.tf
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
@@ -37,7 +38,7 @@ spec:
       command: ["terraform"]
       args:
         - apply
-        - "-auto-approve"
+        - -auto-approve
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
@@ -70,9 +71,33 @@ spec:
       description: The clone depth.
       default: "0"
   tasks:
+    - name: clean
+      taskRef:
+        name: clean
+      workspaces:
+        - name: source
+          workspace: source
+    - name: fetch-source-repo
+      taskRef:
+        name: git-clone
+      runAfter:
+        - clean
+      workspaces:
+        - name: output
+          workspace: source
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.branch-name)
+        - name: depth
+          value: $(params.depth)
+
     - name: terraform-local-env
       taskRef:
         name: tf-cli
+      runAfter:
+        - fetch-source-repo
       workspaces:
         - name: source
           workspace: source
