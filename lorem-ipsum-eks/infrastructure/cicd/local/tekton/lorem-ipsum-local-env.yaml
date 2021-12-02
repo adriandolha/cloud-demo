@@ -25,7 +25,7 @@ spec:
         whoami
         mkdir $(workspaces.secrets.path)/.kube
         cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
-        cat $(inputs.params.path)/variable.tf
+        cat $(inputs.params.path)/variables.tf
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
