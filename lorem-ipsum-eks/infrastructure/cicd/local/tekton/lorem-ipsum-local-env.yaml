@@ -25,7 +25,7 @@ spec:
         whoami
         mkdir $(workspaces.secrets.path)/.kube
         cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
-        cat $(inputs.params.path)/vars.tf
+        cat $(inputs.params.path)/variable.tf
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
@@ -39,7 +39,6 @@ spec:
       args:
         - apply
         - -auto-approve
-        - -var="kube_config_file=$(workspaces.secrets.path)/.kube/config"
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
