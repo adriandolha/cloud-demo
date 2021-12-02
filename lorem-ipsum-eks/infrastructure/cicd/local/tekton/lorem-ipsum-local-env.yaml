@@ -39,6 +39,7 @@ spec:
       args:
         - apply
         - -auto-approve
+        - -var="kube_config_file=$(workspaces.secrets.path)/.kube/config"
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
