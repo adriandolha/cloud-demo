@@ -3,7 +3,7 @@ variable "env" {
 }
 variable "kube_config_file" {
   type    = string
-  default = "/secrets/.kube/config"
+  default = "/workspace/secrets/.kube/config"
 }
 
 variable "namespace" {
