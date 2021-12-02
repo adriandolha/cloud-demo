@@ -1,8 +1,8 @@
 
 data "external" "secrets" {
   program = [
-    "python",
-    "secrets.py",
+    "cat",
+    pathexpand(var.secrets_file),
   ]
   query = {
     # arbitrary map from strings to strings, passed

@@ -6,6 +6,10 @@ variable "kube_config" {
   default = "~/.kube/config"
 }
 
+variable "secrets_file" {
+  type    = string
+  default = "~/.terraform/lorem_ipsum_secrets.json"
+}
 variable "namespace" {
   type    = string
   default = "demo2"

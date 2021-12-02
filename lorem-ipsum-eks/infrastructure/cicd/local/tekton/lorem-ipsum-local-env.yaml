@@ -1,0 +1,113 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: tf-cli
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+    - name: secrets
+    - name: kube-config
+      mountPath: /secrets-raw/.kube
+  params:
+    - name: path
+      type: string
+      description: Path to tf files
+      default: "$(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local"
+  steps:
+    - name: prepare
+      image: alpine
+      script: |
+        #!/bin/sh
+        ls $(inputs.params.path)
+        echo $(workspaces.source.path)
+        echo $(workspaces.secrets.path)
+        whoami
+        mkdir $(workspaces.secrets.path)/.kube
+        cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
+    - name: init
+      image: docker.io/hashicorp/terraform:light
+      workingDir: $(inputs.params.path)
+      command: ["terraform"]
+      args:
+        - "init"
+    - name: apply
+      image: docker.io/hashicorp/terraform:light
+      workingDir: $(inputs.params.path)
+      command: ["terraform"]
+      args:
+        - apply
+        - "-auto-approve"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-terraform-local-env
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+    - name: secrets
+    - name: kube-config
+  params:
+    - name: image-url
+      type: string
+      description: Docker registry image url.
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: branch-name
+      type: string
+      description: The git depth to clone.
+    - name: argocd-repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: argocd-branch-name
+      type: string
+      description: The git depth to clone.
+    - name: depth
+      type: string
+      description: The clone depth.
+      default: "0"
+  tasks:
+    - name: terraform-local-env
+      taskRef:
+        name: tf-cli
+      workspaces:
+        - name: source
+          workspace: source
+        - name: secrets
+          workspace: secrets
+        - name: kube-config
+          workspace: kube-config
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-terraform-local-env-run
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-terraform-local-env
+  params:
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: branch-name
+      value: master
+    - name: argocd-repo-url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+    - name: argocd-branch-name
+      value: main
+    - name: image-url
+      value: "docker-registry.demo:5000/lorem-ipsum"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+    - name: secrets
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+    - name: kube-config
+      secret:
+        secretName: kube-config-file
