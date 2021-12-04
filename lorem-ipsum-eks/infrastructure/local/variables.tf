@@ -10,3 +10,8 @@ variable "namespace" {
   type    = string
   default = "demo2"
 }
+
+variable "grafan_secret" {
+  type    = string
+  default = "grafana"
+}

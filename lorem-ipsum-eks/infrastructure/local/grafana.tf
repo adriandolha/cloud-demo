@@ -6,7 +6,7 @@ resource "random_password" "password" {
 
 resource "kubernetes_secret" "grafana" {
   metadata {
-    name = "grafana"
+    name = var.grafan_secret
     namespace = kubernetes_namespace.ns.id
   }
 
@@ -24,7 +24,7 @@ resource "helm_release" "grafana" {
   values = [
     templatefile("grafana-values.yaml", {
       namespace = kubernetes_namespace.ns.id,
-      grafana_secret = kubernetes_secret.grafana.id,
+      grafana_secret = var.grafan_secret,
       lorem_ipsum_dashboard = indent(8, file("${path.module}/dashboards/lorem-ipsum-dashboard.json"))
     })
   ]
