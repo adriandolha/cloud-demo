@@ -11,7 +11,7 @@ resource "kubernetes_secret" "grafana" {
 
   data = {
     username = "admin"
-    password = random_password.password
+    password = random_password.password.result
   }
 }
 resource "helm_release" "grafana" {
