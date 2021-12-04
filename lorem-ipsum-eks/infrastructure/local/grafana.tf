@@ -7,6 +7,7 @@ resource "random_password" "password" {
 resource "kubernetes_secret" "grafana" {
   metadata {
     name = "grafana"
+    namespace = kubernetes_namespace.ns.id
   }
 
   data = {
