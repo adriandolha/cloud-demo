@@ -10,8 +10,8 @@ grafana.ini:
     root_url: https://localhost:31862/grafana # this host can be localhost
 admin:
   existingSecret: "${grafana_secret}"
-  userKey: admin-user
-  passwordKey: admin-password
+  userKey: username
+  passwordKey: password
 datasources:
   datasources.yaml:
     apiVersion: 1
