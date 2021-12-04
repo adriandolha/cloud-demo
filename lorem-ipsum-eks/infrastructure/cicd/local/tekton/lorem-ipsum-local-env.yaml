@@ -9,11 +9,17 @@ spec:
     - name: secrets
     - name: kube-config
       mountPath: /secrets-raw/.kube
+    - name: lorem-ipsum-secrets
+      mountPath: /secrets-raw/.lorem-ipsum-secrets
   params:
     - name: path
       type: string
       description: Path to tf files
       default: "$(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local"
+    - name: namespace
+      type: string
+      description: Kubernetes namespace
+      default: "demo2"
   steps:
     - name: prepare
       image: alpine
@@ -27,6 +33,16 @@ spec:
         cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
         echo $(workspaces.secrets.path)/.kube/config
         cat $(workspaces.secrets.path)/.kube/config
+        cat $(workspaces.lorem-ipsum-secrets.path)/secrets | base64 -d >> $(workspaces.secrets.path)/secrets.yaml
+        cat $(workspaces.secrets.path)/secrets.yaml
+    - name: kubectl
+      image: gcr.io/cloud-builders/kubectl@sha256:8ab94be8b2b4f3d117f02d868b39540fddd225447abf4014f7ba4765cb39f753
+      script: |
+        export KUBECONFIG=$(workspaces.secrets.path)/.kube/config
+        kubectl create namespace $(inputs.params.namespace) --dry-run=true -o yaml | kubectl apply -f -
+        echo "---------"
+        kubectl apply -n $(inputs.params.namespace) -f $(workspaces.secrets.path)/secrets.yaml
+        kubectl get secrets -n $(inputs.params.namespace)
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
@@ -51,6 +67,7 @@ spec:
     - name: source
     - name: secrets
     - name: kube-config
+    - name: lorem-ipsum-secrets
   params:
     - name: image-url
       type: string
@@ -71,6 +88,10 @@ spec:
       type: string
       description: The clone depth.
       default: "0"
+    - name: namespace
+      type: string
+      description: The kube namespace.
+      default: "demo2"
   tasks:
     - name: clean
       taskRef:
@@ -99,6 +120,9 @@ spec:
         name: tf-cli
       runAfter:
         - fetch-source-repo
+      params:
+        - name: namespace
+          value: $(params.namespace)
       workspaces:
         - name: source
           workspace: source
@@ -106,6 +130,9 @@ spec:
           workspace: secrets
         - name: kube-config
           workspace: kube-config
+        - name: lorem-ipsum-secrets
+          workspace: lorem-ipsum-secrets
+
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -127,6 +154,8 @@ spec:
       value: main
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
+    - name: namespace
+      value: "demo2"
   workspaces:
     - name: source
       persistentVolumeClaim:
@@ -137,3 +166,6 @@ spec:
     - name: kube-config
       secret:
         secretName: kube-config-file
+    - name: lorem-ipsum-secrets
+      secret:
+        secretName: lorem-ipsum-secrets
