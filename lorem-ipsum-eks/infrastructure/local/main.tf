@@ -6,7 +6,7 @@ resource "kubernetes_namespace" "ns" {
 
 terraform {
   backend "local" {
-    path = "/terraform/dev-demo2.tfstate"
+    path = "/workspace/terraform/dev-demo2.tfstate"
   }
 }
 

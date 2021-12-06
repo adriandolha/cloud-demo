@@ -25,7 +25,6 @@ spec:
       script: |
         #!/bin/sh
         ls $(inputs.params.path)
-        ls /workspaces
         echo $(workspaces.source.path)
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
