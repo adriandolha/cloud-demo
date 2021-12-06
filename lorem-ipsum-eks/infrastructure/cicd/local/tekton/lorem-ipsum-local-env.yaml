@@ -18,7 +18,7 @@ spec:
     - name: namespace
       type: string
       description: Kubernetes namespace
-      default: "demo2"
+      default: ""
   steps:
     - name: prepare
       image: alpine
@@ -146,7 +146,7 @@ spec:
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
-      value: "demo2"
+      value: "dev-demo2"
   workspaces:
     - name: source
       persistentVolumeClaim:

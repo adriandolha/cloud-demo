@@ -7,10 +7,8 @@ resource "kubernetes_namespace" "ns" {
   }
 }
 
-data "terraform_remote_state" "local" {
-  backend = "local"
-  config = {
-    path = "env://workspace/terraform/${local.namespace}.tfstate"
+terraform {
+  backend "local" {
+    path = "/workspace/terraform/lorem-ipsum.tfstate"
   }
 }
-
