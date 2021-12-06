@@ -15,13 +15,13 @@ server:
 extraScrapeConfigs: |
   - job_name: loremipsum
     static_configs:
-      - targets: ['lorem-ipsum.demo.svc.cluster.local']
+      - targets: ['lorem-ipsum.${namespace}.svc.cluster.local']
     scrape_interval: 5s
     scrape_timeout: 4s
 
   - job_name: loremipsumgu
     static_configs:
-      - targets: ['lorem-ipsum-statsd.demo.svc.cluster.local:9102']
+      - targets: ['lorem-ipsum-statsd.${namespace}.svc.cluster.local:9102']
     scrape_interval: 5s
     scrape_timeout: 4s
 
@@ -32,10 +32,10 @@ extraScrapeConfigs: |
     static_configs:
       - targets:
         - https://localhost:31862/ambassador/v0/check_ready
-        - http://prometheus.demo2:9090/-/healthy
-        - http://grafana.monitoring/api/health
-        - http://lorem-ipsum.demo/books/health
-        - http://lorem-ipsum-auth.demo/auth/health
+        - http://prometheus.${namespace}:9090/-/healthy
+        - http://grafana.${namespace}/api/health
+        - http://lorem-ipsum.${namespace}/books/health
+        - http://lorem-ipsum-auth.${namespace}/auth/health
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
