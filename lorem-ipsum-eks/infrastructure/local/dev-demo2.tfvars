@@ -1,1 +1,1 @@
-namespace=dev-demo2
+namespace = "dev-demo2"
