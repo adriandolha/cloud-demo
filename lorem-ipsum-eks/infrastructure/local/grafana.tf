@@ -19,7 +19,7 @@ resource "helm_release" "grafana" {
   chart = "grafana"
   name = "grafana"
   repository = "https://grafana.github.io/helm-charts"
-  namespace = kubernetes_namespace.ns.id
+  namespace = kubernetes_namespace.ns.metadata[0].name
 
   values = [
     templatefile("grafana-values.yaml", {
