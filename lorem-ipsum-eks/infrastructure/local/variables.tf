@@ -8,7 +8,7 @@ variable "kube_config_file" {
 
 variable "namespace" {
   type    = string
-  default = "demo2"
+  default = "dev-demo2"
 }
 
 variable "grafan_secret" {

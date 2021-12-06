@@ -6,6 +6,7 @@ metadata:
 spec:
   workspaces:
     - name: source
+    - name: terraform
     - name: secrets
     - name: kube-config
       mountPath: /secrets-raw/.kube
@@ -24,7 +25,9 @@ spec:
       script: |
         #!/bin/sh
         ls $(inputs.params.path)
+        ls /workspaces
         echo $(workspaces.source.path)
+        echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
         mkdir -p $(workspaces.secrets.path)/.kube
         mkdir -p /terraform
@@ -53,6 +56,7 @@ metadata:
 spec:
   workspaces:
     - name: source
+    - name: terraform
     - name: secrets
     - name: kube-config
   params:
@@ -113,6 +117,8 @@ spec:
       workspaces:
         - name: source
           workspace: source
+        - name: terraform
+          workspace: terraform
         - name: secrets
           workspace: secrets
         - name: kube-config
@@ -145,6 +151,11 @@ spec:
     - name: source
       persistentVolumeClaim:
         claimName: lorem-ipsum-source-ws
+      subPath: source
+    - name: terraform
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+      subPath: terraform
     - name: secrets
       persistentVolumeClaim:
         claimName: lorem-ipsum-source-ws
