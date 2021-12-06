@@ -10,7 +10,7 @@ resource "kubernetes_namespace" "ns" {
 data "terraform_remote_state" "local" {
   backend = "local"
   config = {
-    path = "/workspace/terraform/${local.namespace}.tfstate"
+    path = "env://workspace/terraform/${local.namespace}.tfstate"
   }
 }
 
