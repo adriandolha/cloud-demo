@@ -46,7 +46,7 @@ spec:
       args:
         - destroy
         - -auto-approve
-        - -var="namespace=$(inputs.params.namespace)"
+        - -var-file=$(inputs.params.namespace).tfvars
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -96,7 +96,7 @@ spec:
       args:
         - apply
         - -auto-approve
-        - -var="namespace=$(inputs.params.namespace)"
+        - -var-file=$(inputs.params.namespace).tfvars
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
