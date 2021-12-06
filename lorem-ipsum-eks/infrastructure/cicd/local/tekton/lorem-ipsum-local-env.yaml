@@ -26,7 +26,8 @@ spec:
         ls $(inputs.params.path)
         echo $(workspaces.source.path)
         echo $(workspaces.secrets.path)
-        mkdir $(workspaces.secrets.path)/.kube
+        mkdir -p $(workspaces.secrets.path)/.kube
+        mkdir -p /terraform
         cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
         echo $(workspaces.secrets.path)/.kube/config
         cat $(workspaces.secrets.path)/.kube/config
