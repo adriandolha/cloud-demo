@@ -1,12 +1,16 @@
+locals {
+  namespace = var.env
+}
 resource "kubernetes_namespace" "ns" {
   metadata {
-    name = var.namespace
+    name = local.namespace
   }
 }
 
-terraform {
-  backend "local" {
-    path = "/workspace/terraform/dev-demo2.tfstate"
+data "terraform_remote_state" "local" {
+  backend = "local"
+  config = {
+    path = "/workspace/terraform/${local.namespace}.tfstate"
   }
 }
 

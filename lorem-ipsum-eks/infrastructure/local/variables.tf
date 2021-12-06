@@ -6,11 +6,6 @@ variable "kube_config_file" {
   default = "/workspace/secrets/.kube/config"
 }
 
-variable "namespace" {
-  type    = string
-  default = "dev-demo2"
-}
-
 variable "grafan_secret" {
   type    = string
   default = "grafana"

@@ -28,11 +28,12 @@ spec:
         echo $(workspaces.source.path)
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
+        ls $(workspaces.terraform.path)
+        echo Cleaning terraform files
+        rm -rf $(workspaces.terraform.path)/*
+        ls $(workspaces.terraform.path)
         mkdir -p $(workspaces.secrets.path)/.kube
-        mkdir -p /terraform
         cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
-        echo $(workspaces.secrets.path)/.kube/config
-        cat $(workspaces.secrets.path)/.kube/config
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
