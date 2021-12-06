@@ -23,7 +23,7 @@ resource "helm_release" "grafana" {
 
   values = [
     templatefile("grafana-values.yaml", {
-      namespace = namespace = kubernetes_namespace.ns.metadata[0].name,
+      namespace = kubernetes_namespace.ns.metadata[0].name,
       grafana_secret = var.grafan_secret,
       lorem_ipsum_dashboard = indent(8, file("${path.module}/dashboards/lorem-ipsum-dashboard.json"))
     })
