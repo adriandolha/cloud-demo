@@ -9,6 +9,5 @@ resource "kubernetes_namespace" "ns" {
 
 terraform {
   backend "local" {
-    path = "/workspace/terraform/lorem-ipsum.tfstate"
   }
 }
