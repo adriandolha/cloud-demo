@@ -175,44 +175,6 @@ spec:
           workspace: kube-config
 ---
 apiVersion: tekton.dev/v1beta1
-kind: PipelineRun
-metadata:
-  name: lorem-ipsum-tf-apply
-  namespace: tekton-pipelines
-spec:
-  serviceAccountName: git-push-service-account
-  pipelineRef:
-    name: lorem-ipsum-tf-apply
-  params:
-    - name: repo-url
-      value: git@github.com:adriandolha/cloud-demo.git
-    - name: branch-name
-      value: master
-    - name: argocd-repo-url
-      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
-    - name: argocd-branch-name
-      value: main
-    - name: image-url
-      value: "docker-registry.demo:5000/lorem-ipsum"
-    - name: namespace
-      value: "dev-demo2"
-  workspaces:
-    - name: source
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-source-ws
-      subPath: source
-    - name: terraform
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-source-ws
-      subPath: terraform
-    - name: secrets
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-source-ws
-    - name: kube-config
-      secret:
-        secretName: kube-config-file
----
-apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: lorem-ipsum-tf-destroy
@@ -309,7 +271,45 @@ spec:
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
-      value: "dev-demo2"
+      value: "dev-lorem-ipsum"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+      subPath: source
+    - name: terraform
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+      subPath: terraform
+    - name: secrets
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+    - name: kube-config
+      secret:
+        secretName: kube-config-file
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-tf-apply
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-tf-apply
+  params:
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: branch-name
+      value: master
+    - name: argocd-repo-url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+    - name: argocd-branch-name
+      value: main
+    - name: image-url
+      value: "docker-registry.demo:5000/lorem-ipsum"
+    - name: namespace
+      value: "dev-lorem-ipsum"
   workspaces:
     - name: source
       persistentVolumeClaim:
