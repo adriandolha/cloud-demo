@@ -9,12 +9,12 @@ spec:
     - name: terraform
     - name: secrets
     - name: kube-config
-      mountPath: /secrets-raw/.kube
+      mountPath: /secrets/.kube
   params:
     - name: path
       type: string
       description: Path to tf files
-      default: "$(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local"
+      default: ""
     - name: namespace
       type: string
       description: Kubernetes namespace
@@ -29,8 +29,7 @@ spec:
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
         ls $(workspaces.terraform.path)
-        mkdir -p $(workspaces.secrets.path)/.kube
-        cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
+        ls $(workspaces.kube-config.path)
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
@@ -59,12 +58,12 @@ spec:
     - name: terraform
     - name: secrets
     - name: kube-config
-      mountPath: /secrets-raw/.kube
+      mountPath: /secrets/.kube
   params:
     - name: path
       type: string
       description: Path to tf files
-      default: "$(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local"
+      default: ""
     - name: namespace
       type: string
       description: Kubernetes namespace
@@ -79,8 +78,7 @@ spec:
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
         ls $(workspaces.terraform.path)
-        mkdir -p $(workspaces.secrets.path)/.kube
-        cat $(workspaces.kube-config.path)/config | base64 -d >> $(workspaces.secrets.path)/.kube/config
+        ls $(workspaces.kube-config.path)
     - name: init
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
@@ -133,6 +131,11 @@ spec:
       type: string
       description: The kube namespace.
       default: ""
+    - name: tf-path
+      type: string
+      description: The kube namespace.
+      default: "Path for terraform files"
+
   tasks:
     - name: clean
       taskRef:
@@ -155,7 +158,6 @@ spec:
           value: $(params.branch-name)
         - name: depth
           value: $(params.depth)
-
     - name: tf-apply
       taskRef:
         name: tf-apply
@@ -164,6 +166,8 @@ spec:
       params:
         - name: namespace
           value: $(params.namespace)
+        - name: path
+          value: $(params.tf-path)
       workspaces:
         - name: source
           workspace: source
@@ -209,6 +213,10 @@ spec:
       type: string
       description: The kube namespace.
       default: ""
+    - name: tf-path
+      type: string
+      description: The kube namespace.
+      default: ""
   tasks:
     - name: clean
       taskRef:
@@ -240,6 +248,8 @@ spec:
       params:
         - name: namespace
           value: $(params.namespace)
+        - name: path
+          value: $(params.tf-path)
       workspaces:
         - name: source
           workspace: source
@@ -272,6 +282,8 @@ spec:
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
       value: "dev-lorem-ipsum"
+    - name: tf-path
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
   workspaces:
     - name: source
       persistentVolumeClaim:
@@ -310,6 +322,8 @@ spec:
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
       value: "dev-lorem-ipsum"
+    - name: tf-path
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
   workspaces:
     - name: source
       persistentVolumeClaim:
@@ -324,4 +338,4 @@ spec:
         claimName: lorem-ipsum-source-ws
     - name: kube-config
       secret:
-        secretName: kube-config-file
+        secretName: kubeconfig
