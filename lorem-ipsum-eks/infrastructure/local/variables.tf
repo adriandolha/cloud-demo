@@ -5,7 +5,7 @@ variable "env" {
 }
 variable "kube_config_file" {
   type    = string
-  default = "/workspace/secrets/.kube/kubeconfig"
+  default = "/secrets/.kube/kubeconfig"
 }
 
 variable "grafana_secret" {

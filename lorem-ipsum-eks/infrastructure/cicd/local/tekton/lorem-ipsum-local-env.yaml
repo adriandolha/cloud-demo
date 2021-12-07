@@ -28,6 +28,7 @@ spec:
         echo $(workspaces.source.path)
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
+        echo $(workspaces.kube-config.path)
         ls $(workspaces.terraform.path)
         ls $(workspaces.kube-config.path)
     - name: init
@@ -77,6 +78,7 @@ spec:
         echo $(workspaces.source.path)
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
+        echo $(workspaces.kube-config.path)
         ls $(workspaces.terraform.path)
         ls $(workspaces.kube-config.path)
     - name: init
