@@ -1,1 +1,2 @@
 namespace = "dev"
+env = "dev"

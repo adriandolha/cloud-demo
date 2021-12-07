@@ -1,7 +1,7 @@
 variable "env" {
   type    = string
   description = "Env to deploy to. It will translate into a namespace."
-  default = "dev-lorem-ipsum"
+  default = ""
 }
 variable "kube_config_file" {
   type    = string
