@@ -1,0 +1,111 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-local-env-debug-argocd
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+    - name: argocd
+    - name: terraform
+    - name: secrets
+    - name: kube-config
+  params:
+    - name: image-url
+      type: string
+      description: Docker registry image url.
+    - name: image-tag-prefix
+      type: string
+      description: Docker registry image tag prefix.
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: branch-name
+      type: string
+      description: The git depth to clone.
+    - name: argocd-repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: argocd-branch-name
+      type: string
+      description: The git depth to clone.
+    - name: depth
+      type: string
+      description: The clone depth.
+      default: "0"
+    - name: namespace
+      type: string
+      description: The kube namespace.
+      default: ""
+    - name: tf-path
+      type: string
+      description: The kube namespace.
+      default: "Path for terraform files"
+  tasks:
+    - name: argocd-dev
+      taskRef:
+        name: argocd-push
+      workspaces:
+        - name: source
+          workspace: argocd
+      params:
+        - name: path
+          value: $(workspaces.source.path)/lorem-ipsum/values.yaml
+        - name: imageTag
+          value: "v1.0.1.dev"
+    - name: sync-application
+      taskRef:
+        name: argocd-task-sync-and-wait
+      params:
+        - name: application-name
+          value: lorem-ipsum
+        - name: flags
+          value: --insecure # needed in this example only because the Argo CD server is locally hosted
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-local-env-debug-argocd
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-local-env-debug-argocd
+  params:
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: branch-name
+      value: master
+    - name: argocd-repo-url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+    - name: argocd-branch-name
+      value: main
+    - name: image-url
+      value: "docker-registry.demo:5000/lorem-ipsum"
+    - name: image-tag-prefix
+      value: "dev"
+    - name: namespace
+      value: "dev-lorem-ipsum"
+    - name: tf-path
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
+
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+      subPath: source
+    - name: argocd
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+      subPath: argocd
+    - name: terraform
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+      subPath: terraform
+    - name: secrets
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+    - name: kube-config
+      secret:
+        secretName: kubeconfig

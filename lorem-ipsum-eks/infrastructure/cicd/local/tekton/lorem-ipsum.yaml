@@ -60,13 +60,16 @@ spec:
         echo $WS_PATH
         ls $WS_PATH
         cd $WS_PATH
-        count=$(git rev-list --count $(inputs.params.revision))
-        echo -n "1.0.$count" > $(results.version.path)
-        echo -n "$(inputs.params.imageTagPrefix)v1.0.$count" > $(results.imageTag.path)
-        echo -n "$(inputs.params.imageUrl):(inputs.params.imageTagPrefix)v1.0.$count" > $(results.imageUrl.path)
-        cat $(results.imageUrl.path)
-        cat $(results.version.path)
-        cat $(results.imageTag.path)
+        COUNT=$(git rev-list --count $(inputs.params.revision))
+        VERSION="v1.0.$COUNT.$(inputs.params.imageTagPrefix)"
+        TAG=$VERSION
+        URL="$(inputs.params.imageUrl):$TAG"
+        echo -n $VERSION > $(results.version.path)
+        echo -n $TAG > $(results.imageTag.path)
+        echo -n $URL > $(results.imageUrl.path)
+        cat $(results.imageUrl.path); echo
+        cat $(results.version.path); echo
+        cat $(results.imageTag.path); echo
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -296,17 +299,29 @@ spec:
     - name: imageTag
       type: string
       default: "dev"
+    - name: valuesFile
+      type: string
+      default: "lorem-ipsum/values.yaml"
+  results:
+    - name: output
+      description: The current version based on git commit
+
   steps:
     - name: update-yaml
       image: mikefarah/yq
       script: |
         cd $(workspaces.source.path)
-        echo "$(yq eval '.image.tag = "$(inputs.params.imageTag)"' lorem-ipsum/values.yaml)" > lorem-ipsum/values.yaml
+        ls $(workspaces.source.path)
+        whoami
+        ls -all lorem-ipsum
+        cat $(inputs.params.valuesFile) | yq e '.image.tag = "$(inputs.params.imageTag)"' - | tee $(results.output.path)
+        cat $(results.output.path)
     - name: git-push
       image: alpine/git:v2.26.2
       script: |
         #!/bin/sh
         set -e
+        cat $(results.output.path) > $(workspaces.source.path)/$(inputs.params.valuesFile)
         ls $(workspaces.source.path)
         cd $(workspaces.source.path)
         echo $(inputs.params.path)
@@ -319,3 +334,4 @@ spec:
         git push
         count=$(git rev-list --count $(inputs.params.revision))
         echo $count
+        curl

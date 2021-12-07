@@ -1,25 +1,11 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: lorem-ipsum-local-ws
-  namespace: tekton-pipelines
-spec:
-  resources:
-    requests:
-      storage: 500Mi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
----
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: lorem-ipsum-local-env
+  name: lorem-ipsum-tf-apply
   namespace: tekton-pipelines
 spec:
   workspaces:
     - name: source
-    - name: argocd
     - name: terraform
     - name: secrets
     - name: kube-config
@@ -27,9 +13,6 @@ spec:
     - name: image-url
       type: string
       description: Docker registry image url.
-    - name: image-tag-prefix
-      type: string
-      description: Docker registry image tag prefix.
     - name: repo-url
       type: string
       description: The git repository URL to clone from.
@@ -54,6 +37,7 @@ spec:
       type: string
       description: The kube namespace.
       default: "Path for terraform files"
+
   tasks:
     - name: clean
       taskRef:
@@ -76,22 +60,7 @@ spec:
           value: $(params.branch-name)
         - name: depth
           value: $(params.depth)
-    - name: fetch-argocd-repo
-      taskRef:
-        name: git-clone
-      runAfter:
-        - fetch-source-repo
-      workspaces:
-        - name: output
-          workspace: argocd
-      params:
-        - name: url
-          value: $(params.argocd-repo-url)
-        - name: revision
-          value: $(params.argocd-branch-name)
-        - name: depth
-          value: $(params.depth)
-    - name: tf-apply-dev
+    - name: tf-apply
       taskRef:
         name: tf-apply
       runAfter:
@@ -110,77 +79,98 @@ spec:
           workspace: secrets
         - name: kube-config
           workspace: kube-config
-    - name: app-version-dev
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-tf-destroy
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+    - name: terraform
+    - name: secrets
+    - name: kube-config
+  params:
+    - name: image-url
+      type: string
+      description: Docker registry image url.
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: branch-name
+      type: string
+      description: The git depth to clone.
+    - name: argocd-repo-url
+      type: string
+      description: The git repository URL to clone from.
+    - name: argocd-branch-name
+      type: string
+      description: The git depth to clone.
+    - name: depth
+      type: string
+      description: The clone depth.
+      default: "0"
+    - name: namespace
+      type: string
+      description: The kube namespace.
+      default: ""
+    - name: tf-path
+      type: string
+      description: The kube namespace.
+      default: ""
+  tasks:
+    - name: clean
       taskRef:
-        name: app-version
+        name: clean
+      workspaces:
+        - name: source
+          workspace: source
+    - name: fetch-source-repo
+      taskRef:
+        name: git-clone
       runAfter:
-        - tf-apply-dev
+        - clean
+      workspaces:
+        - name: output
+          workspace: source
       params:
         - name: url
           value: $(params.repo-url)
-        - name: imageUrl
-          value: $(params.image-url)
-        - name: imageTagPrefix
-          value: $(params.image-tag-prefix)
-      workspaces:
-        - name: source
-          workspace: source
-    - name: unit-test
-      taskRef:
-        name: pytest
-      runAfter:
-        - app-version-dev
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: ARGS
-          value: tests
-        - name: version
-          value: "$(tasks.app-version-dev.results.version)"
-        - name: WORKING_DIR
-          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
-    - name: build-docker-image
-      taskRef:
-        name: build-docker-image-from-git-source
-      runAfter:
-        - unit-test
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: pathToDockerFile
-          value: Dockerfile
-        - name: pathToContext
-          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
-        - name: imageTag
-          value: "$(tasks.app-version-dev.results.imageTag)"
-        - name: imageUrl
-          value: "$(tasks.app-version-dev.results.imageUrl)"
-    - name: argocd-dev
-      taskRef:
-        name: argocd-push
-      runAfter:
-        - build-docker-image
-      workspaces:
-        - name: source
-          workspace: argocd
-      params:
-        - name: path
-          value: $(workspaces.source.path)/lorem-ipsum/values.yaml
-        - name: imageTag
-          value: "$(tasks.app-version-dev.results.imageTag)"
+        - name: revision
+          value: $(params.branch-name)
+        - name: depth
+          value: $(params.depth)
 
+    - name: tf-destroy
+      taskRef:
+        name: tf-destroy
+      runAfter:
+        - fetch-source-repo
+      params:
+        - name: namespace
+          value: $(params.namespace)
+        - name: path
+          value: $(params.tf-path)
+      workspaces:
+        - name: source
+          workspace: source
+        - name: terraform
+          workspace: terraform
+        - name: secrets
+          workspace: secrets
+        - name: kube-config
+          workspace: kube-config
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: lorem-ipsum-local-env
+  name: lorem-ipsum-tf-destroy
   namespace: tekton-pipelines
 spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
-    name: lorem-ipsum-local-env
+    name: lorem-ipsum-tf-destroy
   params:
     - name: repo-url
       value: git@github.com:adriandolha/cloud-demo.git
@@ -192,28 +182,62 @@ spec:
       value: main
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
-    - name: image-tag-prefix
-      value: "dev"
     - name: namespace
-      value: "dev"
+      value: "dev-lorem-ipsum"
     - name: tf-path
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
   workspaces:
     - name: source
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-source-ws
       subPath: source
-    - name: argocd
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
-      subPath: argocd
     - name: terraform
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-source-ws
       subPath: terraform
     - name: secrets
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-source-ws
+    - name: kube-config
+      secret:
+        secretName: kube-config-file
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-tf-apply
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-tf-apply
+  params:
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: branch-name
+      value: master
+    - name: argocd-repo-url
+      value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+    - name: argocd-branch-name
+      value: main
+    - name: image-url
+      value: "docker-registry.demo:5000/lorem-ipsum"
+    - name: namespace
+      value: "dev-lorem-ipsum"
+    - name: tf-path
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+      subPath: source
+    - name: terraform
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
+      subPath: terraform
+    - name: secrets
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-source-ws
     - name: kube-config
       secret:
         secretName: kubeconfig
