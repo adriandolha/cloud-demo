@@ -25,7 +25,7 @@ spec:
       script: |
         #!/bin/sh
         ls $(inputs.params.path)
-        echo $(workspaces.source.path)
+        ls $(workspaces.source.path)
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
         echo $(workspaces.kube-config.path)

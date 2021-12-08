@@ -1,3 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lorem-ipsum-local-env-tf-ws
+  namespace: tekton-pipelines
+spec:
+  resources:
+    requests:
+      storage: 500Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -183,7 +196,7 @@ spec:
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
-      value: "dev-lorem-ipsum"
+      value: "dev"
     - name: tf-path
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
   workspaces:
@@ -223,16 +236,21 @@ spec:
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
-      value: "dev-lorem-ipsum"
+      value: "dev"
     - name: tf-path
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
   workspaces:
     - name: source
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-env-tf-ws
+      subPath: source
     - name: terraform
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-env-tf-ws
+      subPath: terraform
     - name: secrets
-      emptyDir: {}
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-env-tf-ws
     - name: kube-config
       secret:
         secretName: kubeconfig
