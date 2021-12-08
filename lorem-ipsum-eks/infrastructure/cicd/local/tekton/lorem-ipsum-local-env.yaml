@@ -137,6 +137,30 @@ spec:
         - -backend-config=$(inputs.params.namespace).tfbackend
     - name: apply
       image: docker.io/hashicorp/terraform:light
+      env:
+        - name: TF_LOG
+          value: "INFO"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_SECRET_ACCESS_KEY
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            secretKeyRef:
+              name: aws-config
+              key: REGION
+
+        - name: AWS_ACCOUNT_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-config
+              key: ACCOUNT_ID
       workingDir: $(inputs.params.path)
       command: [ "terraform" ]
       args:
