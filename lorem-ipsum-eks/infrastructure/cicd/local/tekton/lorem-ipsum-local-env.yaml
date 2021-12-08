@@ -73,11 +73,27 @@ spec:
   steps:
     - name: prepare
       image: alpine
+      env:
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            secretKeyRef:
+              name: aws-config
+              key: REGION
+        - name: AWS_ACCOUNT_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-config
+              key: ACCOUNT_ID
+        - name: AWS_BACKEND_KEY
+          value: "lorem-ipsum/$(inputs.params.namespace)/platform"
       script: |
         #!/bin/sh
         ls $(inputs.params.path)
         cat $(inputs.params.path)/main.tf
+        cat $(inputs.params.path)/$(inputs.params.namespace).tfbackend
+        envsubst $(inputs.params.path)/$(inputs.params.namespace).tfbackend
         echo $(workspaces.source.path)
+        cat $(inputs.params.path)/$(inputs.params.namespace).tfbackend
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
         echo $(workspaces.kube-config.path)
@@ -113,9 +129,8 @@ spec:
       command: [ "terraform" ]
       args:
         - init
-        - -backend-config="bucket=terraform-state-$AWS_ACCOUNT_ID"
-        - -backend-config="key=lorem-ipsum/$(inputs.params.namespace)/platform"
-        - -backend-config="region=$AWS_DEFAULT_REGION"
+        - -reconfigure
+        - -backend-config=$(inputs.params.namespace).tfbackend
     - name: apply
       image: docker.io/hashicorp/terraform:light
       workingDir: $(inputs.params.path)
