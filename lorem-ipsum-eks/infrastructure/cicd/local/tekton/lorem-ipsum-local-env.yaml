@@ -113,7 +113,6 @@ spec:
       command: [ "terraform" ]
       args:
         - init
-        - -reconfigure
         - -backend-config="bucket=terraform-state-$AWS_ACCOUNT_ID"
         - -backend-config="key=lorem-ipsum/$(inputs.params.namespace)/platform"
         - -backend-config="region=$AWS_DEFAULT_REGION"

@@ -6,11 +6,3 @@ resource "kubernetes_namespace" "ns" {
     name = local.namespace
   }
 }
-
-terraform {
-  required_providers {
-    aws = ">= 2.18.0"
-  }
-  backend "s3" {
-  }
-}
