@@ -72,7 +72,7 @@ spec:
       default: ""
   steps:
     - name: prepare
-      image: alpine-envsubst
+      image: alpine
       env:
         - name: AWS_DEFAULT_REGION
           valueFrom:
@@ -91,11 +91,10 @@ spec:
         ls $(inputs.params.path)
         cat $(inputs.params.path)/main.tf
         cat $(inputs.params.path)/$(inputs.params.namespace).tfbackend
-        envsubst
         tee $(inputs.params.path)/$(inputs.params.namespace).tfbackend << END
         bucket = "terraform-state-$AWS_ACCOUNT_ID"
-        region = "$AWS_BACKEND_KEY"
-        key = "$AWS_DEFAULT_REGION"
+        key = "lorem-ipsum/$(inputs.params.namespace)/platform"
+        region = "$AWS_DEFAULT_REGION"
         END
         echo $(workspaces.source.path)
         cat $(inputs.params.path)/$(inputs.params.namespace).tfbackend
@@ -108,7 +107,7 @@ spec:
       image: docker.io/hashicorp/terraform:light
       env:
         - name: TF_LOG
-          value: "TRACE"
+          value: "INFO"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
