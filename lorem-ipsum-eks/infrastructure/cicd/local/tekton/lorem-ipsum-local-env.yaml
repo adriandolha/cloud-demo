@@ -76,6 +76,7 @@ spec:
       script: |
         #!/bin/sh
         ls $(inputs.params.path)
+        cat $(inputs.params.path)/main.tf
         echo $(workspaces.source.path)
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
@@ -85,6 +86,8 @@ spec:
     - name: init
       image: docker.io/hashicorp/terraform:light
       env:
+        - name: TF_LOG
+          value: "TRACE"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
