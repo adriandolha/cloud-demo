@@ -29,6 +29,7 @@ spec:
         echo $(workspaces.terraform.path)
         echo $(workspaces.secrets.path)
         echo $(workspaces.kube-config.path)
+        cat $(workspaces.kube-config.path)/config
         ls $(workspaces.terraform.path)
         ls $(workspaces.kube-config.path)
     - name: init
