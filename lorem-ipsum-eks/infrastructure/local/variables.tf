@@ -12,16 +12,3 @@ variable "grafana_secret" {
   type = string
   default = "grafana"
 }
-
-variable "aws_config" {
-  type = list(object({
-    region = string
-    account_id = string
-  }))
-  default = [
-    {
-      region = "eu-central-1"
-      account_id = "local"
-    }
-  ]
-}
