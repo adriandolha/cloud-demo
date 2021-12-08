@@ -228,16 +228,11 @@ spec:
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
   workspaces:
     - name: source
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-source-ws
-      subPath: source
+      emptyDir: {}
     - name: terraform
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-source-ws
-      subPath: terraform
+      emptyDir: {}
     - name: secrets
-      persistentVolumeClaim:
-        claimName: lorem-ipsum-source-ws
+      emptyDir: {}
     - name: kube-config
       secret:
         secretName: kubeconfig

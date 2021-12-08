@@ -8,6 +8,6 @@ resource "kubernetes_namespace" "ns" {
 }
 
 terraform {
-  backend "local" {
+  backend "s3" {
   }
 }
