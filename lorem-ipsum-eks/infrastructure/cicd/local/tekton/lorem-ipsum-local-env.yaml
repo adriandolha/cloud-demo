@@ -1,58 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: tf-destroy
-  namespace: tekton-pipelines
-spec:
-  workspaces:
-    - name: source
-    - name: terraform
-    - name: secrets
-    - name: kube-config
-      mountPath: /secrets/.kube
-  params:
-    - name: path
-      type: string
-      description: Path to tf files
-      default: ""
-    - name: namespace
-      type: string
-      description: Kubernetes namespace
-      default: ""
-  steps:
-    - name: prepare
-      image: alpine
-      script: |
-        #!/bin/sh
-        ls $(inputs.params.path)
-        ls $(workspaces.source.path)
-        echo $(workspaces.terraform.path)
-        echo $(workspaces.secrets.path)
-        echo $(workspaces.kube-config.path)
-        cat $(workspaces.kube-config.path)/config
-        ls $(workspaces.terraform.path)
-        ls $(workspaces.kube-config.path)
-    - name: init
-      image: docker.io/hashicorp/terraform:light
-      workingDir: $(inputs.params.path)
-      command: [ "terraform" ]
-      args:
-        - init
-        - -reconfigure
-        - -backend-config=$(inputs.params.namespace).tfbackend
-    - name: destroy
-      image: docker.io/hashicorp/terraform:light
-      workingDir: $(inputs.params.path)
-      command: [ "terraform" ]
-      args:
-        - destroy
-        - -auto-approve
-        - -var-file=$(inputs.params.namespace).tfvars
----
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: tf-apply
+  name: terraform
   namespace: tekton-pipelines
 spec:
   workspaces:
@@ -65,10 +14,14 @@ spec:
     - name: app-name
       type: string
       description: Path to tf files
-      default: "The name of the app used in the terraform backend path."
+      default: ""
     - name: path
       type: string
       description: Path to tf files
+      default: ""
+    - name: command
+      type: string
+      description: apply or destroy
       default: ""
     - name: namespace
       type: string
@@ -97,7 +50,7 @@ spec:
         cat $(inputs.params.path)/$(inputs.params.namespace).tfbackend
         tee $(inputs.params.path)/$(inputs.params.namespace).tfbackend << END
         bucket = "terraform-state-$AWS_ACCOUNT_ID"
-        key = "lorem-ipsum/$(inputs.params.namespace)/platform"
+        key = "$AWS_BACKEND_KEY"
         region = "$AWS_DEFAULT_REGION"
         END
         echo $(workspaces.source.path)
@@ -139,7 +92,7 @@ spec:
         - init
         - -reconfigure
         - -backend-config=$(inputs.params.namespace).tfbackend
-    - name: apply
+    - name: command
       image: docker.io/hashicorp/terraform:light
       env:
         - name: TF_LOG
@@ -168,6 +121,6 @@ spec:
       workingDir: $(inputs.params.path)
       command: [ "terraform" ]
       args:
-        - apply
+        - $(inputs.params.command)
         - -auto-approve
         - -var-file=$(inputs.params.namespace).tfvars
