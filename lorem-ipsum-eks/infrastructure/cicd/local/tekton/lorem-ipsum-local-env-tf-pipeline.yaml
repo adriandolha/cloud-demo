@@ -83,6 +83,8 @@ spec:
           value: $(params.namespace)
         - name: path
           value: $(params.tf-path)
+        - name: app-name
+          value: "platform"
       workspaces:
         - name: source
           workspace: source

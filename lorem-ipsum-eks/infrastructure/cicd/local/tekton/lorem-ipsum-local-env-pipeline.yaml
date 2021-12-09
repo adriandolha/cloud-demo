@@ -54,6 +54,10 @@ spec:
       type: string
       description: The kube namespace.
       default: "Path for terraform files"
+    - name: tf-app
+      type: string
+      description: The app to deploy.
+      default: ""
   tasks:
     - name: clean
       taskRef:
@@ -76,6 +80,8 @@ spec:
           value: $(params.branch-name)
         - name: depth
           value: $(params.depth)
+        - name: app
+          value: $(params.app)
     - name: fetch-argocd-repo
       taskRef:
         name: git-clone

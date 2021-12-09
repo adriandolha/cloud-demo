@@ -62,6 +62,10 @@ spec:
     - name: kube-config
       mountPath: /secrets/.kube
   params:
+    - name: app-name
+      type: string
+      description: Path to tf files
+      default: "The name of the app used in the terraform backend path."
     - name: path
       type: string
       description: Path to tf files
@@ -85,7 +89,7 @@ spec:
               name: aws-config
               key: ACCOUNT_ID
         - name: AWS_BACKEND_KEY
-          value: "lorem-ipsum/$(inputs.params.namespace)/platform"
+          value: "lorem-ipsum/$(inputs.params.namespace)/$(inputs.params.app-name)"
       script: |
         #!/bin/sh
         ls $(inputs.params.path)
