@@ -330,7 +330,9 @@ spec:
         git config --global user.name "adriandolha"
         git checkout $(inputs.params.revision)
         git add -u lorem-ipsum/values.yaml
-        git commit -m "[tekton] updating deployment"
-        git push
+        if ! git diff-index --quiet $(inputs.params.revision); then
+          git commit -m "[tekton] updating deployment"
+          git push
+        fi
         count=$(git rev-list --count $(inputs.params.revision))
         echo $count
