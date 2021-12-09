@@ -122,7 +122,7 @@ spec:
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: namespace
       value: "platform"
-    - name: tf-path
+    - name: path
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local/platform
     - name: command
       value: "apply"

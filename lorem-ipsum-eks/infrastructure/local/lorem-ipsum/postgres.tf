@@ -12,7 +12,7 @@ resource "kubernetes_secret" "postgres" {
 
   data = {
     username = "postgres"
-    password = random_password.password.result
+    postgresql-password = random_password.password.result
   }
 }
 resource "helm_release" "postgres" {
