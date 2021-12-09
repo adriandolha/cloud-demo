@@ -52,17 +52,25 @@ spec:
       description: The app to deploy.
       default: "yes"
   tasks:
-    - name: clean
+    - name: clean-source
       taskRef:
         name: clean
       workspaces:
         - name: source
           workspace: source
+    - name: clean-argocd
+      taskRef:
+        name: clean
+      runAfter:
+        - clean-source
+      workspaces:
+        - name: source
+          workspace: argocd
     - name: fetch-source-repo
       taskRef:
         name: git-clone
       runAfter:
-        - clean
+        - clean-argocd
       workspaces:
         - name: output
           workspace: source
@@ -148,8 +156,8 @@ spec:
     - name: build-docker-image
       taskRef:
         name: build-docker-image-from-git-source
-      runAfter:
-        - unit-test
+#      runAfter:
+#        - unit-test
       workspaces:
         - name: source
           workspace: source
@@ -198,7 +206,7 @@ spec:
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: run-tests
-      value: "yes"
+      value: "no"
     - name: tf-path
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local/lorem-ipsum
   workspaces:

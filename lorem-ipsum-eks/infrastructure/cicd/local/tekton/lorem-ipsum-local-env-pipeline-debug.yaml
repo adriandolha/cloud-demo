@@ -42,17 +42,6 @@ spec:
       description: The kube namespace.
       default: "Path for terraform files"
   tasks:
-    - name: argocd-dev
-      taskRef:
-        name: argocd-push
-      workspaces:
-        - name: source
-          workspace: argocd
-      params:
-        - name: path
-          value: $(workspaces.source.path)/lorem-ipsum/values.yaml
-        - name: imageTag
-          value: "v1.0.1.dev"
     - name: sync-application
       taskRef:
         name: argocd-task-sync-and-wait
