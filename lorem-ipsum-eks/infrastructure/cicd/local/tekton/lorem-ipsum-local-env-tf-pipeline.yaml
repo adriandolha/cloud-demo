@@ -240,7 +240,7 @@ spec:
     - name: namespace
       value: "dev"
     - name: tf-path
-      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local/platform
   workspaces:
     - name: source
       persistentVolumeClaim:
