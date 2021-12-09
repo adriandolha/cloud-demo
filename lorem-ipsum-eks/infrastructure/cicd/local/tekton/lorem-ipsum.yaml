@@ -334,4 +334,3 @@ spec:
         git push
         count=$(git rev-list --count $(inputs.params.revision))
         echo $count
-        curl

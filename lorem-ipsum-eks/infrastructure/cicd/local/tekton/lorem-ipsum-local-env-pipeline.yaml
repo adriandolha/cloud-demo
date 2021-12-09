@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: lorem-ipsum-local-ws
+  name: lorem-ipsum-local-env-ws
   namespace: tekton-pipelines
 spec:
   resources:
@@ -27,9 +27,6 @@ spec:
     - name: image-url
       type: string
       description: Docker registry image url.
-    - name: image-tag-prefix
-      type: string
-      description: Docker registry image tag prefix.
     - name: repo-url
       type: string
       description: The git repository URL to clone from.
@@ -46,18 +43,14 @@ spec:
       type: string
       description: The clone depth.
       default: "0"
-    - name: namespace
-      type: string
-      description: The kube namespace.
-      default: ""
     - name: tf-path
       type: string
-      description: The kube namespace.
-      default: "Path for terraform files"
-    - name: tf-app
+      description: Path for terraform files.
+      default: ""
+    - name: run-tests
       type: string
       description: The app to deploy.
-      default: ""
+      default: "yes"
   tasks:
     - name: clean
       taskRef:
@@ -80,8 +73,6 @@ spec:
           value: $(params.branch-name)
         - name: depth
           value: $(params.depth)
-        - name: app
-          value: $(params.app)
     - name: fetch-argocd-repo
       taskRef:
         name: git-clone
@@ -99,14 +90,18 @@ spec:
           value: $(params.depth)
     - name: tf-apply-dev
       taskRef:
-        name: tf-apply
+        name: terraform
       runAfter:
         - fetch-source-repo
       params:
         - name: namespace
-          value: $(params.namespace)
+          value: "dev"
         - name: path
           value: $(params.tf-path)
+        - name: app-name
+          value: "lorem-ipsum"
+        - name: command
+          value: "apply"
       workspaces:
         - name: source
           workspace: source
@@ -127,11 +122,15 @@ spec:
         - name: imageUrl
           value: $(params.image-url)
         - name: imageTagPrefix
-          value: $(params.image-tag-prefix)
+          value: "dev"
       workspaces:
         - name: source
           workspace: source
     - name: unit-test
+      when:
+        - input: "$(params.run-tests)"
+          operator: in
+          values: [ "yes" ]
       taskRef:
         name: pytest
       runAfter:
@@ -198,28 +197,26 @@ spec:
       value: main
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
-    - name: image-tag-prefix
-      value: "dev"
-    - name: namespace
-      value: "dev"
+    - name: run-tests
+      value: "yes"
     - name: tf-path
-      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local/lorem-ipsum
   workspaces:
     - name: source
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-local-env-ws
       subPath: source
     - name: argocd
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-local-env-ws
       subPath: argocd
     - name: terraform
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-local-env-ws
       subPath: terraform
     - name: secrets
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-local-env-ws
     - name: kube-config
       secret:
         secretName: kubeconfig
