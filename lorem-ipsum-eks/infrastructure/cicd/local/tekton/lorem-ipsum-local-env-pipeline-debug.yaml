@@ -48,8 +48,8 @@ spec:
       params:
         - name: application-name
           value: lorem-ipsum
-        - name: flags
-          value: --insecure # needed in this example only because the Argo CD server is locally hosted
+        - name: argocd-version
+          value: v1.4.0
 
 ---
 apiVersion: tekton.dev/v1beta1
