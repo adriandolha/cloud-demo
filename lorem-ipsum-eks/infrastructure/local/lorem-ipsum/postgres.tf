@@ -23,7 +23,8 @@ resource "helm_release" "postgres" {
   values = [
     templatefile("postgres-values.yaml", {
       namespace = kubernetes_namespace.ns.id,
-      postgres_secret=var.postgres_secret
+      postgres_secret=var.postgres_secret,
+      postgres_database=var.postgres_database
     })
   ]
 }

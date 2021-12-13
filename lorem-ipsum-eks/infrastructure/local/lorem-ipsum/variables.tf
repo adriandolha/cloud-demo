@@ -19,3 +19,8 @@ variable "postgres_secret" {
   type = string
   default = "postgres"
 }
+
+variable "postgres_database" {
+  type = string
+  default = "lorem-ipsum"
+}

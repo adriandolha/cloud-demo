@@ -13,7 +13,7 @@ from lorem_ipsum.model import UserRepo
 from lorem_ipsum.model import BookRepo
 from lorem_ipsum.model import AppContext
 import lorem_ipsum.model as model
-
+from urllib.parse import quote
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
@@ -70,7 +70,9 @@ class TransactionManager:
             database = self.config.get("database_name")
             minconn = self.config.get('connection_pool_minconn')
             maxconn = self.config.get('connection_pool_maxconn')
-            _db = create_engine(f"postgres://{user}:{password}@{host}:{port}/{database}",
+            # we need to encode passowrd in case it contains special chars
+            encoded_password = quote(password)
+            _db = create_engine(f"postgres://{user}:{encoded_password}@{host}:{port}/{database}",
                                 pool_size=minconn, max_overflow=maxconn - minconn, poolclass=QueuePool, echo=False)
             Transaction._db = _db
             Transaction._session_maker = sessionmaker(_db)
