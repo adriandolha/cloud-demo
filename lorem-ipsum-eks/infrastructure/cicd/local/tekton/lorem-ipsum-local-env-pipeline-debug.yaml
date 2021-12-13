@@ -98,3 +98,64 @@ spec:
     - name: kube-config
       secret:
         secretName: kubeconfig
+apiVersion: tekton.dev/v1beta1
+---
+kind: Pipeline
+metadata:
+  name: lorem-ipsum-local-env-debug-kubectl
+  namespace: tekton-pipelines
+spec:
+  workspaces:
+    - name: source
+    - name: argocd
+    - name: terraform
+    - name: secrets
+    - name: kube-config
+  params:
+    - name: yaml-path
+      type: string
+      description: The kube namespace.
+      default: "Path for terraform files"
+  tasks:
+    - name: deploy-secret
+      taskRef:
+        name: build-docker-image-from-git-source
+      params:
+        - name: SCRIPT
+          value: lorem-ipsum
+        - name: argocd-version
+          value: v1.4.0
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: lorem-ipsum-local-env-debug-kubectl
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  pipelineRef:
+    name: lorem-ipsum-local-env-debug-argocd
+  params:
+    - name: yaml-path
+      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
+
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+      subPath: source
+    - name: argocd
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+      subPath: argocd
+    - name: terraform
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+      subPath: terraform
+    - name: secrets
+      persistentVolumeClaim:
+        claimName: lorem-ipsum-local-ws
+    - name: kube-config
+      secret:
+        secretName: kubeconfig
