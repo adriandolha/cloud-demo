@@ -24,7 +24,7 @@ def get_config():
         'aurora_user': os.getenv('aurora_user'),
         'aurora_port': int(os.getenv('aurora_port', default=5432)),
         'aurora_password': aurora_password,
-        'database_name': os.getenv('database_name', default='lorem-ipsum'),
+        'database_name': os.getenv('database_name', default='postgres'),
         'password_encryption_key': os.getenv('password_encryption_key'),
         'admin_password': os.getenv('admin_password'),
         'admin_user': os.getenv('admin_user'),
