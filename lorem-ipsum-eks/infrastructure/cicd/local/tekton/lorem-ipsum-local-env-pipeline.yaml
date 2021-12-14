@@ -153,6 +153,8 @@ spec:
           value: "$(tasks.app-version-dev.results.version)"
         - name: WORKING_DIR
           value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
+        - name: secret_name
+          value: "lorem-ipsum-dev"
     - name: build-and-push
       taskRef:
         name: buildah
@@ -185,11 +187,20 @@ spec:
           value: $(workspaces.source.path)/lorem-ipsum/values.yaml
         - name: imageTag
           value: "$(tasks.app-version-dev.results.imageTag)"
+    - name: argocd-sync-application
+      taskRef:
+        name: argocd-task-sync-and-wait
+      params:
+        - name: application-name
+          value: lorem-ipsum
+        - name: argocd-version
+          value: v1.4.0
+
     - name: app-version-test
       taskRef:
         name: app-version
       runAfter:
-        - argocd-dev
+        - argocd-sync-application
       params:
         - name: url
           value: $(params.repo-url)
@@ -237,6 +248,74 @@ spec:
           value: "$(tasks.app-version-dev.results.imageUrl)"
         - name: target-image
           value: "$(tasks.app-version-test.results.imageUrl)"
+    - name: clean-argocd-test
+      taskRef:
+        name: clean
+      runAfter:
+        - promote-image-to-test
+      workspaces:
+        - name: source
+          workspace: argocd
+    - name: fetch-argocd-repo-test
+      taskRef:
+        name: git-clone
+      runAfter:
+        - clean-argocd-test
+      workspaces:
+        - name: output
+          workspace: argocd
+      params:
+        - name: url
+          value: $(params.argocd-repo-url)
+        - name: revision
+          value: "test"
+        - name: depth
+          value: $(params.depth)
+    - name: argocd-test
+      taskRef:
+        name: argocd-push
+      runAfter:
+        - fetch-argocd-repo-test
+      workspaces:
+        - name: source
+          workspace: argocd
+      params:
+        - name: path
+          value: $(workspaces.source.path)/lorem-ipsum/values.yaml
+        - name: imageTag
+          value: "$(tasks.app-version-test.results.imageTag)"
+        - name: revision
+          value: "test"
+    - name: argocd-sync-test
+      taskRef:
+        name: argocd-task-sync-and-wait
+      params:
+        - name: application-name
+          value: lorem-ipsum-test
+        - name: argocd-version
+          value: v1.4.0
+
+    - name: integration-test
+      when:
+        - input: "$(params.run-tests)"
+          operator: in
+          values: [ "yes" ]
+      taskRef:
+        name: pytest
+      runAfter:
+        - argocd-sync-test
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: ARGS
+          value: integration_tests
+        - name: version
+          value: "$(tasks.app-version-dev.results.version)"
+        - name: WORKING_DIR
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
+        - name: secret_name
+          value: "lorem-ipsum-dev"
 
 ---
 apiVersion: tekton.dev/v1beta1

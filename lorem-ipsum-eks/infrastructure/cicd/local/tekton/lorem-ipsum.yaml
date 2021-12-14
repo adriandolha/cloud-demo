@@ -99,6 +99,9 @@ spec:
     - name: version
       type: string
       default: ""
+    - name: secret_name
+      type: string
+      default: "lorem-ipsum"
   steps:
     - name: unit-test
       image: docker.io/python:$(inputs.params.PYTHON)
@@ -106,63 +109,63 @@ spec:
         - name: aurora_host
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: aurora_host
+              name: $(inputs.params.secret_name)
+              key: aurora-host
         - name: aurora_user
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: aurora_user
+              name: $(inputs.params.secret_name)
+              key: aurora-user
         - name: aurora_port
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: aurora_port
+              name: $(inputs.params.secret_name)
+              key: aurora-port
         - name: aurora_password
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: aurora_password
+              name: $(inputs.params.secret_name)
+              key: aurora-password
         - name: admin_user
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: admin_user
+              name: $(inputs.params.secret_name)
+              key: admin-user
         - name: admin_password
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
+              name: $(inputs.params.secret_name)
               key: admin_password
         - name: password_encryption_key
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: password_encryption_key
+              name: $(inputs.params.secret_name)
+              key: password-encryption-key
         - name: jwk_public_key_path
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: jwk_public_key_path
+              name: $(inputs.params.secret_name)
+              key: jwk-public-key-path
         - name: admin_token_permissions
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: admin_token_permissions
+              name: $(inputs.params.secret_name)
+              key: admin-token-permissions
         - name: user_token_permissions
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: user_token_permissions
+              name: $(inputs.params.secret_name)
+              key: user-token-permissions
         - name: admin_token
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: admin_token
+              name: $(inputs.params.secret_name)
+              key: admin-token
         - name: user_token
           valueFrom:
             secretKeyRef:
-              name: lorem-ipsum-unit
-              key: user_token
+              name: $(inputs.params.secret_name)
+              key: user-token
       workingDir: $(inputs.params.WORKING_DIR)
       volumeMounts:
         - name: jwk-certs-auth0
