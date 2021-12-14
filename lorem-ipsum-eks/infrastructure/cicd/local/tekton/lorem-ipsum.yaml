@@ -220,6 +220,10 @@ spec:
       type: string
       description: image url
       default: "docker-registry.demo:5000/lorem-ipsum:dev"
+  results:
+    - name: IMAGE-DIGEST
+      description: The current version based on git commit
+
   steps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v0.16.0
@@ -232,8 +236,10 @@ spec:
       args:
         - --dockerfile=$(params.pathToDockerFile)
         - --destination=$(params.imageUrl)
+        - --destination=$(params.imageUrl).test
         - --context=$(params.pathToContext)
         - --skip-tls-verify
+        - --digest-file=/tekton/results/IMAGE-DIGEST
     - name: debugging
       image: ubuntu  # contains bash
       script: |

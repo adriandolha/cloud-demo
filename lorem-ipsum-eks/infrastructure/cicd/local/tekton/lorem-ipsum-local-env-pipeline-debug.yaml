@@ -98,11 +98,33 @@ spec:
     - name: kube-config
       secret:
         secretName: kubeconfig
-apiVersion: tekton.dev/v1beta1
 ---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: image-promote
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: source-image
+      type: string
+    - name: target-image
+      type: string
+  steps:
+    - name: promote
+      image: docker.io/library/docker:stable@sha256:18ff92d3d31725b53fa6633d60bed323effb6d5d4588be7b547078d384e0d4bf #tag: stable
+      env:
+      # Connect to the sidecar over TCP, with TLS.
+      - name: DOCKER_HOST
+        value: tcp://localhost:2376
+      script: |
+        docker tag $(inputs.params.source-image) $(inputs.params.target-image)
+
+---
+apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: lorem-ipsum-local-env-debug-kubectl
+  name: lorem-ipsum-local-env-debug-promote
   namespace: tekton-pipelines
 spec:
   workspaces:
@@ -112,33 +134,89 @@ spec:
     - name: secrets
     - name: kube-config
   params:
-    - name: yaml-path
-      type: string
-      description: The kube namespace.
-      default: "Path for terraform files"
-  tasks:
-    - name: deploy-secret
-      taskRef:
-        name: build-docker-image-from-git-source
-      params:
-        - name: SCRIPT
-          value: lorem-ipsum
-        - name: argocd-version
-          value: v1.4.0
+    - name: source-image
+    - name: target-image
+    - name: repo-url
+    - name: revision
+    - name: depth
 
+  tasks:
+    - name: clean-source
+      taskRef:
+        name: clean
+      workspaces:
+        - name: source
+          workspace: source
+    - name: fetch-source-repo
+      taskRef:
+        name: git-clone
+      runAfter:
+        - clean-source
+      workspaces:
+        - name: output
+          workspace: source
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+        - name: depth
+          value: $(params.depth)
+
+    - name: build-and-push
+      taskRef:
+        name: buildah
+      runAfter:
+        - fetch-source-repo
+      params:
+        - name: IMAGE
+          value: $(params.source-image)
+        - name: CONTEXT
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
+        - name: DOCKERFILE
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum/.Dockerfile
+        - name: TLSVERIFY
+          value: "false"
+        - name: FORMAT
+          value: "oci"
+      workspaces:
+        - name: source
+          workspace: source
+
+    - name: promote
+      taskRef:
+        name: docker-tag
+      runAfter:
+        - build-and-push
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: source-image
+          value: $(params.source-image)
+        - name: target-image
+          value: $(params.target-image)
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: lorem-ipsum-local-env-debug-kubectl
+  name: lorem-ipsum-local-env-debug-promote
   namespace: tekton-pipelines
 spec:
   serviceAccountName: git-push-service-account
   pipelineRef:
-    name: lorem-ipsum-local-env-debug-argocd
+    name: lorem-ipsum-local-env-debug-promote
   params:
-    - name: yaml-path
-      value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local
+    - name: source-image
+      value: docker-registry.demo:5000/lorem-ipsum:v1.0.175.dev
+    - name: target-image
+      value: docker-registry.demo:5000/lorem-ipsum:v1.0.175.test
+    - name: repo-url
+      value: git@github.com:adriandolha/cloud-demo.git
+    - name: revision
+      value: master
+    - name: depth
+      value: "0"
 
   workspaces:
     - name: source
@@ -155,7 +233,7 @@ spec:
       subPath: terraform
     - name: secrets
       persistentVolumeClaim:
-        claimName: lorem-ipsum-local-ws
+        claimName: lorem-ipsum-local-env-ws
     - name: kube-config
       secret:
         secretName: kubeconfig

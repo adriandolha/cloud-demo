@@ -170,6 +170,19 @@ spec:
           value: "$(tasks.app-version-dev.results.imageTag)"
         - name: imageUrl
           value: "$(tasks.app-version-dev.results.imageUrl)"
+    - name: promote-image-to-test
+      taskRef:
+        name: docker-tag
+      runAfter:
+        - build-docker-image
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: source-image
+          value: "$(tasks.build-docker-image.results.IMAGE-DIGEST)"
+        - name: target-image
+          value: "$(tasks.app-version-dev.results.imageUrl).test"
     - name: argocd-dev
       taskRef:
         name: argocd-push

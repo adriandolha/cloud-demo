@@ -64,7 +64,7 @@ spec:
       image: docker.io/hashicorp/terraform:light
       env:
         - name: TF_LOG
-          value: "WARN"
+          value: "ERROR"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
@@ -96,7 +96,7 @@ spec:
       image: docker.io/hashicorp/terraform:light
       env:
         - name: TF_LOG
-          value: "WARN"
+          value: "ERROR"
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
