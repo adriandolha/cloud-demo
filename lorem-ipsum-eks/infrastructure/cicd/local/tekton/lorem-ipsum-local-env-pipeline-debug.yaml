@@ -134,6 +134,7 @@ spec:
     - name: secrets
     - name: kube-config
   params:
+    - name: run-full
     - name: source-image
     - name: target-image
     - name: repo-url
@@ -142,6 +143,10 @@ spec:
 
   tasks:
     - name: clean-source
+      when:
+        - input: "$(params.run-full)"
+          operator: in
+          values: [ "yes" ]
       taskRef:
         name: clean
       workspaces:
@@ -164,6 +169,10 @@ spec:
           value: $(params.depth)
 
     - name: build-and-push
+      when:
+        - input: "$(params.run-full)"
+          operator: in
+          values: [ "yes" ]
       taskRef:
         name: buildah
       runAfter:
@@ -174,7 +183,7 @@ spec:
         - name: CONTEXT
           value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
         - name: DOCKERFILE
-          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum/.Dockerfile
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum/Dockerfile
         - name: TLSVERIFY
           value: "false"
         - name: FORMAT
@@ -186,8 +195,8 @@ spec:
     - name: promote
       taskRef:
         name: docker-tag
-      runAfter:
-        - build-and-push
+#      runAfter:
+#        - build-and-push
       workspaces:
         - name: source
           workspace: source
@@ -207,6 +216,8 @@ spec:
   pipelineRef:
     name: lorem-ipsum-local-env-debug-promote
   params:
+    - name: run-full
+      value: "no"
     - name: source-image
       value: docker-registry.demo:5000/lorem-ipsum:v1.0.175.dev
     - name: target-image

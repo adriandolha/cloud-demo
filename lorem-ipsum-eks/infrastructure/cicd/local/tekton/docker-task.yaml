@@ -151,7 +151,10 @@ spec:
     workingDir: $(workspaces.source.path)
     script: |
       [[ "$(workspaces.sslcertdir.bound)" == "true" ]] && CERT_DIR_FLAG="--cert-dir $(workspaces.sslcertdir.path)"
+      buildah pull --tls-verify=$(params.TLSVERIFY) $(params.source-image)
       buildah tag $(params.source-image) $(params.target-image)
+      buildah push --tls-verify=$(params.TLSVERIFY)  $(params.source-image) $(params.target-image)
+
     volumeMounts:
     - name: varlibcontainers
       mountPath: /var/lib/containers

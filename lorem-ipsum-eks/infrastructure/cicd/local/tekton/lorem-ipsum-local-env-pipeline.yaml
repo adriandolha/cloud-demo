@@ -153,41 +153,30 @@ spec:
           value: "$(tasks.app-version-dev.results.version)"
         - name: WORKING_DIR
           value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
-    - name: build-docker-image
+    - name: build-and-push
       taskRef:
-        name: build-docker-image-from-git-source
-#      runAfter:
-#        - unit-test
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: pathToDockerFile
-          value: Dockerfile
-        - name: pathToContext
-          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
-        - name: imageTag
-          value: "$(tasks.app-version-dev.results.imageTag)"
-        - name: imageUrl
-          value: "$(tasks.app-version-dev.results.imageUrl)"
-    - name: promote-image-to-test
-      taskRef:
-        name: docker-tag
+        name: buildah
       runAfter:
-        - build-docker-image
+        - app-version-dev
+      params:
+        - name: IMAGE
+          value: "$(tasks.app-version-dev.results.imageUrl)"
+        - name: CONTEXT
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
+        - name: DOCKERFILE
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum/Dockerfile
+        - name: TLSVERIFY
+          value: "false"
+        - name: FORMAT
+          value: "oci"
       workspaces:
         - name: source
           workspace: source
-      params:
-        - name: source-image
-          value: "$(tasks.build-docker-image.results.IMAGE-DIGEST)"
-        - name: target-image
-          value: "$(tasks.app-version-dev.results.imageUrl).test"
     - name: argocd-dev
       taskRef:
         name: argocd-push
       runAfter:
-        - build-docker-image
+        - build-and-push
       workspaces:
         - name: source
           workspace: argocd
@@ -196,6 +185,58 @@ spec:
           value: $(workspaces.source.path)/lorem-ipsum/values.yaml
         - name: imageTag
           value: "$(tasks.app-version-dev.results.imageTag)"
+    - name: app-version-test
+      taskRef:
+        name: app-version
+      runAfter:
+        - argocd-dev
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: imageUrl
+          value: $(params.image-url)
+        - name: imageTagPrefix
+          value: "test"
+      workspaces:
+        - name: source
+          workspace: source
+    - name: tf-apply-test
+      taskRef:
+        name: terraform
+      runAfter:
+        - app-version-test
+      params:
+        - name: namespace
+          value: "test"
+        - name: path
+          value: $(params.tf-path)
+        - name: app-name
+          value: "lorem-ipsum"
+        - name: command
+          value: "apply"
+      workspaces:
+        - name: source
+          workspace: source
+        - name: terraform
+          workspace: terraform
+        - name: secrets
+          workspace: secrets
+        - name: kube-config
+          workspace: kube-config
+
+    - name: promote-image-to-test
+      taskRef:
+        name: docker-tag
+      runAfter:
+        - tf-apply-test
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: source-image
+          value: "$(tasks.app-version-dev.results.imageUrl)"
+        - name: target-image
+          value: "$(tasks.app-version-test.results.imageUrl)"
 
 ---
 apiVersion: tekton.dev/v1beta1
