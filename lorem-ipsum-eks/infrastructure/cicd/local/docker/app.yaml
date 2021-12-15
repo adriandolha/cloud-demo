@@ -26,8 +26,6 @@ spec:
               value: "http://0.0.0.0:5000"
             - name: REGISTRY_HTTPS_PROXY
               value: "http://0.0.0.0:5000"
-            - name: REGISTRY_HTTP_ADDR
-              value: "0.0.0.0:5000"
             - name: REGISTRY_HTTP_TLS_KEY
               value: "/certs/tls.key"
             - name: REGISTRY_VALIDATION_DISABLED

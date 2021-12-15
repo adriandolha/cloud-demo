@@ -22,6 +22,8 @@ def config_valid():
             print(_config)
             for k, v in _config.items():
                 os.environ[k] = str(v)
+    else:
+        _config = os.environ
     lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.setLevel(logging.DEBUG)
