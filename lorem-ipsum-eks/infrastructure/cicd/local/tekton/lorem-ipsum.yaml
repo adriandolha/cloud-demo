@@ -102,6 +102,9 @@ spec:
     - name: secret_name
       type: string
       default: "lorem-ipsum"
+    - name: env
+      type: string
+      default: "dev"
   steps:
     - name: unit-test
       image: docker.io/python:$(inputs.params.PYTHON)
@@ -124,7 +127,7 @@ spec:
         - name: aurora_password
           valueFrom:
             secretKeyRef:
-              name: postgres
+              name: "postgres-$(inputs.params.env)"
               key: postgresql-password
         - name: admin_user
           valueFrom:

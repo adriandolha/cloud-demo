@@ -15,11 +15,13 @@ import bcrypt
 @pytest.fixture()
 def config_valid():
     import json
-    with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json", "r") as _file:
-        _config = dict(json.load(_file))
-        print(_config)
-        for k, v in _config.items():
-            os.environ[k] = str(v)
+    config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json"
+    if os.path.exists(config_file):
+        with open(config_file, "r") as _file:
+            _config = dict(json.load(_file))
+            print(_config)
+            for k, v in _config.items():
+                os.environ[k] = str(v)
     lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.setLevel(logging.DEBUG)

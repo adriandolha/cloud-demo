@@ -1,0 +1,18 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: event-binding
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: git-repository-url
+      value: $(body.repository.url)
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: push-trigger-template
+spec:
+  params:
+    - name: git-repository-url
+      description: The git repository url
