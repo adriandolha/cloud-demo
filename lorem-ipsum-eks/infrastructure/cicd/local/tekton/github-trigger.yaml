@@ -1,4 +1,4 @@
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
   name: event-binding
@@ -8,11 +8,87 @@ spec:
     - name: git-repository-url
       value: $(body.repository.url)
 ---
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: listener
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: git-push-service-account
+  triggers:
+    - name: trigger
+      bindings:
+        - ref: event-binding
+      template:
+        ref: push-trigger-template
+      interceptors:
+#        - github:
+#            secretRef:
+#              secretName: git-secret
+#              secretKey: secretToken
+#            eventTypes:
+#              - push
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+          - name: "secretRef"
+            value:
+              secretName: git-secret
+              secretKey: secretToken
+          - name: "eventTypes"
+            value: ["push"]
+---
+apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
   name: push-trigger-template
+  namespace: tekton-pipelines
 spec:
   params:
     - name: git-repository-url
       description: The git repository url
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: lorem-ipsum-local-env-
+    spec:
+      serviceAccountName: git-push-service-account
+      pipelineRef:
+        name: lorem-ipsum-local-env
+      params:
+        - name: repo-url
+          value: git@github.com:adriandolha/cloud-demo.git
+        - name: branch-name
+          value: master
+        - name: argocd-repo-url
+          value: git@github.com:adriandolha/lorem-ipsum-argocd.git
+        - name: argocd-branch-name
+          value: main
+        - name: image-url
+          value: "docker-registry.demo:5000/lorem-ipsum"
+        - name: run-tests
+          value: "yes"
+        - name: tf-path
+          value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local/lorem-ipsum
+      workspaces:
+        - name: source
+          persistentVolumeClaim:
+            claimName: lorem-ipsum-local-env-ws
+          subPath: source
+        - name: argocd
+          persistentVolumeClaim:
+            claimName: lorem-ipsum-local-env-ws
+          subPath: argocd
+        - name: terraform
+          persistentVolumeClaim:
+            claimName: lorem-ipsum-local-env-ws
+          subPath: terraform
+        - name: secrets
+          persistentVolumeClaim:
+            claimName: lorem-ipsum-local-env-ws
+        - name: kube-config
+          secret:
+            secretName: kubeconfig
