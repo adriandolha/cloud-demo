@@ -10,6 +10,12 @@ variable "namespace" {
   default = "dev"
 }
 
+variable "pipeline_namespace" {
+  type = string
+  description = "Namespace."
+  default = "tekton-pipelines"
+}
+
 variable "kube_config_file" {
   type = string
   default = "~/.kube/config"

@@ -124,8 +124,8 @@ spec:
         - name: aurora_password
           valueFrom:
             secretKeyRef:
-              name: $(inputs.params.secret_name)
-              key: aurora-password
+              name: postgres
+              key: postgresql-password
         - name: admin_user
           valueFrom:
             secretKeyRef:
@@ -135,7 +135,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: $(inputs.params.secret_name)
-              key: admin_password
+              key: admin-password
         - name: password_encryption_key
           valueFrom:
             secretKeyRef:

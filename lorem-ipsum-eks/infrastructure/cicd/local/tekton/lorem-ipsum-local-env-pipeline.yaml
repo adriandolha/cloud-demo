@@ -131,6 +131,7 @@ spec:
           value: $(params.image-url)
         - name: imageTagPrefix
           value: "dev"
+
       workspaces:
         - name: source
           workspace: source
@@ -155,6 +156,7 @@ spec:
           value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
         - name: secret_name
           value: "lorem-ipsum-dev"
+
     - name: build-and-push
       taskRef:
         name: buildah
@@ -187,20 +189,28 @@ spec:
           value: $(workspaces.source.path)/lorem-ipsum/values.yaml
         - name: imageTag
           value: "$(tasks.app-version-dev.results.imageTag)"
-    - name: argocd-sync-application
+        - name: revision
+          value: "main"
+
+    - name: argocd-sync-dev
       taskRef:
         name: argocd-task-sync-and-wait
+      runAfter:
+        - argocd-dev
       params:
         - name: application-name
           value: lorem-ipsum
         - name: argocd-version
           value: v1.4.0
+        - name: revision
+          value: "main"
+
 
     - name: app-version-test
       taskRef:
         name: app-version
       runAfter:
-        - argocd-sync-application
+        - argocd-sync-dev
       params:
         - name: url
           value: $(params.repo-url)
@@ -289,21 +299,26 @@ spec:
     - name: argocd-sync-test
       taskRef:
         name: argocd-task-sync-and-wait
+      runAfter:
+        - argocd-test
       params:
         - name: application-name
           value: lorem-ipsum-test
         - name: argocd-version
           value: v1.4.0
+        - name: revision
+          value: "test"
+
 
     - name: integration-test
-      when:
-        - input: "$(params.run-tests)"
-          operator: in
-          values: [ "yes" ]
+#      when:
+#        - input: "$(params.run-tests)"
+#          operator: in
+#          values: [ "yes" ]
       taskRef:
         name: pytest
       runAfter:
-        - argocd-sync-test
+        - argocd-sync-dev
       workspaces:
         - name: source
           workspace: source
@@ -316,6 +331,7 @@ spec:
           value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
         - name: secret_name
           value: "lorem-ipsum-dev"
+
 
 ---
 apiVersion: tekton.dev/v1beta1
@@ -339,7 +355,7 @@ spec:
     - name: image-url
       value: "docker-registry.demo:5000/lorem-ipsum"
     - name: run-tests
-      value: "no"
+      value: "yes"
     - name: tf-path
       value: $(workspaces.source.path)/lorem-ipsum-eks/infrastructure/local/lorem-ipsum
   workspaces:
