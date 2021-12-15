@@ -12,7 +12,7 @@ class TestConfig:
         _result = app.get_config()
         config = json.loads(_result.response[0].decode('utf-8'))
         print(config)
-        assert config.get('aurora_host') == 'localhost'
+        assert config.get('aurora_host') == os.getenv('aurora_host')
         assert '200' == _result.status
 
     def test_config_no_sensitive_data(self, config_valid_request):
