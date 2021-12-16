@@ -274,7 +274,7 @@ spec:
       args:
         - "-i"
         - "-e"
-        - "s;lorem-ipsum:dev; kubernetes.docker.internal:5000/lorem-ipsum:dev;g"
+        - "s;lorem-ipsum:dev; docker-registry.internal:31111/lorem-ipsum:dev;g"
         - "$(params.path)"
     - name: debugging
       image: ubuntu  # contains bash
