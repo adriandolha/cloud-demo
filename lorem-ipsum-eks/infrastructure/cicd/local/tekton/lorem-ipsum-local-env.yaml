@@ -92,6 +92,7 @@ spec:
         - init
         - -reconfigure
         - -backend-config=$(inputs.params.namespace).tfbackend
+        - -var-file=$(inputs.params.namespace).tfvars
     - name: command
       image: docker.io/hashicorp/terraform:light
       env:

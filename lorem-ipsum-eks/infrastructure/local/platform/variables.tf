@@ -1,13 +1,13 @@
 variable "env" {
   type = string
   description = "Env to deploy to. It will translate into a namespace."
-  default = "dev"
+  default = "platform"
 }
 
 variable "namespace" {
   type = string
   description = "Namespace."
-  default = "dev"
+  default = "platform"
 }
 
 variable "kube_config_file" {
