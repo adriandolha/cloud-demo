@@ -21,7 +21,7 @@ class TestConnectionPool:
         metrics = json.loads(_result.response[0].decode('utf-8'))
         print(metrics)
         assert metrics.get('connection_pool.rusedconn') == 0
-        assert '200' == _result.status
+        assert 200 == _result.status_code
 
     def test_pool_size_increases_when_new_session_transaction(self, metrics_request_no_fields):
         app_context = app.app_context()
@@ -45,4 +45,4 @@ class TestConnectionPool:
         metrics = json.loads(_result.response[0].decode('utf-8'))
         print(f'Metrics v3 = {metrics}')
         assert metrics.get('connection_pool.rusedconn') == 0
-        assert '200' == _result.status
+        assert 200 == _result.status_code
