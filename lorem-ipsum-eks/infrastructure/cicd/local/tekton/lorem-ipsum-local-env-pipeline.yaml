@@ -161,7 +161,7 @@ spec:
       taskRef:
         name: buildah
       runAfter:
-        - app-version-dev
+        - unit-test
       params:
         - name: IMAGE
           value: "$(tasks.app-version-dev.results.imageUrl)"
@@ -204,8 +204,27 @@ spec:
           value: v1.4.0
         - name: revision
           value: "main"
-
-
+    - name: integration-test
+#      when:
+#        - input: "$(params.run-tests)"
+#          operator: in
+#          values: [ "yes" ]
+      taskRef:
+        name: pytest
+      runAfter:
+        - argocd-sync-dev
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: ARGS
+          value: integration_tests
+        - name: version
+          value: "$(tasks.app-version-dev.results.version)"
+        - name: WORKING_DIR
+          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
+        - name: secret_name
+          value: "lorem-ipsum-dev"
     - name: app-version-test
       taskRef:
         name: app-version
@@ -308,29 +327,6 @@ spec:
           value: v1.4.0
         - name: revision
           value: "test"
-
-
-    - name: integration-test
-#      when:
-#        - input: "$(params.run-tests)"
-#          operator: in
-#          values: [ "yes" ]
-      taskRef:
-        name: pytest
-      runAfter:
-        - argocd-sync-dev
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: ARGS
-          value: integration_tests
-        - name: version
-          value: "$(tasks.app-version-dev.results.version)"
-        - name: WORKING_DIR
-          value: $(workspaces.source.path)/lorem-ipsum-eks/lorem-ipsum
-        - name: secret_name
-          value: "lorem-ipsum-dev"
 
 
 ---
