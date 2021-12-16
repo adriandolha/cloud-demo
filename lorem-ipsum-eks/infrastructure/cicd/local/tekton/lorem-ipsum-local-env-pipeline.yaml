@@ -229,7 +229,7 @@ spec:
       taskRef:
         name: app-version
       runAfter:
-        - argocd-sync-dev
+        - integration-test
       params:
         - name: url
           value: $(params.repo-url)
