@@ -22,9 +22,9 @@ spec:
           env:
             - name: REGISTRY_HTTP_TLS_CERTIFICATE
               value: "/certs/tls.crt"
-            - name: HTTPS_PROXY
+            - name: HTTP_PROXY
               value: "http://0.0.0.0:5000"
-            - name: REGISTRY_HTTPS_PROXY
+            - name: REGISTRY_HTTP_PROXY
               value: "http://0.0.0.0:5000"
             - name: REGISTRY_HTTP_TLS_KEY
               value: "/certs/tls.key"
