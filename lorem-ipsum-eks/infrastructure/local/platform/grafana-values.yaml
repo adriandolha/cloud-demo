@@ -5,9 +5,9 @@ labels:
   app: grafana
 podLabels:
   app: grafana
-grafana.ini:
-  server:
-    root_url: https://localhost:31862/grafana # this host can be localhost
+#grafana.ini:
+#  server:
+#    root_url: https://localhost:31862/grafana # this host can be localhost
 admin:
   existingSecret: "${grafana_secret}"
   userKey: username
@@ -39,6 +39,16 @@ dashboards:
       gnetId: 10000
       revision: 1
       datasource: prometheus
+    blackbox-exporter:
+      gnetId: 7587
+      revision: 3
+      datasource: prometheus
+    kubernetes-pod-overview:
+      gnetId: 13787
+      revision: 3
+      datasource: prometheus
     lorem-ipsum-dashboard:
       json: |
         ${lorem_ipsum_dashboard}
+plugins:
+  - grafana-piechart-panel
