@@ -24,7 +24,8 @@ resource "helm_release" "grafana" {
     templatefile("grafana-values.yaml", {
       namespace = kubernetes_namespace.ns.id,
       grafana_secret = var.grafana_secret,
-      lorem_ipsum_dashboard = indent(8, file("${path.module}/dashboards/lorem-ipsum-dashboard.json"))
+      lorem_ipsum_dashboard = indent(8, file("${path.module}/dashboards/lorem-ipsum-dashboard.json")),
+      kubernetes_cluster = indent(8, file("${path.module}/dashboards/kubernetes-cluster.json"))
     })
   ]
 }

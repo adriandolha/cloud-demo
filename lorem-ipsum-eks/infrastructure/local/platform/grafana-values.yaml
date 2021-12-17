@@ -50,5 +50,8 @@ dashboards:
     lorem-ipsum-dashboard:
       json: |
         ${lorem_ipsum_dashboard}
+    kubernetes-cluster:
+      json: |
+        ${kubernetes_cluster}
 plugins:
   - grafana-piechart-panel
