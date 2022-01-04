@@ -1,15 +1,16 @@
 import logging
 import os
+
 import faker
-import boto3
 import flask
-import pytest
 import mock
-# from mock import mock
+import pytest
 
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json
-import bcrypt
+
+
+# from mock import mock
 
 
 @pytest.fixture()
@@ -24,7 +25,7 @@ def db_session():
 @pytest.fixture()
 def config_valid(db_session):
     import json
-    config_file= f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-unit.json"
+    config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-unit.json"
     if os.path.exists(config_file):
         with open(config_file, "r") as _file:
             _config = dict(json.load(_file))
@@ -117,46 +118,47 @@ def metrics_request_no_fields(app_valid):
 
 @pytest.fixture()
 def user_valid_list_one_request(user_valid1, app_valid):
-    # from flask import request
     import app
+    import lorem_ipsum.views as api
     with app.app.test_request_context():
         flask.request.data = to_json([user_valid1]).encode('utf-8')
         lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = lorem_ipsum.repo.User(
             **user_valid1)
         yield user_valid1
         # print(lorem_ipsum.repo.Transaction.session.mock_calls)
-        app.app_context().user_service.delete(user_valid1['username'])
+        api.app_context().user_service.delete(user_valid1['username'])
 
 
 @pytest.fixture()
 def user_valid_list_request(user_valid2, app_valid):
-    # from flask import request
     import app
+    import lorem_ipsum.views as api
     with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid2])
+        api.app_context().user_service.save([user_valid2])
         flask.request.data = to_json([user_valid2]).encode('utf-8')
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 1
         lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value = [
             lorem_ipsum.repo.User(**user_valid2)]
         yield user_valid2
-        app.app_context().user_service.delete(user_valid2['username'])
+        api.app_context().user_service.delete(user_valid2['username'])
 
 
 @pytest.fixture()
 def user_valid_list_default_limit(user_valid2, user_valid1, app_valid):
-    # from flask import request
+    import lorem_ipsum.views as api
     import app
+
     with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid1])
-        app.app_context().user_service.save([user_valid2])
+        api.app_context().user_service.save([user_valid1])
+        api.app_context().user_service.save([user_valid2])
 
         flask.request.args = {}
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
         lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value = [
             lorem_ipsum.repo.User(**user_valid1)]
         yield user_valid2
-        app.app_context().user_service.delete(user_valid1['username'])
-        app.app_context().user_service.delete(user_valid2['username'])
+        api.app_context().user_service.delete(user_valid1['username'])
+        api.app_context().user_service.delete(user_valid2['username'])
 
 
 @pytest.fixture()

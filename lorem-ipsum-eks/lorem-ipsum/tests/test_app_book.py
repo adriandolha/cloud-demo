@@ -3,7 +3,7 @@ import os
 
 os.environ['env'] = 'test'
 from lorem_ipsum.serializers import from_json
-import app
+import lorem_ipsum.views as app
 
 
 class TestBookApi:

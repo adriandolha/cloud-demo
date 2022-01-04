@@ -1,11 +1,8 @@
 import json
 import os
 
-from lorem_ipsum.repo import Transaction
-
 os.environ['env'] = 'test'
-from lorem_ipsum.serializers import from_json
-import app
+import lorem_ipsum.views as app
 
 
 class TestMetricsApi:
