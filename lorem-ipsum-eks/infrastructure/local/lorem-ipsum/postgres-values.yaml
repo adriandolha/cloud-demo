@@ -1,6 +1,0 @@
-namespaceOverride: "${namespace}"
-
-global:
-  postgresql:
-    existingSecret: "${postgres_secret}"
-    postgresqlDatabase: "${postgres_database}"

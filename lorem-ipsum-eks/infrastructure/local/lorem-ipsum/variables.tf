@@ -4,6 +4,17 @@ variable "env" {
   default = "dev"
 }
 
+variable "postgres_env" {
+  type = string
+  description = "Env to deploy to. It will translate into a namespace."
+  default = "platform"
+}
+
+variable "postgres_namespace" {
+  type = string
+  description = "Env to deploy to. It will translate into a namespace."
+  default = "platform"
+}
 variable "namespace" {
   type = string
   description = "Namespace."

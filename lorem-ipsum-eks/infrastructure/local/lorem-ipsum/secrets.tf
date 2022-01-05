@@ -5,10 +5,11 @@ data "kubernetes_secret" "app_secret_source" {
   }
 }
 
-resource "random_password" "password" {
-  length = 16
-  special = true
-  override_special = "_%@"
+data "kubernetes_secret" "postgres_secret_source" {
+  metadata {
+    name = "${var.app_secret_name}-${var.postgres_env}"
+    namespace = var.postgres_namespace
+  }
 }
 
 resource "kubernetes_secret" "postgres" {
@@ -17,10 +18,7 @@ resource "kubernetes_secret" "postgres" {
     namespace = kubernetes_namespace.ns.id
   }
 
-  data = {
-    username = "postgres"
-    postgresql-password = random_password.password.result
-  }
+  data = data.kubernetes_secret.postgres_secret_source.data
 }
 resource "kubernetes_secret" "postgres_secret" {
   metadata {
