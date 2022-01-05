@@ -19,7 +19,8 @@ def db_session():
         with mock.patch('lorem_ipsum.repo.Transaction._session_maker'):
             with mock.patch('lorem_ipsum.repo.Transaction.session'):
                 with mock.patch('lorem_ipsum.repo.Transaction.pool'):
-                    yield
+                    with mock.patch('lorem_ipsum.repo.TransactionManager.create_db_engine'):
+                        yield
 
 
 @pytest.fixture()
