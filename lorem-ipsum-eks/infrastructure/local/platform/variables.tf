@@ -19,3 +19,18 @@ variable "grafana_secret" {
   type = string
   default = "grafana"
 }
+
+variable "postgres_secret" {
+  type = string
+  default = "postgres"
+}
+variable "postgres_database" {
+  type = string
+  default = "postgres"
+}
+
+variable "pipeline_namespace" {
+  type = string
+  description = "Namespace."
+  default = "tekton-pipelines"
+}
