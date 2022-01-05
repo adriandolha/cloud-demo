@@ -1,32 +1,18 @@
 import json
 import os
 
+import requests
+
 os.environ['env'] = 'test'
-from lorem_ipsum.serializers import from_json
+from lorem_ipsum.serializers import from_json, to_json
 import app
 
 
 class TestUserApi:
-    def test_user_list_one(self, config_valid, user_valid_list_one_request):
-        app.app_context().user_service.save([user_valid_list_one_request])
-        response = app.get_user(user_valid_list_one_request['username'])
-        user = json.loads(response.response[0].decode('utf-8'))
-        print(user)
-        assert user['username'] == user_valid_list_one_request['username']
-        assert 200 == response.status_code
-
-    def test_user_list_count(self, user_valid_list_request):
-        response = app.get_all_users()
-        users = json.loads(response.response[0].decode('utf-8'))
+    def test_user_list_count(self, config_valid, basic_headers):
+        response = requests.get(url=f'{config_valid["root_url"]}/users', headers=basic_headers)
+        users = json.loads(response.content.decode('utf-8'))
         print(users)
         assert users['total']
-        assert len(users['items']) == 1
-        assert 200 == response.status_code
-
-    def test_user_list_default_limit(self, user_valid_list_default_limit):
-        response = app.get_all_users()
-        users = json.loads(response.response[0].decode('utf-8'))
-        print(users)
-        assert users['total'] > 2
         assert len(users['items']) == 1
         assert 200 == response.status_code

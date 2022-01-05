@@ -106,9 +106,14 @@ spec:
       type: string
       default: "dev"
   steps:
-    - name: unit-test
+    - name: pytest
       image: docker.io/python:$(inputs.params.PYTHON)
       env:
+        - name: root_url
+          valueFrom:
+            secretKeyRef:
+              name: $(inputs.params.secret_name)
+              key: root-url
         - name: aurora_host
           valueFrom:
             secretKeyRef:

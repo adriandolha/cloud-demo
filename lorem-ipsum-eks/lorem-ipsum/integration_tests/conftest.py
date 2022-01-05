@@ -16,6 +16,7 @@ import bcrypt
 def config_valid():
     import json
     config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json"
+    print(f'Config file is {config_file}')
     if os.path.exists(config_file):
         with open(config_file, "r") as _file:
             _config = dict(json.load(_file))
@@ -98,6 +99,18 @@ def test_client():
     import app
     with app.app.test_client() as client:
         yield client
+
+
+@pytest.fixture
+def basic_headers(config_valid):
+    return {'Content-Type': 'application/json',
+            'X-Token-String': config_valid['admin_token']}
+
+
+@pytest.fixture
+def basic_headers_user(config_valid):
+    return {'Content-Type': 'application/json',
+            'X-Token-String': config_valid['user_token']}
 
 
 @pytest.fixture()

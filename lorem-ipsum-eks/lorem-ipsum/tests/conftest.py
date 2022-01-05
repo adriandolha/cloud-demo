@@ -26,6 +26,7 @@ def db_session():
 def config_valid(db_session):
     import json
     config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-unit.json"
+    print(f'Config file is {config_file}')
     if os.path.exists(config_file):
         with open(config_file, "r") as _file:
             _config = dict(json.load(_file))
