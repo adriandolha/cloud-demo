@@ -28,11 +28,18 @@ class TestBookApi:
         assert len(books['items']) >= 1
         assert 200 == response.status_code
 
-    def test_book_list_default_limit(self, config_valid, requests_standard_settings):
+    def test_book_list_default_limit(self, config_valid, book_valid, requests_standard_settings):
+        _response = requests.post(url=f'{config_valid["root_url"]}/books',
+                                  data=to_json([book_valid]).encode('utf-8'), **requests_standard_settings)
+        assert _response.status_code == 200
+
+        _response = requests.post(url=f'{config_valid["root_url"]}/books',
+                                  data=to_json([book_valid]).encode('utf-8'), **requests_standard_settings)
+        assert _response.status_code == 200
         response = requests.get(url=f'{config_valid["root_url"]}/books', **requests_standard_settings)
         books = json.loads(response.content.decode('utf-8'))
         print(books)
-        assert books['total'] > 2
+        assert books['total'] >= 2
         assert len(books['items']) == 1
         assert 200 == response.status_code
 
