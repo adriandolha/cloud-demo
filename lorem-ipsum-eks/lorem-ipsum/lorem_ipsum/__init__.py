@@ -84,13 +84,13 @@ def create_app() -> AppContext:
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     LOGGER.info(f'Start time: {now}')
     model.start_mappers()
+    repo.create_database_if_not_exists(get_config())
     app_context = create_app_context()
+    app_context.init()
 
     return app_context
 
 
 def create_app_context() -> AppContext:
     _app_context = DefaultAppContext()
-    _app_context.init()
-
     return _app_context

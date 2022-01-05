@@ -14,6 +14,7 @@ DEFAULT_CONFIGS = {
 @lru_cache()
 def get_config():
     aurora_password = os.getenv('aurora_password')
+    postgres_password = os.getenv('postgres_password', aurora_password)
     if os.getenv('app_env') == 'aws':
         session = boto3.session.Session()
         kms = session.client('kms')
@@ -21,10 +22,13 @@ def get_config():
     _config = dict(DEFAULT_CONFIGS)
     _config.update({
         'aurora_host': os.getenv('aurora_host').split(":")[0],
+        'postgres_user': os.getenv('postgres_user', default='postgres'),
+        'postgres_password': postgres_password,
+        'postgres_database_name': os.getenv('postgres_database_name', default='postgres'),
         'aurora_user': os.getenv('aurora_user'),
-        'aurora_port': int(os.getenv('aurora_port', default=5432)),
         'aurora_password': aurora_password,
         'database_name': os.getenv('database_name', default='postgres'),
+        'aurora_port': int(os.getenv('aurora_port', default=5432)),
         'password_encryption_key': os.getenv('password_encryption_key'),
         'admin_password': os.getenv('admin_password'),
         'admin_user': os.getenv('admin_user'),

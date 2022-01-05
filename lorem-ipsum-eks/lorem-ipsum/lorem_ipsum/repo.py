@@ -1,8 +1,9 @@
 import logging
 import uuid
-from functools import lru_cache
+from urllib.parse import quote
 
 import bcrypt
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import Column, String
 from sqlalchemy import create_engine, JSON, Integer
 from sqlalchemy.engine import Engine
@@ -10,11 +11,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
 
-from lorem_ipsum.model import UserRepo
-from lorem_ipsum.model import BookRepo
-from lorem_ipsum.model import AppContext
 import lorem_ipsum.model as model
-from urllib.parse import quote
+from lorem_ipsum.model import AppContext
+from lorem_ipsum.model import BookRepo
+from lorem_ipsum.model import UserRepo
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
@@ -71,14 +71,21 @@ class TransactionManager:
             database = self.config.get("database_name")
             minconn = self.config.get('connection_pool_minconn')
             maxconn = self.config.get('connection_pool_maxconn')
-            # we need to encode passowrd in case it contains special chars
-            encoded_password = quote(password)
-            _db = create_engine(f"postgres://{user}:{encoded_password}@{host}:{port}/{database}",
-                                pool_size=minconn, max_overflow=maxconn - minconn, poolclass=QueuePool, echo=False)
+            _db = TransactionManager.create_db_engine(user=user, password=password, host=host, port=port,
+                                                      database=database,
+                                                      minconn=minconn, maxconn=maxconn)
             Transaction._db = _db
             Transaction._session_maker = sessionmaker(_db)
             LOGGER.debug(f'Created db {Transaction._db}')
         self._transaction = Transaction(app_context)
+
+    @staticmethod
+    def create_db_engine(user: str, password: str, host: str, port: str, database: str, minconn: str, maxconn: str):
+        # we need to encode passowrd in case it contains special chars
+        encoded_password = quote(password)
+        _db = create_engine(f"postgres://{user}:{encoded_password}@{host}:{port}/{database}",
+                            pool_size=minconn, max_overflow=maxconn - minconn, poolclass=QueuePool, echo=False)
+        return _db
 
     @property
     def transaction(self) -> Transaction:
@@ -213,19 +220,39 @@ class PostgresBookRepo(BookRepo):
         return _book.as_model()
 
 
-DATABASE_READY = False
+def create_database_if_not_exists(config: dict):
+    user = config['postgres_user']
+    password = config['postgres_password']
+    host = config['aurora_host']
+    port = config['aurora_port']
+    database = config.get("postgres_database_name")
+    minconn = config.get('connection_pool_minconn')
+    maxconn = config.get('connection_pool_maxconn')
+    _db = TransactionManager.create_db_engine(user=user, password=password, host=host, port=port,
+                                              database=database,
+                                              minconn=minconn, maxconn=maxconn)
+
+    _db_name = config.get('database_name')
+    with _db.connect() as conn:
+        conn.connection.set_isolation_level(
+            ISOLATION_LEVEL_AUTOCOMMIT
+        )
+        _result = conn.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{_db_name}'")
+        exists = _result.cursor.fetchone()
+        print(f'Database {_db_name} exists status is {exists}')
+    with _db.connect() as conn:
+        conn.connection.set_isolation_level(
+            ISOLATION_LEVEL_AUTOCOMMIT
+        )
+        if not exists:
+            conn.execute(f"CREATE DATABASE {_db_name}")
 
 
-@lru_cache()
 def db_setup(app_context: AppContext):
     LOGGER.info('Running database setup...')
-    _db_name = app_context.config.get('db_name', 'lorem-ipsum')
-    _cursor = app_context.transaction_manager.transaction.session
-    # _cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{_db_name}'")
-    # exists = _cursor.fetchone()
-    # if not exists:
-    #     _cursor.execute(f'CREATE DATABASE {_db_name}')
-    _cursor.execute('CREATE TABLE IF NOT EXISTS public.books\
+    _db_name = app_context.config.get('database_name', 'postgres')
+    _session = app_context.transaction_manager.transaction.session
+    _session.execute('CREATE TABLE IF NOT EXISTS public.books\
             (\
                 id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
                 author character varying(50) COLLATE pg_catalog."default" NOT NULL,\
@@ -235,12 +262,16 @@ def db_setup(app_context: AppContext):
                 CONSTRAINT book_pk PRIMARY KEY (id)\
             )')
 
-    _cursor.execute('CREATE TABLE IF NOT EXISTS public.users\
+    _session.execute('CREATE TABLE IF NOT EXISTS public.users\
             (\
                 username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
                 password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
                 CONSTRAINT user_pk PRIMARY KEY (username)\
             )')
+    create_admin_user(app_context)
+
+
+def create_admin_user(app_context):
     if app_context.user_repo.get(app_context.config['admin_user']) is None:
         password_plain = app_context.config['admin_password']
         password_encrypted = app_context.user_repo.encrypt_password(password_plain)
