@@ -1,15 +1,12 @@
 import logging
 import os
+
 import faker
-import boto3
 import flask
 import pytest
-import mock
-# from mock import mock
 
 import lorem_ipsum
 from lorem_ipsum.serializers import to_json
-import bcrypt
 
 
 @pytest.fixture()
@@ -88,7 +85,6 @@ def book_add_request_insufficient_permissions(book_valid, user_token_valid):
 
 @pytest.fixture()
 def config_valid_request(config_valid):
-    # from flask import request
     import app
     with app.app.test_request_context():
         yield True
@@ -105,6 +101,18 @@ def test_client():
 def basic_headers(config_valid):
     return {'Content-Type': 'application/json',
             'X-Token-String': config_valid['admin_token']}
+
+
+@pytest.fixture
+def requests_standard_settings(config_valid):
+    return {"headers": {'Content-Type': 'application/json',
+                        'X-Token-String': config_valid['admin_token']}, "timeout": 3}
+
+
+@pytest.fixture
+def requests_user_token_settings(config_valid):
+    return {"headers": {'Content-Type': 'application/json',
+                        'X-Token-String': config_valid['user_token']}, "timeout": 3}
 
 
 @pytest.fixture

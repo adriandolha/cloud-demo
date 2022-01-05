@@ -205,10 +205,6 @@ spec:
         - name: revision
           value: "main"
     - name: integration-test
-#      when:
-#        - input: "$(params.run-tests)"
-#          operator: in
-#          values: [ "yes" ]
       taskRef:
         name: pytest
       runAfter:
