@@ -1,11 +1,8 @@
-import logging
 import os
 
 import faker
-import flask
 import pytest
 
-import lorem_ipsum
 from lorem_ipsum.serializers import to_json
 
 
@@ -22,9 +19,6 @@ def config_valid():
                 os.environ[k] = str(v)
     else:
         _config = os.environ
-    lorem_ipsum.create_app()
-    LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.setLevel(logging.DEBUG)
     return _config
 
 
@@ -63,46 +57,6 @@ def user_valid2():
            }
 
 
-@pytest.fixture()
-def book_valid_add_request(book_valid, admin_token_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context(headers={'X-Token-String': admin_token_valid}):
-        book_valid = book_valid
-        flask.request.data = to_json([book_valid]).encode('utf-8')
-        yield book_valid
-
-
-@pytest.fixture()
-def book_add_request_insufficient_permissions(book_valid, user_token_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context(headers={'X-Token-String': user_token_valid}):
-        book_valid = book_valid
-        flask.request.data = to_json([book_valid]).encode('utf-8')
-        yield book_valid
-
-
-@pytest.fixture()
-def config_valid_request(config_valid):
-    import app
-    with app.app.test_request_context():
-        yield True
-
-
-@pytest.fixture
-def test_client():
-    import app
-    with app.app.test_client() as client:
-        yield client
-
-
-@pytest.fixture
-def basic_headers(config_valid):
-    return {'Content-Type': 'application/json',
-            'X-Token-String': config_valid['admin_token']}
-
-
 @pytest.fixture
 def requests_standard_settings(config_valid):
     return {"headers": {'Content-Type': 'application/json',
@@ -113,77 +67,3 @@ def requests_standard_settings(config_valid):
 def requests_user_token_settings(config_valid):
     return {"headers": {'Content-Type': 'application/json',
                         'X-Token-String': config_valid['user_token']}, "timeout": 3}
-
-
-@pytest.fixture
-def basic_headers_user(config_valid):
-    return {'Content-Type': 'application/json',
-            'X-Token-String': config_valid['user_token']}
-
-
-@pytest.fixture()
-def metrics_request_with_fields(config_valid):
-    import app
-    with app.app.test_request_context():
-        flask.request.args = {'fields': 'connections,threads'}
-        yield flask.request.args
-
-
-@pytest.fixture()
-def metrics_request_no_fields(config_valid):
-    import app
-    with app.app.test_request_context():
-        yield flask.request.args
-
-
-@pytest.fixture()
-def user_valid_list_one_request(user_valid1):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        flask.request.data = to_json([user_valid1]).encode('utf-8')
-        yield user_valid1
-        app.app_context().user_service.delete(user_valid1['username'])
-
-
-@pytest.fixture()
-def user_valid_list_request(user_valid2, config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid2])
-        flask.request.data = to_json([user_valid2]).encode('utf-8')
-        yield user_valid2
-        app.app_context().user_service.delete(user_valid2['username'])
-
-
-@pytest.fixture()
-def user_valid_list_default_limit(user_valid2, user_valid1, config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid1])
-        app.app_context().user_service.save([user_valid2])
-
-        flask.request.args = {}
-        yield user_valid2
-        app.app_context().user_service.delete(user_valid1['username'])
-        app.app_context().user_service.delete(user_valid2['username'])
-
-
-@pytest.fixture()
-def book_valid_get_request(config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        flask.request.args = {'limit': '2'}
-        yield book_valid
-
-
-@pytest.fixture()
-def book_valid_get_default_limit(config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        flask.request.args = {}
-        yield book_valid

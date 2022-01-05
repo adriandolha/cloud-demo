@@ -7,7 +7,7 @@ data "kubernetes_secret" "app_secret_source" {
 
 data "kubernetes_secret" "postgres_secret_source" {
   metadata {
-    name = "${var.app_secret_name}-${var.postgres_env}"
+    name = var.postgres_secret
     namespace = var.postgres_namespace
   }
 }
