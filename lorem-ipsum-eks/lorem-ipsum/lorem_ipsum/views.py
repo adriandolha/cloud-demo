@@ -54,7 +54,7 @@ def api_context(event, context):
 
 @books.route('/health', methods=['GET'])
 def health():
-    LOGGER.info('Checking system health...')
+    LOGGER.debug('Checking system health...')
     return response({'body': 'all_good', 'status_code': '200'})
 
 
