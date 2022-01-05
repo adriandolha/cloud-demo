@@ -93,6 +93,13 @@ def config_valid_request(config_valid):
         yield True
 
 
+@pytest.fixture
+def test_client():
+    import app
+    with app.app.test_client() as client:
+        yield client
+
+
 @pytest.fixture()
 def metrics_request_with_fields(config_valid):
     import app

@@ -1,5 +1,6 @@
 import logging
 import uuid
+from functools import lru_cache
 
 import bcrypt
 from sqlalchemy import Column, String
@@ -212,8 +213,12 @@ class PostgresBookRepo(BookRepo):
         return _book.as_model()
 
 
+DATABASE_READY = False
+
+
+@lru_cache()
 def db_setup(app_context: AppContext):
-    LOGGER.debug('Creating table...')
+    LOGGER.info('Running database setup...')
     _db_name = app_context.config.get('db_name', 'lorem-ipsum')
     _cursor = app_context.transaction_manager.transaction.session
     # _cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{_db_name}'")
@@ -221,21 +226,21 @@ def db_setup(app_context: AppContext):
     # if not exists:
     #     _cursor.execute(f'CREATE DATABASE {_db_name}')
     _cursor.execute('CREATE TABLE IF NOT EXISTS public.books\
-        (\
-            id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
-            author character varying(50) COLLATE pg_catalog."default" NOT NULL,\
-            title character varying(100) COLLATE pg_catalog."default" NOT NULL,\
-            no_of_pages integer NOT NULL,\
-            book jsonb NOT NULL,\
-            CONSTRAINT book_pk PRIMARY KEY (id)\
-        )')
+            (\
+                id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+                author character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+                title character varying(100) COLLATE pg_catalog."default" NOT NULL,\
+                no_of_pages integer NOT NULL,\
+                book jsonb NOT NULL,\
+                CONSTRAINT book_pk PRIMARY KEY (id)\
+            )')
 
     _cursor.execute('CREATE TABLE IF NOT EXISTS public.users\
-        (\
-            username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
-            password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
-            CONSTRAINT user_pk PRIMARY KEY (username)\
-        )')
+            (\
+                username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+                password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
+                CONSTRAINT user_pk PRIMARY KEY (username)\
+            )')
     if app_context.user_repo.get(app_context.config['admin_user']) is None:
         password_plain = app_context.config['admin_password']
         password_encrypted = app_context.user_repo.encrypt_password(password_plain)

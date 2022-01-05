@@ -25,7 +25,7 @@ def get_ssm_secret(parameter_name, decrypt=True):
 def configure_logging():
     logging.basicConfig(format='%(asctime)s.%(msecs)03dZ %(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.INFO)
     # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
     # LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info('logging configured...')
@@ -85,10 +85,12 @@ def create_app() -> AppContext:
     LOGGER.info(f'Start time: {now}')
     model.start_mappers()
     app_context = create_app_context()
+
     return app_context
 
 
 def create_app_context() -> AppContext:
     _app_context = DefaultAppContext()
     _app_context.init()
+
     return _app_context

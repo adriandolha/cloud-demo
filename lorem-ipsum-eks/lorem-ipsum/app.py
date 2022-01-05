@@ -37,5 +37,5 @@ if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
     app.register_blueprint(users, url_prefix="/users")
     lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.debug(app.config)
+    LOGGER.info(app.config)
     start_prometheus_metrics(app)

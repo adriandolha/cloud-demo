@@ -23,7 +23,7 @@ def response(api_response):
 def requires_permission(permissions: list):
     def requires_permission_decorator(function):
         def wrapper(*args, **kwargs):
-            LOGGER.debug(f'Authorization...\n{request.headers}')
+            LOGGER.info(f'Authorization...\n{request.headers}')
             user_service = app_context().user_service
             payload = user_service.decode_auth_token(request.headers['X-Token-String'])
             LOGGER.debug(payload)
@@ -63,12 +63,12 @@ def metrics():
     fields = request.args.get('fields')
     if fields is None:
         fields = ''
-    LOGGER.info('Metrics...')
+    LOGGER.debug('Metrics...')
     return response({'body': raw_metrics(fields), 'status_code': '200'})
 
 
 def raw_metrics(fields=''):
-    LOGGER.info('Metrics...')
+    LOGGER.debug('Metrics...')
     _metrics = {}
     try:
         _metrics = to_json(lorem_ipsum.create_app_context().metrics_service.metrics(fields.split(',')))
@@ -82,14 +82,14 @@ def raw_metrics(fields=''):
 @books.route('/<id>', methods=['GET'])
 @requires_permission(['read:books'])
 def get_book(id):
-    LOGGER.debug('Get all data...')
+    LOGGER.info('Get all data...')
     result = app_context().book_service.get(id)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
 @books.route('/', methods=['GET'])
 def get_all_books():
-    LOGGER.debug('Get all data...')
+    LOGGER.info('Get all data...')
     _limit = int(request.args.get('limit', 1))
     result = app_context().book_service.get_all(limit=_limit)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
@@ -106,23 +106,23 @@ def save_book():
 
 @books.route('/config', methods=['GET'])
 def get_config():
-    LOGGER.debug(app.config)
-    LOGGER.debug(request.headers)
+    LOGGER.info(app.config)
+    LOGGER.info(request.headers)
     public_config = {k: v for (k, v) in app_context().config.items() if 'password' not in k}
     return response({"status_code": '200', 'body': to_json(public_config)})
 
 
 @users.route('/<username>', methods=['GET'])
 def get_user(username):
-    LOGGER.debug('Get user...')
+    LOGGER.info('Get user...')
     result = app_context().user_service.get(username)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
 @users.route('/', methods=['GET'])
 def get_all_users():
-    LOGGER.debug('Get all users...')
-    LOGGER.debug(request.headers)
+    LOGGER.info('Get all users...')
+    LOGGER.info(request.headers)
     _limit = int(request.args.get('limit', 1))
     result = app_context().user_service.get_all(limit=_limit)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})

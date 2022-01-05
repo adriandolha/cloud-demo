@@ -4,19 +4,20 @@ import os
 os.environ['env'] = 'test'
 from lorem_ipsum.serializers import from_json
 import app
+import requests
 
 
 class TestBookApi:
-    def test_book_list_one(self, config_valid, book_valid_add_request):
-        _response = app.save_book()
+    def test_book_list_one(self, config_valid, book_valid, test_client):
+        _response = requests.post("http://localhost:8000/books", headers={'Content-Type':'application/json','X-Token-String': config_valid['admin_token']}, data=json.dumps(book_valid))
         assert _response.status_code == 200
-        _book_json = from_json(_response.response[0].decode('utf-8'))
+        _book_json = from_json(_response.json().decode('utf-8'))
         print(_book_json)
         _uuid = _book_json['items'][0]['id']
         response = app.get_book(_uuid)
         book = json.loads(response.response[0].decode('utf-8'))
         print(book)
-        assert book['title'] == book_valid_add_request['title']
+        assert book['title'] == book_valid['title']
         assert 200 == response.status_code
 
     def test_book_list_count(self, book_valid_get_request):
