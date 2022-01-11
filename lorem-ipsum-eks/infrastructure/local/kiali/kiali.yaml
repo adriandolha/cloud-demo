@@ -1,0 +1,27 @@
+apiVersion: kiali.io/v1alpha1
+kind: Kiali
+metadata:
+  name: kiali
+  namespace: istio-system
+spec:
+  auth:
+    strategy: "anonymous"
+  deployment:
+    instance_name: "kiali"
+    accessible_namespaces: ["books"]
+    view_only_mode: false
+  server:
+    web_root: "/kiali"
+  external_services:
+    prometheus:
+      url: "http://prometheus-server.platform.svc.cluster.local/"
+    tracing:
+      enabled: true
+      in_cluster_url: 'http://tracing.istio-system.svc.cluster.local/jaeger'
+      use_grpc: true
+    grafana:
+      enabled: true
+      in_cluster_url: 'http://grafana.platform.svc.cluster.local/jaeger'
+      insecure_skip_verify: true
+      username: "admin"
+      password: "secret:grafana:password"

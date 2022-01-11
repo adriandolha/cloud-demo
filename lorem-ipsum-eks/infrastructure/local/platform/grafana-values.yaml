@@ -53,5 +53,21 @@ dashboards:
     kubernetes-cluster:
       json: |
         ${kubernetes_cluster}
+    istio-mesh:
+      gnetId: 7639
+      datasource: prometheus
+    istio-service:
+      gnetId: 7636
+      datasource: prometheus
+    istio-workload:
+      gnetId: 7630
+      datasource: prometheus
+    istio-performance:
+      gnetId: 11829
+      datasource: prometheus
+    istio-control-plane:
+      gnetId: 7645
+      datasource: prometheus
+
 plugins:
   - grafana-piechart-panel

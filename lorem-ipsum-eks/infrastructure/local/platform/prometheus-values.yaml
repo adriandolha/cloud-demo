@@ -13,6 +13,25 @@ server:
   persistentVolume:
     enabled: false
 extraScrapeConfigs: |
+  - job_name: 'envoy-stats'
+    metrics_path: /stats/prometheus
+    kubernetes_sd_configs:
+    - role: pod
+
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_pod_container_port_name]
+      action: keep
+      regex: '.*-envoy-prom'
+  - job_name: 'istiod'
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - istio-system
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+      action: keep
+      regex: istiod;http-monitoring
   - job_name: loremipsum
     static_configs:
       - targets: ['lorem-ipsum.dev.svc.cluster.local', 'lorem-ipsum.test.svc.cluster.local']
@@ -31,10 +50,10 @@ extraScrapeConfigs: |
       module: [http_2xx]  # Look for a HTTP 200 response.
     static_configs:
       - targets:
-        - http://prometheus.${namespace}:9090/-/healthy
-        - http://grafana.${namespace}/api/health
-        - http://lorem-ipsum.dev/books/health
-        - http://lorem-ipsum.test/books/health
+        - http://prometheus.${namespace}.svc.cluster.local:9090/-/healthy
+        - http://grafana.${namespace}.svc.cluster.local/api/health
+        - http://lorem-ipsum.dev.svc.cluster.local/books/health
+        - http://lorem-ipsum.test.svc.cluster.local/books/health
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

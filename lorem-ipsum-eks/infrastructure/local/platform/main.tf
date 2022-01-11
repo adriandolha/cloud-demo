@@ -7,6 +7,12 @@ resource "kubernetes_namespace" "ns" {
   }
 }
 
+
+resource "kubernetes_namespace" "istio_ns" {
+  metadata {
+    name = var.istio_namespace
+  }
+}
 terraform {
   backend "s3" {
   }
