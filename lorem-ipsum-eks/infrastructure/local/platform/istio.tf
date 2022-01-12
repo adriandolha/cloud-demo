@@ -1,3 +1,11 @@
+resource "kubernetes_namespace" "istio_ingress" {
+  metadata {
+    name = "istio-ingress"
+    labels = {
+      istio-injection="enabled"
+    }
+  }
+}
 data "kubernetes_secret" "grafana_secret_data" {
   metadata {
     name = var.grafana_secret
@@ -11,6 +19,22 @@ resource "kubernetes_secret" "grafana_secret" {
     namespace = var.istio_namespace
   }
   data = data.kubernetes_secret.grafana_secret_data.data
+}
+
+data "kubernetes_secret" "istio_ca_secret" {
+  metadata {
+    name = "istio-ca-secret"
+    namespace = var.istio_namespace
+  }
+  depends_on = [helm_release.istiod]
+}
+
+resource "kubernetes_secret" "istio_ca_secret_ingress" {
+  metadata {
+    name = "istio-ca-secret"
+    namespace = "istio-ingress"
+  }
+  data = data.kubernetes_secret.istio_ca_secret.data
 }
 
 resource "helm_release" "istio_base" {
@@ -55,9 +79,11 @@ resource "helm_release" "istio_ingress" {
   timeout = 120
   cleanup_on_fail = true
   force_update = true
-  namespace = var.istio_namespace
+  namespace = "istio-ingress"
+
+//  values = [file("istio-ingress-values.yaml")]
   depends_on = [
-    kubernetes_namespace.istio_ns,
+    kubernetes_namespace.istio_ingress,
     helm_release.istiod]
 }
 

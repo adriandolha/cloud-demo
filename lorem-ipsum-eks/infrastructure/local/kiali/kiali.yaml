@@ -8,7 +8,7 @@ spec:
     strategy: "anonymous"
   deployment:
     instance_name: "kiali"
-    accessible_namespaces: ["books"]
+    accessible_namespaces: ["**"]
     view_only_mode: false
   server:
     web_root: "/kiali"
@@ -17,11 +17,11 @@ spec:
       url: "http://prometheus-server.platform.svc.cluster.local/"
     tracing:
       enabled: true
-      in_cluster_url: 'http://tracing.istio-system.svc.cluster.local/jaeger'
+      in_cluster_url: "http://tracing.istio-system.svc.cluster.local/jaeger"
       use_grpc: true
     grafana:
       enabled: true
-      in_cluster_url: 'http://grafana.platform.svc.cluster.local/jaeger'
+      in_cluster_url: "http://grafana.platform.svc.cluster.local"
       insecure_skip_verify: true
       username: "admin"
       password: "secret:grafana:password"
