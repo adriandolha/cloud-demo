@@ -14,6 +14,10 @@ variable "istio_namespace" {
   default = "istio-system"
 }
 
+variable "istio_ingress_gateway_secret" {
+  default = "lorem-ipsum-dev-ca-secret"
+}
+
 variable "kube_config_file" {
   type = string
   default = "~/.kube/config"

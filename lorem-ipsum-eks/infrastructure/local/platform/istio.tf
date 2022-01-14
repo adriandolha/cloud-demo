@@ -1,11 +1,3 @@
-resource "kubernetes_namespace" "istio_ingress" {
-  metadata {
-    name = "istio-ingress"
-    labels = {
-      istio-injection="enabled"
-    }
-  }
-}
 data "kubernetes_secret" "grafana_secret_data" {
   metadata {
     name = var.grafana_secret
@@ -21,20 +13,21 @@ resource "kubernetes_secret" "grafana_secret" {
   data = data.kubernetes_secret.grafana_secret_data.data
 }
 
-data "kubernetes_secret" "istio_ca_secret" {
+data "kubernetes_secret" "istio_ingress_gateway_secret_data" {
   metadata {
-    name = "istio-ca-secret"
-    namespace = var.istio_namespace
+    name = var.istio_ingress_gateway_secret
+    namespace = var.pipeline_namespace
   }
-  depends_on = [helm_release.istiod]
+  depends_on = [
+    helm_release.istiod]
 }
 
-resource "kubernetes_secret" "istio_ca_secret_ingress" {
+resource "kubernetes_secret" "istio_ingress_gateway_secret" {
   metadata {
-    name = "istio-ca-secret"
-    namespace = "istio-ingress"
+    name = var.istio_ingress_gateway_secret
+    namespace = var.istio_namespace
   }
-  data = data.kubernetes_secret.istio_ca_secret.data
+  data = data.kubernetes_secret.istio_ingress_gateway_secret_data.data
 }
 
 resource "helm_release" "istio_base" {
@@ -79,11 +72,11 @@ resource "helm_release" "istio_ingress" {
   timeout = 120
   cleanup_on_fail = true
   force_update = true
-  namespace = "istio-ingress"
+  namespace = var.istio_namespace
 
-//  values = [file("istio-ingress-values.yaml")]
   depends_on = [
-    kubernetes_namespace.istio_ingress,
+    kubernetes_namespace.istio_ns,
+    kubernetes_secret.istio_ingress_gateway_secret,
     helm_release.istiod]
 }
 

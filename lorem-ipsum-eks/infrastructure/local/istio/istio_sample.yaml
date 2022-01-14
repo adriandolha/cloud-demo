@@ -1,20 +1,11 @@
-apiVersion: telemetry.istio.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: mesh-default
-  namespace: istio-system
-spec:
-  accessLogging:
-  - {}
----
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: lorem-ipsum-gateway
+  name: httpbin-gateway
   namespace: istio-system
 spec:
   selector:
-    istio: ingress # use Istio default gateway implementation
+    istio: ingressgateway # use Istio default gateway implementation
   servers:
   - port:
       number: 443
@@ -30,21 +21,21 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: lorem-ipsum-vs
+  name: httpbin
   namespace: istio-system
 spec:
   hosts:
-  - "lorem.ipsum.dev"
+  - "*"
   gateways:
-  - lorem-ipsum-gateway
+  - httpbin-gateway
   http:
   - match:
     - uri:
-        prefix: "/api/v1/"
-    rewrite:
-      uri: "/"
+        prefix: /books
     route:
     - destination:
         port:
           number: 80
         host: lorem-ipsum.dev.svc.cluster.local
+
+

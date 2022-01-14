@@ -33,6 +33,7 @@ if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
     prepare_orm_for_gevent()
     from lorem_ipsum.views import books, users, JsonCollector
 
+    app.url_map.strict_slashes = False
     app.register_blueprint(books, url_prefix="/books")
     app.register_blueprint(users, url_prefix="/users")
     lorem_ipsum.create_app()
