@@ -68,7 +68,7 @@ spec:
         - name: argocd-branch-name
           value: main
         - name: image-url
-          value: "docker-registry:5000/lorem-ipsum"
+          value: "kubernetes.docker.internal:31111/lorem-ipsum"
         - name: run-tests
           value: "yes"
         - name: tf-path
