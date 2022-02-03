@@ -1,0 +1,3 @@
+pytest
+fake
+selenium

@@ -4,8 +4,13 @@ import platform
 from functools import lru_cache
 
 import boto3
+from flask_login import LoginManager
+from flask_sqlalchemy import SQLAlchemy
 
 import lorem_ipsum_auth
+
+db = SQLAlchemy()
+login_manager = LoginManager()
 
 
 def get_ssm_secret(parameter_name, decrypt=True):
@@ -19,7 +24,7 @@ def get_ssm_secret(parameter_name, decrypt=True):
 def configure_logging():
     logging.basicConfig(format='%(asctime)s.%(msecs)03dZ %(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.setLevel(logging.WARNING)
+    LOGGER.setLevel(logging.DEBUG)
     # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
     # LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info('logging configured...')
@@ -44,9 +49,10 @@ class AppContext:
         return self._authenticator
 
     def init(self):
-        from lorem_ipsum_auth.repo import db_setup
-        with self.transaction_manager.transaction:
-            db_setup(self)
+        pass
+        # from lorem_ipsum_auth.repo import db_setup
+        # with self.transaction_manager.transaction:
+        #     db_setup(self)
 
     @staticmethod
     def local_context():
@@ -73,3 +79,8 @@ def create_app() -> AppContext:
     app_context = AppContext.local_context()
     setup(app_context)
     return app_context
+
+
+def create_app_context() -> AppContext:
+    _app_context = AppContext.local_context()
+    return _app_context

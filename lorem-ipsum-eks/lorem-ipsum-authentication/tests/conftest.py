@@ -24,6 +24,14 @@ def config_valid():
 
 
 @pytest.fixture()
+def app():
+    app = lorem_ipsum_auth.create_app()
+    LOGGER = logging.getLogger('lorem-ipsum-auth')
+    LOGGER.setLevel(logging.DEBUG)
+    return app
+
+
+@pytest.fixture()
 def admin_token_valid(config_valid):
     yield os.getenv('admin_token')
 
@@ -35,13 +43,22 @@ def user_token_valid(config_valid):
 
 @pytest.fixture()
 def user_valid1():
+
     yield {"username": 'test_user1',
-           "password": 'pwd'
+           "password": 'pwd',
+           "email": "test_user1@gmail.com"
            }
 
 
 @pytest.fixture()
 def user_valid2():
+    yield {"username": 'test_user2',
+           "password": 'pwd'
+           }
+
+
+@pytest.fixture()
+def valid_user_token():
     yield {"username": 'test_user2',
            "password": 'pwd'
            }

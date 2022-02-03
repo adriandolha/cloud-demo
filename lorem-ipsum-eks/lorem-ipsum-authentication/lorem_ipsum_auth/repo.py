@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import quote
 
 import bcrypt
 from sqlalchemy import Column, String
@@ -60,13 +61,14 @@ class TransactionManager:
 
         if Transaction._db is None:
             user = self.config['aurora_user']
-            password = self.config['aurora_password']
+            password = quote(self.config['aurora_password'])
             host = self.config['aurora_host']
             port = self.config['aurora_port']
-            database = "lorem-ipsum"
+            database = self.config['database_name']
             minconn = self.config.get('connection_pool_minconn')
             maxconn = self.config.get('connection_pool_maxconn')
-            _db = create_engine(f"postgres://{user}:{password}@{host}:{port}/{database}",
+            self.database_connection_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+            _db = create_engine(self.database_connection_string,
                                 pool_size=minconn, max_overflow=maxconn - minconn, poolclass=QueuePool, echo=False)
             Transaction._db = _db
             Transaction._session_maker = sessionmaker(_db)
@@ -89,7 +91,7 @@ def transaction(function):
 
 
 class User(declarative_base()):
-    __tablename__ = 'users'
+    __tablename__ = 'users1'
 
     username = Column(String, primary_key=True)
     password = Column(String)
@@ -150,7 +152,7 @@ def db_setup(app_context: AppContext):
     # exists = _cursor.fetchone()
     # if not exists:
     #     _cursor.execute(f'CREATE DATABASE {_db_name}')
-    _cursor.execute('CREATE TABLE IF NOT EXISTS public.users\
+    _cursor.execute('CREATE TABLE IF NOT EXISTS public.users1\
         (\
             username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
             password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
@@ -159,5 +161,5 @@ def db_setup(app_context: AppContext):
     if app_context.user_repo.get(app_context.config['admin_user']) is None:
         password_plain = app_context.config['admin_password']
         password_encrypted = app_context.user_repo.encrypt_password(password_plain)
-        app_context.user_repo.save(
-            {'username': app_context.config['admin_user'], 'password': password_encrypted})
+        app_context.user_repo.save(User.from_dict(
+            {'username': app_context.config['admin_user'], 'password': password_encrypted}))

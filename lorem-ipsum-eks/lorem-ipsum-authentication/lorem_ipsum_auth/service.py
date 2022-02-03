@@ -1,16 +1,15 @@
+import logging
+import sys
+import threading
 from abc import ABC, abstractmethod
 from functools import lru_cache
 
-import sys
-import threading
+from authlib.jose import jwt
+from cryptography.hazmat.primitives import serialization
 
 import lorem_ipsum_auth
-from lorem_ipsum_auth.repo import transaction, User
 from lorem_ipsum_auth.repo import Transaction
-import logging
-from authlib.jose import JsonWebKey
-from authlib.jose import JWK_ALGORITHMS
-from authlib.jose import jwt
+from lorem_ipsum_auth.repo import transaction, User
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
@@ -105,10 +104,19 @@ class UserService:
 
     @lru_cache()
     def secret_key(self):
-        with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
-            key = f.read()
-        # return key
-        return "GZqgnQYylZ8Kuf2HxB11rd50ajGlLhDa2iSZkm4ZihHLH8vd73oNbIqXdGVT7GNY"
+        private_key = self._app_context.config.get('auth0_private_key')
+        if not private_key:
+            with open(self._app_context.config['jwk_private_key_path'], 'rb') as f:
+                private_key = f.read()
+        return private_key
+
+    @lru_cache()
+    def public_key(self):
+        public_key = self._app_context.config.get('auth0_public_key')
+        if not public_key:
+            with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
+                public_key = f.read()
+        return public_key
 
     def decode_auth_token(self, auth_token):
         """
@@ -116,7 +124,12 @@ class UserService:
         :param auth_token:
         :return: integer|string
         """
-        return self._app_context.authenticator.decode_auth_token(auth_token)
+        try:
+            payload = jwt.decode(auth_token, self.public_key())
+            return payload
+        except:
+            LOGGER.exception('token is invalid', exc_info=True)
+            raise Exception('token is invalid')
 
 
 class Authenticator(ABC):

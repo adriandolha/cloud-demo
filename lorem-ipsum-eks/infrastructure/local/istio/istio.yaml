@@ -7,15 +7,23 @@ spec:
   selector:
     istio: ingress # use Istio default gateway implementation
   servers:
-  - port:
-      number: 443
-      name: https
-      protocol: HTTPS
-    hosts:
-    - "*"
-    tls:
-      mode: SIMPLE
-      credentialName: lorem-ipsum-dev-ca-secret
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+      tls:
+        httpsRedirect: true # sends 301 redirect for http requests
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - "*"
+      tls:
+        mode: SIMPLE
+        credentialName: lorem-ipsum-dev-ca-secret
 
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -25,15 +33,32 @@ metadata:
   namespace: istio-system
 spec:
   hosts:
-  - "lorem.ipsum.dev"
+    - "lorem.ipsum.dev"
   gateways:
-  - lorem-ipsum-gateway
+    - lorem-ipsum-gateway
   http:
-  - match:
-    - uri:
-        prefix: "/books"
-    route:
-    - destination:
-        port:
-          number: 80
-        host: lorem-ipsum.dev.svc.cluster.local
+    - match:
+        - uri:
+            prefix: "/books"
+      route:
+        - destination:
+            port:
+              number: 80
+            host: lorem-ipsum.dev.svc.cluster.local
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: lorem-ipsum-auth-vs
+  namespace: istio-system
+spec:
+  hosts:
+    - "lorem.ipsum.auth"
+  gateways:
+    - lorem-ipsum-gateway
+  http:
+    - route:
+        - destination:
+            port:
+              number: 80
+            host: lorem-ipsum-auth.demo.svc.cluster.local

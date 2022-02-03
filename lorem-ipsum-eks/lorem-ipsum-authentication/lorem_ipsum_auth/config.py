@@ -24,10 +24,16 @@ def get_config():
         'aurora_user': os.getenv('aurora_user'),
         'aurora_port': int(os.getenv('aurora_port', default=5432)),
         'aurora_password': aurora_password,
+        'database_name': os.getenv('database_name'),
         'password_encryption_key': os.getenv('password_encryption_key'),
         'admin_password': os.getenv('admin_password'),
         'admin_user': os.getenv('admin_user'),
-        'jwk_public_key_path': os.getenv('jwk_public_key_path', '/jwk/certs/public.pem')
+        'guest_password': os.getenv('guest_password'),
+        'guest_user': os.getenv('guest_user'),
+        'google_client_id': os.getenv('google_client_id'),
+        'google_client_secret': os.getenv('google_client_secret'),
+        'jwk_public_key_path': os.getenv('jwk_public_key_path', '/jwk/certs/public.pem'),
+        'jwk_private_key_path': os.getenv('jwk_private_key_path', '/jwk/certs/private.pem')
     })
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.debug('Configuration:')

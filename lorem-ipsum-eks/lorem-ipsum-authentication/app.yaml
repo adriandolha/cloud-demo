@@ -20,21 +20,23 @@ spec:
           image: lorem-ipsum-auth:dev
 #          imagePullPolicy: "Always"
           env:
+            - name: "AUTHLIB_INSECURE_TRANSPORT"
+              value: "1"
             - name: app_env
               value: "kube"
             - name: aurora_user
               value: "postgres"
             - name: aurora_host
 #              value: "existing-peahen-postgresql.default.svc.cluster.local"
-              value: postgres-postgresql.default.svc.cluster.local
+              value: postgresql.platform.svc.cluster.local
             - name: aurora_port
               value: "5432"
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
 #                  name: existing-peahen-postgresql
-                  name: postgres-postgresql
-                  key: postgresql-password
+                  name: postgres
+                  key:  postgresql-password
             - name: admin_user
               valueFrom:
                 secretKeyRef:
@@ -45,17 +47,20 @@ spec:
                 secretKeyRef:
                   name: lorem-ipsum
                   key: admin-password
+            - name: password_encryption_key
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: password-encryption-key
           livenessProbe:
             httpGet:
-              path: /auth/health
+              path: /health
               port: 8000
             initialDelaySeconds: 3
             periodSeconds: 5
           volumeMounts:
             - mountPath: /jwk/certs
               name: jwk-certs
-        - name: lorem-ipsum-prometheus-auth
-          image: lorem-ipsum-auth-prometheus:dev
         - name: statsd-exporter
           image: prom/statsd-exporter:latest
       volumes:
@@ -72,7 +77,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: lorem-ipsum-auth-np
+  name: lorem-ipsum-auth
   namespace: demo
 spec:
   type: NodePort
@@ -80,20 +85,7 @@ spec:
     app: lorem-ipsum-auth
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
-      nodePort: 30505
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: lorem-ipsum-auth
-  namespace: demo
-spec:
-  type: ClusterIP
-  selector:
-    app: lorem-ipsum-auth
-  ports:
-    - protocol: TCP
+      name: http
       port: 80
       targetPort: 8000
+      nodePort: 32000
