@@ -6,7 +6,7 @@ metadata:
 spec:
   jwtRules:
   - issuer: "lorem.ipsum.dev"
-    jwksUri: "http://lorem-ipsum-auth.demo.svc.cluster.local/.well-known/jwks.json"
+    jwksUri: "http://lorem-ipsum-auth.demo.svc.cluster.local/api/auth/.well-known/jwks.json"
     outputPayloadToHeader: User-Info
   selector:
     matchLabels:
@@ -25,7 +25,7 @@ spec:
   rules:
   - when:
     - key: request.auth.claims[roles]
-      values: [ "admin", "user" ]
+      values: [ "ROLE_ADMIN", "ROLE_USER", "ROLE_MODERATOR" ]
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
