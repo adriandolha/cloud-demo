@@ -69,11 +69,17 @@ class DefaultBookService(BookService):
         return self._app_context.book_repo.get(id).as_dict()
 
     @transaction
-    def get_all(self, id=None, limit=1):
+    def get_all(self, id=None, limit=1, offset=1):
         LOGGER.debug(f'using connection pool {Transaction.db()}')
-        results = self._app_context.book_repo.get_all(limit=limit)
+        results = self._app_context.book_repo.get_all(limit=limit, offset=offset)
         results['items'] = [book.as_dict() for book in results['items']]
         return results
+
+    @transaction
+    def delete(self, id: str = None):
+        _book = self._app_context.book_repo.get(id)
+        self._app_context.book_repo.delete(_book)
+        return True
 
     @transaction
     def save(self, data_records):
@@ -133,21 +139,24 @@ class DefaultUserService(UserService):
         return {'errors': errors}
 
     @lru_cache()
-    def secret_key(self):
-        key = self._app_context.config.get('auth0_public_key')
-        if not key:
-            with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
-                key = f.read()
+    def public_key(self):
+        key = None
+
+        with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
+            key = f.read()
         return key
 
-    def decode_auth_token(self, auth_token):
+    def decode_auth_token(self, auth_token, jwks=None):
         """
         Decodes the auth token
         :param auth_token:
         :return: integer|string
         """
         try:
-            payload = jwt.decode(auth_token, self.secret_key())
+            if jwks:
+                payload = jwt.decode(auth_token, jwks)
+            else:
+                payload = jwt.decode(auth_token, self.public_key())
             return payload
         except:
             LOGGER.exception('token is invalid', exc_info=True)

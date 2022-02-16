@@ -6,7 +6,8 @@ from functools import lru_cache
 import boto3
 
 from lorem_ipsum.config import get_config
-from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo
+from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo, \
+    create_database_if_not_exists
 from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, AppContext
 from lorem_ipsum.service import DefaultBookService
 from lorem_ipsum.service import DefaultMetricsService
@@ -42,9 +43,7 @@ class DefaultAppContext(AppContext):
         self._metrics_service = DefaultMetricsService(self)
 
     def init(self):
-        from lorem_ipsum.repo import db_setup
-        with self._transaction_manager.transaction:
-            db_setup(self)
+        pass
 
     @property
     def transaction_manager(self):
@@ -74,6 +73,12 @@ class DefaultAppContext(AppContext):
     def config(self):
         return self._config
 
+    def run_database_setup(self):
+        create_database_if_not_exists(get_config())
+        with self._transaction_manager.transaction:
+            from lorem_ipsum.repo import db_setup
+            db_setup(self)
+
 
 @lru_cache()
 def create_app() -> AppContext:
@@ -84,9 +89,7 @@ def create_app() -> AppContext:
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     LOGGER.info(f'Start time: {now}')
     model.start_mappers()
-    repo.create_database_if_not_exists(get_config())
     app_context = create_app_context()
-    app_context.init()
 
     return app_context
 

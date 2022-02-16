@@ -52,9 +52,9 @@ def create_flask_app():
     db.init_app(app)
     app.register_blueprint(auth)
     app.register_blueprint(main)
-    app.register_blueprint(google_oauth, url_prefix='/google')
-    app.register_blueprint(token_auth, url_prefix='/auth')
-    app.register_blueprint(users, url_prefix='/users')
+    app.register_blueprint(google_oauth, url_prefix='/api/auth/google')
+    app.register_blueprint(token_auth, url_prefix='/api/auth')
+    app.register_blueprint(users, url_prefix='/api/users')
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.anonymous_user = AnonymousUser

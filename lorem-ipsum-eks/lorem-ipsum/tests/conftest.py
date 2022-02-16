@@ -192,10 +192,20 @@ def book_valid_get_request(app_valid, book_valid):
     with app.app.test_request_context():
         flask.request.args = {'limit': '2'}
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value = [
+        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
             lorem_ipsum.repo.Book(**book_valid), lorem_ipsum.repo.Book(**book_valid)]
         yield book_valid
 
+@pytest.fixture()
+def book_valid_get_request_limit_offset(app_valid, book_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {'limit': '3', 'offset':'4'}
+        lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
+            lorem_ipsum.repo.Book(**book_valid), lorem_ipsum.repo.Book(**book_valid)]
+        yield book_valid
 
 @pytest.fixture()
 def book_valid_get_default_limit(app_valid, book_valid):
@@ -204,6 +214,6 @@ def book_valid_get_default_limit(app_valid, book_valid):
     with app.app.test_request_context():
         flask.request.args = {}
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value = [
+        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
             lorem_ipsum.repo.Book(**book_valid)]
         yield book_valid

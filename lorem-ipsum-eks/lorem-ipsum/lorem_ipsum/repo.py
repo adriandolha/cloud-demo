@@ -51,7 +51,7 @@ class Transaction:
             LOGGER.debug(f'Commit connection for session transaction {self.session.transaction}')
             self.session.commit()
         except:
-            print('Database error...')
+            LOGGER.debug('Database error...')
             self.session.rollback()
             raise
         finally:
@@ -205,11 +205,10 @@ class PostgresBookRepo(BookRepo):
         book = _session.query(Book).filter(Book.id == id).first()
         return book.as_model() if book else None
 
-    def get_all(self, limit=10):
-        items = []
+    def get_all(self, limit=10, offset=1):
         _session = self._transaction_manager.transaction.session
         count = _session.query(Book).count()
-        books = _session.query(Book).limit(limit)
+        books = _session.query(Book).limit(limit).offset(offset)
         return {"total": count, "items": [book.as_model() for book in books]}
 
     def save(self, book: model.Book) -> model.Book:
@@ -218,6 +217,12 @@ class PostgresBookRepo(BookRepo):
         _session = self._transaction_manager.transaction.session
         _session.add(_book)
         return _book.as_model()
+
+    def delete(self, book: model.Book):
+        _session = self._transaction_manager.transaction.session
+        _book = _session.query(Book).filter(Book.id == book.id).first()
+
+        _session.delete(_book)
 
 
 def create_database_if_not_exists(config: dict):
@@ -233,19 +238,26 @@ def create_database_if_not_exists(config: dict):
                                               minconn=minconn, maxconn=maxconn)
 
     _db_name = config.get('database_name')
-    with _db.connect() as conn:
-        conn.connection.set_isolation_level(
-            ISOLATION_LEVEL_AUTOCOMMIT
-        )
-        _result = conn.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{_db_name}'")
-        exists = _result.cursor.fetchone()
-        print(f'Database {_db_name} exists status is {exists}')
-    with _db.connect() as conn:
-        conn.connection.set_isolation_level(
-            ISOLATION_LEVEL_AUTOCOMMIT
-        )
-        if not exists:
-            conn.execute(f"CREATE DATABASE {_db_name}")
+    conn = None
+    try:
+        conn = _db.connect()
+        with conn:
+            _result = conn.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{_db_name}'")
+            exists = _result.cursor.fetchone()
+            print(f'Database {_db_name} exists status is {exists}')
+        conn = _db.connect()
+        with conn:
+            if not exists:
+                conn.connection.set_isolation_level(
+                    ISOLATION_LEVEL_AUTOCOMMIT
+                )
+                conn.execute(f"CREATE DATABASE {_db_name}")
+    except:
+        LOGGER.debug('Database setup error.')
+        raise
+    finally:
+        if conn and not conn.closed:
+            conn.close()
 
 
 def db_setup(app_context: AppContext):

@@ -66,7 +66,7 @@ class BookRepo(ABC):
         pass
 
     @abstractmethod
-    def get_all(self, limit=10):
+    def get_all(self, limit=10, offset=1):
         pass
 
     @abstractmethod
@@ -75,6 +75,9 @@ class BookRepo(ABC):
 
     @abstractmethod
     def next_id(self):
+        pass
+
+    def delete(self, book: Book):
         pass
 
 
@@ -90,11 +93,14 @@ class BookService(ABC):
         pass
 
     @abstractmethod
-    def get_all(self, id=None, limit=1):
+    def get_all(self, id=None, limit=1, offset=1):
         pass
 
     @abstractmethod
     def save(self, data_records):
+        pass
+
+    def delete(self, id: str):
         pass
 
 
@@ -120,13 +126,14 @@ class UserService(ABC):
         pass
 
     @abstractmethod
-    def secret_key(self):
+    def public_key(self):
         pass
 
     @abstractmethod
-    def decode_auth_token(self, auth_token):
+    def decode_auth_token(self, auth_token, jwks: dict):
         """
         Decodes the auth token
+        :param jwks: JWK keys created from public key
         :param auth_token:
         :return: integer|string
         """
@@ -167,4 +174,8 @@ class AppContext(ABC):
     @property
     @abstractmethod
     def book_service(self) -> BookService:
+        pass
+
+    @abstractmethod
+    def run_database_setup(self):
         pass

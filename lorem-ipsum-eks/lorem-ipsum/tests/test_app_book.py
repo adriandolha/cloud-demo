@@ -27,22 +27,29 @@ class TestBookApi:
         assert len(books['items']) == 2
         assert 200 == response.status_code
 
+    def test_book_list_limit_and_offset(self, book_valid_get_request_limit_offset):
+        response = app.get_all_books()
+        books = json.loads(response.response[0].decode('utf-8'))
+        import lorem_ipsum
+        assert books['total']
+        assert len(books['items']) == 2
+        assert 200 == response.status_code
+        assert lorem_ipsum.repo.Transaction.session.query.return_value.limit.call_args.args[0] == 3
+        assert lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.call_args.args[0] == 4
+
     def test_book_list_default_limit(self, book_valid_get_default_limit):
         response = app.get_all_books()
         books = json.loads(response.response[0].decode('utf-8'))
-        print(books)
         assert books['total'] > 2
         assert len(books['items']) == 1
         assert 200 == response.status_code
 
     def test_book_add(self, book_valid_add_request, config_valid):
-        print(json.dumps(book_valid_add_request))
         response = app.save_book()
         assert from_json(response.response[0].decode('utf-8'))['items'][0]['title']
         assert 200 == response.status_code
 
     def test_book_add_insufficient_permissions(self, book_add_request_insufficient_permissions):
-        print(json.dumps(book_add_request_insufficient_permissions))
         response = app.save_book()
         assert 403 == response.status_code
         assert from_json(response.response[0].decode('utf-8')) == 'Forbidden.'

@@ -45,7 +45,7 @@ def user_valid1(config_valid, admin_access_token):
 
 
 def delete_user(admin_access_token, config_valid, username):
-    _response = requests.delete(url=f'{config_valid["root_url"]}/users/{username}',
+    _response = requests.delete(url=f'{config_valid["root_url"]}/api/users/{username}',
                                 headers={'Content-Type': 'application/json',
                                          'Authorization': f'Bearer {admin_access_token}'}, timeout=3,
                                 )
@@ -74,7 +74,7 @@ def user_access_token(config_valid):
 
 
 def _get_access_token(config_valid, password, username):
-    _response = requests.get(url=f'{config_valid["root_url"]}/auth/login',
+    _response = requests.get(url=f'{config_valid["root_url"]}/api/auth/signin',
                              headers={'Content-Type': 'application/json'}, timeout=3,
                              auth=HTTPBasicAuth(username, password))
     print(_response.content)

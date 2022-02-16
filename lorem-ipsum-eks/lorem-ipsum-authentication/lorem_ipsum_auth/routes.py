@@ -80,6 +80,12 @@ def index():
     return render_template('index.html')
 
 
+@main.route('/health', methods=['GET'])
+def health():
+    LOGGER.info('Checking system health...')
+    return 'all_good'
+
+
 @login_manager.request_loader
 def load_user_from_request(request):
     _app_context = app_context()

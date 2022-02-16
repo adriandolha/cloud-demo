@@ -32,7 +32,6 @@ class OAuth:
         return access_token
 
 
-
 class PasswordFlow(OAuth):
     def __init__(self, page_context: PageContext, token_url: str, authorization_url: str):
         OAuth.__init__(self, page_context, token_url)

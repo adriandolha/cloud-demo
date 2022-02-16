@@ -1,3 +1,6 @@
+from authlib.jose import JsonWebKey
+from functools import lru_cache
+
 from flask import current_app as app
 from flask import Blueprint
 from lorem_ipsum.serializers import to_json, from_json
@@ -20,14 +23,37 @@ def response(api_response):
     return app.response_class(response=api_response['body'], status=api_response['status_code'])
 
 
+@lru_cache()
+def get_jwk():
+    LOGGER.debug('Loading jwk from public key...')
+    key_data = None
+    with open(app_context().config['jwk_public_key_path'], 'rb') as _key_file:
+        key_data = _key_file.read()
+    LOGGER.debug(key_data)
+    key = JsonWebKey.import_key(key_data, {'kty': 'RSA'})
+    _jwks = {'keys': [{**key.as_dict(), 'kid': 'demo_key'}]}
+    LOGGER.debug(_jwks)
+    return _jwks
+
+
 def requires_permission(permissions: list):
     def requires_permission_decorator(function):
         def wrapper(*args, **kwargs):
             LOGGER.info(f'Authorization...\n{request.headers}')
             user_service = app_context().user_service
-            payload = user_service.decode_auth_token(request.headers['X-Token-String'])
+            access_token = request.headers.get('X-Token-String')
+            if not access_token:
+                authorization_header = request.headers.get('Authorization')
+                if not authorization_header:
+                    return response({'body': to_json('Forbidden.'), 'status_code': '403'})
+                access_token = authorization_header.split('Bearer')[1].strip()
+
+            payload = user_service.decode_auth_token(access_token, get_jwk())
             LOGGER.debug(payload)
-            user_permissions = payload.get('scope', []).split()
+            user_permissions = payload.get('roles', [])
+            payload_scope = payload.get('scope')
+            if payload_scope:
+                user_permissions = payload_scope.split()
             LOGGER.debug(f'Required: {permissions} Actual: {user_permissions}')
             if not set(permissions).issubset(user_permissions):
                 return response({'body': to_json('Forbidden.'), 'status_code': '403'})
@@ -80,23 +106,24 @@ def raw_metrics(fields=''):
 
 
 @books.route('/<id>', methods=['GET'])
-@requires_permission(['read:books'])
+@requires_permission(['ROLE_ADMIN'])
 def get_book(id):
     LOGGER.info('Get all data...')
     result = app_context().book_service.get(id)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
-@books.route('/', methods=['GET'])
+@books.route('/', methods=['GET', 'OPTIONS'])
 def get_all_books():
-    LOGGER.info('Get all data...')
-    _limit = int(request.args.get('limit', 1))
-    result = app_context().book_service.get_all(limit=_limit)
+    _limit = int(request.args.get('limit', 20))
+    _offset = int(request.args.get('offset', 1))
+    LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}]]...')
+    result = app_context().book_service.get_all(limit=_limit, offset=_offset)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
 @books.route('/', methods=['POST'])
-@requires_permission(['create:books'])
+@requires_permission(['ROLE_ADMIN'])
 def save_book():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
@@ -110,6 +137,14 @@ def get_config():
     LOGGER.info(request.headers)
     public_config = {k: v for (k, v) in app_context().config.items() if 'password' not in k}
     return response({"status_code": '200', 'body': to_json(public_config)})
+
+
+@books.route('/<id>', methods=['DELETE'])
+@requires_permission(['ROLE_ADMIN'])
+def delete_user(id:str):
+    LOGGER.info(f'Delete book {id}...')
+    app_context().book_service.delete(id)
+    return '', 204
 
 
 @users.route('/<username>', methods=['GET'])
@@ -141,6 +176,7 @@ def app_context():
         g.app_context = lorem_ipsum.create_app_context()
     return g.app_context
 
+
 class JsonCollector(object):
     def __init__(self):
         pass
@@ -163,3 +199,11 @@ class JsonCollector(object):
         _metric.add_sample('lorem_ipsum_thread_count',
                            value=_metrics['thread_count'], labels={})
         yield _metric
+
+
+@books.after_request
+def apply_cors(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add('Access-Control-Allow-Headers', "*")
+    response.headers.add('Access-Control-Allow-Methods', "*")
+    return response

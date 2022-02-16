@@ -9,7 +9,7 @@ from lorem_ipsum.serializers import to_json
 @pytest.fixture()
 def config_valid():
     import json
-    config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json"
+    config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-integration.json"
     print(f'Config file is {config_file}')
     if os.path.exists(config_file):
         with open(config_file, "r") as _file:
@@ -60,10 +60,12 @@ def user_valid2():
 @pytest.fixture
 def requests_standard_settings(config_valid):
     return {"headers": {'Content-Type': 'application/json',
-                        'X-Token-String': config_valid['admin_token']}, "timeout": 3}
+                        'Authorization': f"Bearer {config_valid['admin_token']}"}, "timeout": 10}
 
 
 @pytest.fixture
 def requests_user_token_settings(config_valid):
     return {"headers": {'Content-Type': 'application/json',
-                        'X-Token-String': config_valid['user_token']}, "timeout": 3}
+                        'X-Token-String': config_valid['user_token']}, "timeout": 10}
+
+

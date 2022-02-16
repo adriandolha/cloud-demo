@@ -112,22 +112,26 @@ class UserService:
 
     @lru_cache()
     def public_key(self):
-        public_key = self._app_context.config.get('auth0_public_key')
+        public_key = None
         if not public_key:
             with open(self._app_context.config['jwk_public_key_path'], 'rb') as f:
                 public_key = f.read()
         return public_key
 
-    def decode_auth_token(self, auth_token):
+    def decode_auth_token(self, auth_token, jwks: dict = None):
         """
         Decodes the auth token
+        :param jwks: Optionally decode using jwks not public key
         :param auth_token:
         :return: integer|string
         """
         try:
-            payload = jwt.decode(auth_token, self.public_key())
+            if jwks:
+                payload = jwt.decode(auth_token, jwks)
+            else:
+                payload = jwt.decode(auth_token, self.public_key())
             return payload
-        except:
+        except :
             LOGGER.exception('token is invalid', exc_info=True)
             raise Exception('token is invalid')
 

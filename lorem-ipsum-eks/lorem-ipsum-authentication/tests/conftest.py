@@ -13,7 +13,7 @@ from lorem_ipsum_auth.serializers import to_json
 @pytest.fixture()
 def config_valid():
     import json
-    with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local.json", "r") as _file:
+    with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-integration.json", "r") as _file:
         json = dict(json.load(_file))
         print(json)
         for k, v in json.items():

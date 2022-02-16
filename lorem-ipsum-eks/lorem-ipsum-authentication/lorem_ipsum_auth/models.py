@@ -41,7 +41,7 @@ class BlacklistToken(db.Model):
 
 
 class User(UserMixin, db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'users_'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(64), unique=True, index=True)
     username = db.Column(db.String(64), unique=True, index=True)
@@ -82,21 +82,21 @@ class User(UserMixin, db.Model):
     def is_administrator(self):
         return self.can(Permission.ADMIN)
 
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        if self.role is None:
+            self.role = Role.query.filter_by(default=True).first()
+
     @staticmethod
     def get_basic_user(email: str):
         return User.query.filter_by(email=email).filter_by(login_type=LoginType.BASIC).first()
 
-    def __init__(self, **kwargs):
-        super(User, self).__init__(**kwargs)
-        if self.role is None:
-            if self.role is None:
-                self.role = Role.query.filter_by(default=True).first()
-
     def to_json(self):
-        return {'username': self.username,
+        return {'id': self.id,
+                'username': self.username,
                 'email': self.email,
                 'login_type': self.login_type,
-                'role': {'name': self.role.name}}
+                'roles': [self.role.name]}
 
     @staticmethod
     def reset_password(token, new_password):
@@ -114,18 +114,21 @@ class User(UserMixin, db.Model):
 
     @staticmethod
     def insert_users(config):
-        users = [{'username': 'admin_user', 'email': 'admin@gmail.com',
-                  'password': config["admin_password"], 'role': 'Administrator'},
-                 {'username': 'guest_user', 'email': 'guest@gmail.com',
-                  'password': config["guest_password"], 'role': 'User'}]
+        users = [{'username': config['admin_user'], 'email': 'admin@gmail.com',
+                  'password': config["admin_password"], 'role': 'ROLE_ADMIN'},
+                 {'username': config['guest_user'], 'email': 'guest@gmail.com',
+                  'password': config["guest_password"], 'role': 'ROLE_USER'},
+                 {'username': 'moderator', 'email': 'moderator@gmail.com',
+                  'password': config["guest_password"], 'role': 'ROLE_MODERATOR'}
+                 ]
 
         for user in users:
             existing_user = User.query.filter_by(username=user['username']).first()
-            if existing_user is not None:
+            if existing_user is None:
                 role = Role.query.filter_by(name=user['role']).first()
                 user_entity = User(username=user['username'], email=user['email'],
                                    password=user['password'],
-                                   role=role),
+                                   role=role)
                 db.session.add(user_entity)
         db.session.commit()
 
@@ -160,11 +163,11 @@ class Role(db.Model):
     @staticmethod
     def insert_roles():
         roles = {
-            'User': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.PROFILE],
-            'Administrator': [Permission.ADD, Permission.READ,
-                              Permission.WRITE, Permission.ADMIN, Permission.PROFILE],
+            'ROLE_USER': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.PROFILE],
+            'ROLE_MODERATOR': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.PROFILE],
+            'ROLE_ADMIN': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.ADMIN, Permission.PROFILE],
         }
-        default_role = 'User'
+        default_role = 'ROLE_USER'
         for r in roles:
             role = Role.query.filter_by(name=r).first()
             if role is None:

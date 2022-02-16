@@ -33,7 +33,7 @@ def get_config():
         'admin_password': os.getenv('admin_password'),
         'admin_user': os.getenv('admin_user'),
         'pod_name': os.getenv('pod_name', default='pod_name'),
-        'jwk_public_key_path': os.getenv('jwk_public_key_path', '/jwk/certs/public.pem'),
+        'jwk_public_key_path': os.getenv('jwk_public_key_path', '/jwk/certs/public.key'),
         'auth0_public_key': os.getenv('auth0_public_key')
     })
     LOGGER = logging.getLogger('lorem-ipsum')

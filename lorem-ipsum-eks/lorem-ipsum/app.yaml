@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: lorem-ipsum
-  namespace: demo
+  namespace: dev
   labels:
     app: lorem-ipsum
 spec:
@@ -10,10 +10,12 @@ spec:
   selector:
     matchLabels:
       app: lorem-ipsum
+      version: v1
   template:
     metadata:
       labels:
         app: lorem-ipsum
+        version: v1
     spec:
       containers:
         - name: lorem-ipsum
@@ -22,18 +24,30 @@ spec:
           env:
             - name: app_env
               value: "kube"
+            - name: database_name
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: aurora-database
             - name: aurora_user
-              value: "postgres"
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: aurora-user
             - name: aurora_host
-              #              value: "existing-peahen-postgresql.default.svc.cluster.local"
-              value: postgres-postgresql.default.svc.cluster.local
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: aurora-host
             - name: aurora_port
-              value: "5432"
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum
+                  key: aurora-port
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
-                  #                  name: existing-peahen-postgresql
-                  name: postgres-postgresql
+                  name: postgresql
                   key: postgresql-password
             - name: admin_user
               valueFrom:
@@ -68,24 +82,25 @@ spec:
       volumes:
         - name: jwk-certs
           secret:
-            secretName: jwk-certs-auth0
+            secretName: jwk-certs
             items:
-              - key: public.pem
-                path: public.pem
-              - key: key.pem
-                path: private.pem
+              - key: public.key
+                path: public.key
+              - key: private.key
+                path: private.key
 ---
 kind: Service
 apiVersion: v1
 metadata:
   name: lorem-ipsum
-  namespace: demo
+  namespace: dev
 spec:
   type: ClusterIP
   selector:
     app: lorem-ipsum
   ports:
     - protocol: TCP
+      name: http
       port: 80
       targetPort: 8000
 ---
@@ -93,7 +108,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: lorem-ipsum-prometheus
-  namespace: demo
+  namespace: dev
 spec:
   type: ClusterIP
   selector:
@@ -107,7 +122,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: lorem-ipsum-statsd
-  namespace: demo
+  namespace: dev
 spec:
   type: ClusterIP
   selector:
@@ -116,3 +131,4 @@ spec:
     - protocol: TCP
       targetPort: 9102
       port: 9102
+

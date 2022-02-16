@@ -26,17 +26,24 @@ def prepare_orm_for_gevent():
 def start_prometheus_metrics(app):
     _prometheus_metrics = PrometheusMetrics(app=None)
     _prometheus_metrics.init_app(app)
+    from lorem_ipsum.views import JsonCollector
     REGISTRY.register(JsonCollector())
+
+
+def create_flask_app():
+    global app
+    from lorem_ipsum.views import books, users
+    app.url_map.strict_slashes = False
+    app.register_blueprint(books, url_prefix="/books")
+    app.register_blueprint(users, url_prefix="/users")
+    _app_context = lorem_ipsum.create_app()
+    _app_context.run_database_setup()
+    LOGGER = logging.getLogger('lorem-ipsum')
+    LOGGER.info(app.config)
+    start_prometheus_metrics(app)
+    return app
 
 
 if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
     prepare_orm_for_gevent()
-    from lorem_ipsum.views import books, users, JsonCollector
-
-    app.url_map.strict_slashes = False
-    app.register_blueprint(books, url_prefix="/books")
-    app.register_blueprint(users, url_prefix="/users")
-    lorem_ipsum.create_app()
-    LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.info(app.config)
-    start_prometheus_metrics(app)
+    create_flask_app()

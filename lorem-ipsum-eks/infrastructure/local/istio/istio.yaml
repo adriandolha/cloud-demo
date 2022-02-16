@@ -33,7 +33,7 @@ metadata:
   namespace: istio-system
 spec:
   hosts:
-    - "lorem.ipsum.dev"
+    - "*"
   gateways:
     - lorem-ipsum-gateway
   http:
@@ -53,11 +53,16 @@ metadata:
   namespace: istio-system
 spec:
   hosts:
-    - "lorem.ipsum.auth"
+    - "*"
   gateways:
     - lorem-ipsum-gateway
   http:
-    - route:
+    - match:
+        - uri:
+            prefix: "/api/auth"
+        - uri:
+            prefix: "/api/users"
+      route:
         - destination:
             port:
               number: 80

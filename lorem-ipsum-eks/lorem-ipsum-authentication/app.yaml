@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: lorem-ipsum-auth
-  namespace: demo
+  namespace: dev
   labels:
     app: lorem-ipsum-auth
 spec:
@@ -26,6 +26,11 @@ spec:
               value: "kube"
             - name: aurora_user
               value: "postgres"
+            - name: database_name
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: aurora-database
             - name: aurora_host
 #              value: "existing-peahen-postgresql.default.svc.cluster.local"
               value: postgresql.platform.svc.cluster.local
@@ -35,22 +40,42 @@ spec:
               valueFrom:
                 secretKeyRef:
 #                  name: existing-peahen-postgresql
-                  name: postgres
+                  name: postgresql
                   key:  postgresql-password
             - name: admin_user
               valueFrom:
                 secretKeyRef:
-                  name: lorem-ipsum
+                  name: lorem-ipsum-auth
                   key: admin-user
             - name: admin_password
               valueFrom:
                 secretKeyRef:
-                  name: lorem-ipsum
+                  name: lorem-ipsum-auth
                   key: admin-password
+            - name: guest_user
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: guest-user
+            - name: guest_password
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: guest-password
+            - name: google_client_id
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: google-client-id
+            - name: google_client_secret
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: google-client-secret
             - name: password_encryption_key
               valueFrom:
                 secretKeyRef:
-                  name: lorem-ipsum
+                  name: lorem-ipsum-auth
                   key: password-encryption-key
           livenessProbe:
             httpGet:
@@ -68,17 +93,17 @@ spec:
           secret:
             secretName: jwk-certs
             items:
-              - key: public.pem
-                path: public.pem
-              - key: key.pem
-                path: private.pem
+              - key: public.key
+                path: public.key
+              - key: private.key
+                path: private.key
 
 ---
 kind: Service
 apiVersion: v1
 metadata:
   name: lorem-ipsum-auth
-  namespace: demo
+  namespace: dev
 spec:
   type: NodePort
   selector:
