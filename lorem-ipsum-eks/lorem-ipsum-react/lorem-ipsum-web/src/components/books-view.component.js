@@ -4,76 +4,88 @@ import BookActions from "./book-actions.component";
 import ReactTable from "./book-table.component"
 import { useFetch, useAsyncError } from "./hooks";
 import Spinner from 'react-bootstrap/Spinner';
-
+import BookView from './book-view.component'
 const DEFAULT_PAGE_SIZE = 10
 const DEFAULT_OFFSET = 1
 
 const API_URL = "https://localhost";
 function Books() {
-  const [{ data, totalCount, pageSize, pageIndex, deleted }, setTableMetadata] = useState({})
+  const [{ data, pageSize, pageIndex, deleted, view }, setTableMetadata] = useState({})
   const _pageSize = pageSize || DEFAULT_PAGE_SIZE;
   const _pageIndex = pageIndex || DEFAULT_OFFSET;
   const offset = Math.ceil(_pageSize * (_pageIndex - 1))
   const pagination = useMemo(() => [_pageIndex, _pageSize, deleted], [_pageIndex, _pageSize, deleted])
+  const tableMetadata = { data: data, pageSize: _pageSize, pageIndex: _pageIndex, deleted: deleted, view: view };
 
   const columns = useMemo(
-    () => [
-      {
-        Header: "Books",
-        // First group columns
-        columns: [
-          {
-            Header: "id",
-            accessor: "id"
-          },
-          {
-            Header: "title",
-            accessor: "title"
-          },
-          {
-            Header: "Author",
-            accessor: "author"
-          },
-          {
-            Header: "Actions",
-            accessor: "actions",
-            Cell: (props) => {
-              // console.log(props);
-              const row = props.row;
-              return (
-                <BookActions row={row} tableMetadata={data, pageSize, pageIndex, deleted} setDeleted={(id, tableMetadata) => {
-                  console.log(tableMetadata);
-                  setTableMetadata({ ...tableMetadata, ...{ deleted: id } })
-                }}></BookActions>
-              );
+    () => {
+      return [
+        {
+          Header: "Books",
+          columns: [
+            {
+              Header: "id",
+              accessor: "id"
             },
-          }
-        ]
-      }
-    ],
+            {
+              Header: "title",
+              accessor: "title"
+            },
+            {
+              Header: "Author",
+              accessor: "author"
+            },
+            {
+              Header: "Actions",
+              accessor: "actions",
+              Cell: (props) => {
+                const row = props.row;
+                return (
+                  <BookActions row={row} tm={tableMetadata} setDeleted={(id) => {
+                    setTableMetadata({ ...tableMetadata, deleted: id })
+                  }} setView={(id) => {
+                    console.log(`View ${id}`);
+                    setTableMetadata({ ...tableMetadata, view: id })
+                  }}></BookActions>
+                );
+              },
+            }
+          ]
+        }
+      ]
+    },
     [pageSize, pageIndex, deleted]
   );
 
   console.log('Rendering books page.')
-  console.log({ data, totalCount, pageSize, pageIndex, deleted })
-  console.log(pagination)
+  console.log(tableMetadata)
 
   const { loading, _data, error } = useFetch(
     `${API_URL}/books?limit=${_pageSize}&offset=${offset}`, 'get', null, null, (data) => {
       setTableMetadata({
-        data: data.items,
-        totalCount: data.total,
-        pageSize: _pageSize,
-        pageIndex: _pageIndex
+        ...tableMetadata,
+        data: data,
+
       })
     },
     [_pageSize, _pageIndex, deleted]
   );
   console.log(`Loading is ${loading}`)
   if (data && !loading) {
+    const items = data.items;
+    const totalCount = data.total;
+    const handleClose = () => { setTableMetadata({ ...tableMetadata, view: null }) }
+    const book_data = data.items.filter(item => item.id == view)[0]
+    const showBook = () => {
+      return view && <BookView book_data={book_data} show={view ? "true" : "false"} handleClose={handleClose}></BookView>
+    }
+
     return (
-      <ReactTable columns={columns} data={data} tableMetadataState={[{ data, totalCount, pageSize, pageIndex }, setTableMetadata]}>
-      </ReactTable>
+      <React.Fragment>
+        {showBook()}
+        <ReactTable columns={columns} data={items} totalCount={totalCount} tableMetadataState={[tableMetadata, setTableMetadata]}>
+        </ReactTable>
+      </React.Fragment>
     );
   }
   if (loading || deleted) {

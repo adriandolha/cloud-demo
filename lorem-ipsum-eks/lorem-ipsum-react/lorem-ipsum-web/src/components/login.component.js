@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router';
 import { useSearchParams } from 'react-router-dom';
 import * as Yup from 'yup';
 import { Navigate } from "react-router-dom";
+import { fab } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 const LoginPage = (props) => {
     const API_URL = "https://localhost";
@@ -77,8 +79,8 @@ const LoginPage = (props) => {
 
     return (
         <React.Fragment>
-
             <div className="col-md-12">
+
                 <div className="card card-container">
                     <h2>Login Page</h2>
                     <Form className="form-container" >
@@ -92,11 +94,17 @@ const LoginPage = (props) => {
                             <Field type="password" name="password" className={"form-control"} placeholder="Password" />
                             {touched.password && errors.password && <span className="help-block text-danger">{errors.password}</span>}
                         </div><br></br>
-                        <button type="submit" className="btn btn-primary">Login</button><br></br><br></br>
-                        <button type="submit" className="btn btn-primary" onClick={() => {
+                        <button type="submit" className="btn btn-primary me-2">Login</button>
+
+                        <button type="submit" className="btn btn-success" onClick={() => {
                             setFieldValue('login_type', 'google')
                             handleSubmit(values, props);
-                        }}>Google Login</button><br></br><br></br>
+                        }}>
+                            <FontAwesomeIcon icon={['fab', 'google']} />
+                            <span className="ms-1">
+                                Login
+                            </span>
+                        </button>
 
                     </Form><br></br>
                     {error && <div className="alert alert-danger" role="alert"> {error.message} </div>}

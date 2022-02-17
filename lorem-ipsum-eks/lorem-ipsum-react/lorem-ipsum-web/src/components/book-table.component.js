@@ -1,7 +1,7 @@
 import React from "react";
 import { useTable, usePagination } from "react-table";
 import Table from 'react-bootstrap/Table';
-export default function ReactTable({ columns, data, tableMetadataState }) {
+export default function ReactTable({ columns, data, totalCount, tableMetadataState }) {
   // Use the useTable Hook to send the columns and data to build the table
   const [tableMetadata, setTableMetadata] = tableMetadataState;
   const {
@@ -30,7 +30,7 @@ export default function ReactTable({ columns, data, tableMetadataState }) {
       // pageCount.
       pageSize: tableMetadata.pageSize,
       pageIndex: tableMetadata.pageIndex,
-      pageCount: Math.ceil(tableMetadata.totalCount / tableMetadata.pageSize),
+      pageCount: Math.ceil(totalCount / tableMetadata.pageSize),
     },
     usePagination
   )

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 const API_URL = "https://localhost";
 
-function BookActions({ row, tableMetadata, setDeleted }) {
+function BookActions({ row, tm, setDeleted, setView }) {
     const id = row.original.id;
     const uri = `${API_URL}/books/${id}`;
     const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ function BookActions({ row, tableMetadata, setDeleted }) {
                 return true;
 
             })
-            .then(() => setDeleted(id, tableMetadata))
+            .then(() => setDeleted(id))
             .then(() => setLoading(false))
             .catch((error) => {
                 console.log(error);
@@ -29,12 +29,14 @@ function BookActions({ row, tableMetadata, setDeleted }) {
             })
     }
 
+    const handleView = () => {
+        console.log(id);
+        setView(id);
+    }
+
     return (
         <div>
-            <span onClick={() => {
-                console.log(row);
-                console.log(row.original.id);
-            }} className="m-2">
+            <span onClick={handleView} className="m-2">
                 <i className="far fa-eye action"></i>
             </span>
             <span onClick={handleDelete}>
