@@ -14,7 +14,7 @@ export default class Profile extends Component {
     const { currentUser } = this.state;
 
     return (
-      <div className="container">
+      <div className="flex-row">
         <header className="jumbotron">
           <h3>
             <strong>{currentUser.username}</strong> Profile

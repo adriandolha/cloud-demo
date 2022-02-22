@@ -4,8 +4,7 @@ import Spinner from 'react-bootstrap/Spinner';
 import { useNavigate } from 'react-router';
 import { useSearchParams } from 'react-router-dom';
 import * as Yup from 'yup';
-import { Navigate } from "react-router-dom";
-import { fab } from '@fortawesome/free-brands-svg-icons'
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 const LoginPage = (props) => {

@@ -103,6 +103,9 @@ class BookService(ABC):
     def delete(self, id: str):
         pass
 
+    def random(self, no_of_pages: int):
+        pass
+
 
 class UserService(ABC):
     @abstractmethod

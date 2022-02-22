@@ -1,14 +1,35 @@
 import { Modal, Button, Row, Col, Container, Carousel } from "react-bootstrap"
 import { useState } from 'react'
+import BookService from '../services/books.service';
 
-function BookView({ book_data, show, handleClose }) {
+
+function BookView({ book_data, show, handleClose, handleSave }) {
     const book_json = JSON.parse(book_data.book);
     const book_text = Object.values(book_json).map(page => page.reduce((prev, crt) => prev + "\n" + crt));
     const book = {
         title: book_data.title,
         pages: book_text
     };
+    const [error, setError] = useState();
+    const [data, setData] = useState();
+    const [loading, setLoading] = useState();
     const pageCount = book.pages.length
+    const _handleSave = () => {
+        setLoading(true)
+        BookService.add(book_data)
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(message => { setLoading(false); throw new Error(message); })
+                }
+                return res.json();
+            })
+            .then(handleSave)
+            .then(() => setLoading(false))
+            .catch((error) => {
+                console.log(`Error: ${error}`);
+                setError(error);
+            });
+    }
 
     return (
         <>
@@ -32,9 +53,20 @@ function BookView({ book_data, show, handleClose }) {
 
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>
-                        Close
-                    </Button>
+                    {error && <div className="alert alert-danger" role="alert"> {error.message} </div>}
+                    <span className={loading ? "visible" : "invisible"}>
+                        <i className="fas fa-spinner action fa-spin"></i>
+                    </span>
+                    <div className="btn-group" role="group" aria-label="Basic example">
+                        {handleSave &&
+                            <Button variant="primary" onClick={_handleSave}>
+                                Save
+                            </Button>
+                        }
+                        <Button variant="secondary" onClick={handleClose}>
+                            Close
+                        </Button>
+                    </div>
                 </Modal.Footer>
             </Modal>
         </>

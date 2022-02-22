@@ -43,22 +43,7 @@ export default function ReactTable({ columns, data, totalCount, tableMetadataSta
 
   return (
     <>
-      <pre>
-        <code>
-          {JSON.stringify(
-            {
-              pageIndex,
-              pageSize,
-              pageCount,
-              canNextPage,
-              canPreviousPage,
-            },
-            null,
-            2
-          )}
-        </code>
-      </pre>
-      <Table {...getTableProps()} className="col-md-10" striped bordered hover>
+      <Table {...getTableProps()} hover>
         <thead>
           {headerGroups.map(headerGroup => (
             <tr {...headerGroup.getHeaderGroupProps()}>

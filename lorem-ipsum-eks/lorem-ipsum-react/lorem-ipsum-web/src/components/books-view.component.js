@@ -4,8 +4,11 @@ import BookActions from "./book-actions.component";
 import ReactTable from "./book-table.component"
 import { useFetch, useAsyncError } from "./hooks";
 import Spinner from 'react-bootstrap/Spinner';
-import BookView from './book-view.component'
-const DEFAULT_PAGE_SIZE = 10
+import BookView from './book-view.component';
+import AddBook from './add-book.component';
+import BookService from '../services/books.service';
+
+const DEFAULT_PAGE_SIZE = 12
 const DEFAULT_OFFSET = 1
 
 const API_URL = "https://localhost";
@@ -102,7 +105,8 @@ export default function BooksView() {
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <Books />
+      <AddBook></AddBook>
+      <Books/>
     </ErrorBoundary>
   )
 }

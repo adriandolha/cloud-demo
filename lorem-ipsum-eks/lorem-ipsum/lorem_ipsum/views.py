@@ -122,6 +122,14 @@ def get_all_books():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
+@books.route('/random', methods=['GET', 'OPTIONS'])
+def random_book():
+    no_of_pages = int(request.args.get('no_of_pages', 1))
+    LOGGER.info(f'Generate book, no_of_pages=[{no_of_pages}]]...')
+    result = app_context().book_service.random(no_of_pages=no_of_pages)
+    return response({"status_code": '200', 'body': to_json(result)})
+
+
 @books.route('/', methods=['POST'])
 @requires_permission(['ROLE_ADMIN'])
 def save_book():
@@ -141,7 +149,7 @@ def get_config():
 
 @books.route('/<id>', methods=['DELETE'])
 @requires_permission(['ROLE_ADMIN'])
-def delete_user(id:str):
+def delete_user(id: str):
     LOGGER.info(f'Delete book {id}...')
     app_context().book_service.delete(id)
     return '', 204

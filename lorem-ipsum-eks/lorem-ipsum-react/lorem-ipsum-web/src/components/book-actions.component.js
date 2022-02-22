@@ -8,7 +8,6 @@ function BookActions({ row, tm, setDeleted, setView }) {
     const uri = `${API_URL}/books/${id}`;
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState();
-    // console.log(`Actions table metadata is ${tableMetadata}`)
     const handleDelete = () => {
         console.log(id);
         console.log(`Fetching ${uri}...`);
