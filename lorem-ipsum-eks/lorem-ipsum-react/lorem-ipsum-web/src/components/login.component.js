@@ -80,9 +80,9 @@ const LoginPage = (props) => {
         <React.Fragment>
             <div className="col-md-12">
 
-                <div className="card card-container">
+                <div className="card card-container bg-light">
                     <h2>Login Page</h2>
-                    <Form className="form-container" >
+                    <Form >
                         <div className="form-group">
                             <label htmlFor="username">Username</label>
                             <Field type="text" name="username" className={"form-control"} placeholder="username" />
@@ -92,12 +92,12 @@ const LoginPage = (props) => {
                             <label htmlFor="password">Password</label>
                             <Field type="password" name="password" className={"form-control"} placeholder="Password" />
                             {touched.password && errors.password && <span className="help-block text-danger">{errors.password}</span>}
-                        </div><br></br>
+                        </div>
                         <button type="submit" className="btn btn-primary me-2">Login</button>
 
                         <button type="submit" className="btn btn-success" onClick={() => {
                             setFieldValue('login_type', 'google')
-                            handleSubmit(values, props);
+                            handleSubmit(values, props)
                         }}>
                             <FontAwesomeIcon icon={['fab', 'google']} />
                             <span className="ms-1">
@@ -105,8 +105,8 @@ const LoginPage = (props) => {
                             </span>
                         </button>
 
-                    </Form><br></br>
-                    {error && <div className="alert alert-danger" role="alert"> {error.message} </div>}
+                    </Form>
+                    {error && <div className="alert alert-danger mt-2" role="alert"> {error.message} </div>}
                 </div>
             </div>
 

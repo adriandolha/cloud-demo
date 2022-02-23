@@ -8,6 +8,7 @@ function BookView({ book_data, show, handleClose, handleSave }) {
     const book_text = Object.values(book_json).map(page => page.reduce((prev, crt) => prev + "\n" + crt));
     const book = {
         title: book_data.title,
+        author: book_data.author,
         pages: book_text
     };
     const [error, setError] = useState();
@@ -33,9 +34,11 @@ function BookView({ book_data, show, handleClose, handleSave }) {
 
     return (
         <>
-            <Modal show={show} onHide={handleClose} size="xl" aria-labelledby="contained-modal-title-vcenter" centered>
-                <Modal.Header>
-                    <Modal.Title className="bg-dark text-light text-center col-md-11 ms-5">{book.title}</Modal.Title>
+            <Modal show={show} onHide={handleClose} animation={false} size="xl" aria-labelledby="contained-modal-title-vcenter" centered>
+                <Modal.Header className="flex-column text-left text-dark bg-light">
+                    <Modal.Title className="col-md-11 ms-5">{book.title}</Modal.Title>
+                    {/* <h1 className="bg-light text-dark col-md-11 ms-5 ">{book.title}</h1> */}
+                    <h6 className=" font-italic col-md-11 ms-5 ">{book.author}</h6>
                 </Modal.Header>
                 <Modal.Body>
                     <Carousel>

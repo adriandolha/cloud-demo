@@ -14,6 +14,20 @@ class User:
         return User(**data)
 
 
+class Word:
+    def __init__(self, id: str, name: str, count: int):
+        self.id = id
+        self.name = name
+        self.count = count
+
+    def as_dict(self):
+        return self.__dict__
+
+    @staticmethod
+    def from_dict(data: dict):
+        return Word(**data)
+
+
 class Book:
     def __init__(self, id: str, author: str, title: str, no_of_pages: int, book: str):
         self.id = id
@@ -55,8 +69,22 @@ class UserRepo(ABC):
     def save(self, user: User):
         pass
 
+
+class WordRepo(ABC):
     @abstractmethod
-    def encrypt_password(self, pwd):
+    def get(self, id=None) -> Word:
+        pass
+
+    @abstractmethod
+    def delete(self, word: Word):
+        pass
+
+    @abstractmethod
+    def get_all(self, limit=10, offset=1):
+        pass
+
+    @abstractmethod
+    def save(self, word: Word):
         pass
 
 
@@ -107,6 +135,23 @@ class BookService(ABC):
         pass
 
 
+class WordService(ABC):
+    @abstractmethod
+    def get(self, id=None):
+        pass
+
+    @abstractmethod
+    def get_all(self, id=None, limit=1, offset=1):
+        pass
+
+    @abstractmethod
+    def save(self, data_records):
+        pass
+
+    def delete(self, id: str):
+        pass
+
+
 class UserService(ABC):
     @abstractmethod
     def get(self, username=None):
@@ -144,6 +189,9 @@ class UserService(ABC):
 
 
 class AppContext(ABC):
+    def __init__(self):
+        pass
+
     @property
     @abstractmethod
     def user_service(self) -> UserService:
@@ -171,12 +219,22 @@ class AppContext(ABC):
 
     @property
     @abstractmethod
+    def word_repo(self) -> WordRepo:
+        pass
+
+    @property
+    @abstractmethod
     def config(self):
         pass
 
     @property
     @abstractmethod
     def book_service(self) -> BookService:
+        pass
+
+    @property
+    @abstractmethod
+    def word_service(self) -> WordService:
         pass
 
     @abstractmethod

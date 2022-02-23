@@ -13,6 +13,7 @@ import json
 from prometheus_client import Metric
 
 books = Blueprint('books', __name__)
+words = Blueprint('words', __name__)
 users = Blueprint('users', __name__)
 from flask import g
 
@@ -139,6 +140,40 @@ def save_book():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
+@words.route('/', methods=['POST'])
+@requires_permission(['ROLE_ADMIN'])
+def save_word():
+    LOGGER.info('Adding data...')
+    _request = from_json(request.data.decode('utf-8'))
+    result = app_context().word_service.save(_request)
+    return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+
+
+@words.route('/<id>', methods=['GET'])
+@requires_permission(['ROLE_ADMIN'])
+def get_word(id):
+    LOGGER.info('Get all data...')
+    result = app_context().word_service.get(id)
+    return response({"status_code": '200', 'body': to_json(result)})
+
+
+@words.route('/', methods=['GET', 'OPTIONS'])
+def get_all_words():
+    _limit = int(request.args.get('limit', 20))
+    _offset = int(request.args.get('offset', 1))
+    LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}]]...')
+    result = app_context().word_service.get_all(limit=_limit, offset=_offset)
+    return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+
+
+@words.route('/<id>', methods=['DELETE'])
+@requires_permission(['ROLE_ADMIN'])
+def delete_word(id: str):
+    LOGGER.info(f'Delete word {id}...')
+    app_context().word_service.delete(id)
+    return '', 204
+
+
 @books.route('/config', methods=['GET'])
 def get_config():
     LOGGER.info(app.config)
@@ -149,7 +184,7 @@ def get_config():
 
 @books.route('/<id>', methods=['DELETE'])
 @requires_permission(['ROLE_ADMIN'])
-def delete_user(id: str):
+def delete_book(id: str):
     LOGGER.info(f'Delete book {id}...')
     app_context().book_service.delete(id)
     return '', 204

@@ -69,3 +69,11 @@ def requests_user_token_settings(config_valid):
                         'X-Token-String': config_valid['user_token']}, "timeout": 10}
 
 
+@pytest.fixture()
+def word_valid():
+    _faker = faker.Faker()
+    name = _faker.word()
+    yield {"id": name,
+           "name": name,
+           "count": _faker.random_int(1, 50),
+           }

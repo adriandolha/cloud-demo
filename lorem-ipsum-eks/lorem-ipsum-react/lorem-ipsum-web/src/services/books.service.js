@@ -20,6 +20,15 @@ class BookService {
             })
         })
     }
+    get_all (limit, offset) {
+        return fetch( `${API_URL}/books?limit=${limit}&offset=${offset}`, {
+            method: 'get',
+            headers: new Headers({
+                'Content-Type': 'application/json',
+                ...authHeader()
+            })
+        })
+    }
 }
 
 export default new BookService();

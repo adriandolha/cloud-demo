@@ -7,9 +7,9 @@ import sys
 from authlib.jose import jwt
 
 import lorem_ipsum.model
-from lorem_ipsum import MetricsService, BookService, UserService
+from lorem_ipsum.model import MetricsService, BookService, UserService, WordService
 from lorem_ipsum.model import User, Book
-from lorem_ipsum.repo import Transaction, transaction
+from lorem_ipsum.repo import Transaction, transaction, Word
 from lorem_ipsum.serializers import to_json
 
 LOGGER = logging.getLogger('lorem-ipsum')
@@ -172,3 +172,39 @@ class DefaultUserService(UserService):
         except:
             LOGGER.exception('token is invalid', exc_info=True)
             raise Exception('token is invalid')
+
+
+class DefaultWordService(WordService):
+    def __init__(self, app_context: lorem_ipsum.model.AppContext):
+        self._app_context = app_context
+
+    @transaction
+    def get(self, id=None):
+        return self._app_context.word_repo.get(id).as_dict()
+
+    @transaction
+    def delete(self, username=None):
+        user = self._app_context.user_repo.get(username)
+        if user is not None:
+            self._app_context.user_repo.delete(user)
+        else:
+            LOGGER.debug(f'User {username} does not exist. No delete performed.')
+        return True
+
+    @transaction
+    def get_all(self, id=None, limit=10, offset=1):
+        results = self._app_context.word_repo.get_all(limit=limit, offset=offset)
+        results['items'] = [word.as_dict() for word in results['items']]
+        return results
+
+    @transaction
+    def save(self, data_records):
+        saved_records = []
+        for record in data_records:
+            word_repo = self._app_context.word_repo
+            word = word_repo.get(record['id'])
+            if word is None:
+                word = Word.from_dict(record)
+                word_repo.save(word)
+            saved_records.append(word.as_dict())
+        return {'items': saved_records, 'total': len(saved_records)}

@@ -22,6 +22,7 @@ function Books() {
 
   const columns = useMemo(
     () => {
+      console.log('Columns update', data);
       return [
         {
           Header: "Books",
@@ -57,7 +58,7 @@ function Books() {
         }
       ]
     },
-    [pageSize, pageIndex, deleted]
+    [_pageSize, _pageIndex, deleted, view, data]
   );
 
   console.log('Rendering books page.')
@@ -77,14 +78,32 @@ function Books() {
   if (data && !loading) {
     const items = data.items;
     const totalCount = data.total;
-    const handleClose = () => { setTableMetadata({ ...tableMetadata, view: null }) }
-    const book_data = data.items.filter(item => item.id == view)[0]
     const showBook = () => {
+      const handleClose = () => { setTableMetadata({ ...tableMetadata, view: null }) }
+      const book_data = data.items.filter(item => item.id == view)[0]
+      view && console.log(`View book ${view}`, book_data);
+      view && items.map(item => console.log(item.id))
       return view && <BookView book_data={book_data} show={view ? "true" : "false"} handleClose={handleClose}></BookView>
     }
 
     return (
       <React.Fragment>
+        <AddBook onSave={() => {
+          console.log('saveing...');
+          BookService.get_all(_pageIndex, offset)
+            .then(res => res.json())
+            .then(new_data => {
+              console.log('new data', new_data);
+              const lastPageIndex = Math.ceil(new_data.total / tableMetadata.pageSize)
+              setTableMetadata({ ...tableMetadata, data: new_data, pageIndex: lastPageIndex })
+            })
+            .catch((error) => {
+              console.log(`Error: ${error}`);
+              // setError(error);
+
+            });
+        }}></AddBook>
+
         {showBook()}
         <ReactTable columns={columns} data={items} totalCount={totalCount} tableMetadataState={[tableMetadata, setTableMetadata]}>
         </ReactTable>
@@ -99,14 +118,13 @@ function Books() {
 export default function BooksView() {
   return (
     <ErrorBoundary>
-      <div className="alert alert-danger alert-dismissible fade show invisible fixed-top" role="alert">
+      <div className="alert alert-danger alert-dismissible fade show invisible fixed-bottom" role="alert">
         <strong>Holy guacamole!</strong> You should check in on some of those fields below.
         <button type="button" className="close" data-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <AddBook></AddBook>
-      <Books/>
+      <Books />
     </ErrorBoundary>
   )
 }

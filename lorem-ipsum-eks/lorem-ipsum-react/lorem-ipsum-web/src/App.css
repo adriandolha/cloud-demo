@@ -34,3 +34,7 @@ label {
 html {
   font-size: 1rem;
 }
+
+.fa-trash {
+  color : red;
+}

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import BookView from './book-view.component';
 import BookService from '../services/books.service';
 
-const API_URL = 'https://localhost'
 const shouldGenerateAndSave = (values) => {
     return values && values.noOfBooks > 1
 }
@@ -19,9 +18,9 @@ function AddBookPage(props) {
         isSubmitting,
         setSubmitting,
         setStatus,
-        status
+        status,
+        onSave
     } = props;
-
     const [error, setError] = useState(false)
     // console.log(isSubmitting, status);
     if (status && status.showBook && status.data) {
@@ -35,6 +34,7 @@ function AddBookPage(props) {
                 console.log('save book');
                 setSubmitting(false);
                 setStatus({ showBook: false });
+                onSave();
             }}></BookView>
     }
     const showProgressBar = (status && status.progress) && shouldGenerateAndSave(values);
@@ -47,6 +47,7 @@ function AddBookPage(props) {
         if (crtProgressValue == values.noOfBooks) {
             setStatus({ progress: null });
             setSubmitting(false);
+            onSave();
         }
         percentage = showProgressBar && crtProgressValue * 100 / values.noOfBooks;
         status && console.log(`Progress: ${crtProgressValue} ${percentage}`);
@@ -144,6 +145,7 @@ const AddBookFormik = withFormik({
                 })
                 .then(data => {
                     setStatus({ data: data, showBook: true });
+
                 })
                 .catch((error) => {
                     console.log(`Error: ${error}`);
@@ -156,8 +158,8 @@ const AddBookFormik = withFormik({
 
 
 
-export default function AddBook() {
+export default function AddBook({onSave}) {
     return (
-        <AddBookFormik />
+        <AddBookFormik onSave={onSave}/>
     )
 }

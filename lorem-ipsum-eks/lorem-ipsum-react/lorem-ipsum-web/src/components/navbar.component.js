@@ -33,7 +33,7 @@ const NavBar = () => {
                         </Link>
                     </li>
                     <li className="nav-item">
-                        <a href="/logout" className="nav-link" onClick={() => { AuthService.logout() }}>
+                        <a href="/login" className="nav-link" onClick={() => { AuthService.logout() }}>
                             LogOut
                         </a>
                     </li>

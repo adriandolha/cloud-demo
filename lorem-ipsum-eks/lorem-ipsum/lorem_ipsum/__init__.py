@@ -6,12 +6,13 @@ from functools import lru_cache
 import boto3
 
 from lorem_ipsum.config import get_config
-from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo, \
+from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo, PostgresWordRepo, \
     create_database_if_not_exists
-from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, AppContext
+from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, WordRepo, WordService, AppContext
 from lorem_ipsum.service import DefaultBookService
 from lorem_ipsum.service import DefaultMetricsService
 from lorem_ipsum.service import DefaultUserService
+from lorem_ipsum.service import DefaultWordService
 import lorem_ipsum.model as model
 
 
@@ -40,6 +41,8 @@ class DefaultAppContext(AppContext):
         self._book_service = DefaultBookService(self)
         self._user_repo = PostgresUserRepo(self)
         self._user_service = DefaultUserService(self)
+        self._word_repo = PostgresWordRepo(self)
+        self._word_service = DefaultWordService(self)
         self._metrics_service = DefaultMetricsService(self)
 
     def init(self):
@@ -62,12 +65,20 @@ class DefaultAppContext(AppContext):
         return self._user_repo
 
     @property
+    def word_repo(self):
+        return self._word_repo
+
+    @property
     def book_repo(self):
         return self._book_repo
 
     @property
     def user_service(self):
         return self._user_service
+
+    @property
+    def word_service(self):
+        return self._word_service
 
     @property
     def config(self):

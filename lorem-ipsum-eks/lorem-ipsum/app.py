@@ -6,6 +6,7 @@ from flask import Flask
 from prometheus_flask_exporter import PrometheusMetrics
 
 import gevent_psycopg2
+from lorem_ipsum.views import words
 
 app = Flask('lorem-ipsum')
 LOGGER = logging.getLogger('lorem-ipsum')
@@ -36,6 +37,7 @@ def create_flask_app():
     app.url_map.strict_slashes = False
     app.register_blueprint(books, url_prefix="/books")
     app.register_blueprint(users, url_prefix="/users")
+    app.register_blueprint(words, url_prefix="/words")
     _app_context = lorem_ipsum.create_app()
     _app_context.run_database_setup()
     LOGGER = logging.getLogger('lorem-ipsum')

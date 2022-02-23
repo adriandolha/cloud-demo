@@ -8,7 +8,6 @@ import {
   CDBSidebarMenuItem,
 } from 'cdbreact';
 import { NavLink } from 'react-router-dom';
-
 const Sidebar = () => {
   return (
     <div className="m-0 p-0" style={{ display: 'flex', height: '100vh', overflow: 'scroll initial' }}>
@@ -21,7 +20,7 @@ const Sidebar = () => {
 
         <CDBSidebarContent className="sidebar-content">
           <CDBSidebarMenu>
-            <NavLink exact to="/" activeClassName="activeClicked">
+            <NavLink exact to="/dashboard" activeClassName="activeClicked">
               <CDBSidebarMenuItem icon="columns">Dashboard</CDBSidebarMenuItem>
             </NavLink>
             <NavLink exact to="/books" activeClassName="activeClicked">

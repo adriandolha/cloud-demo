@@ -15,6 +15,7 @@ import lorem_ipsum.model as model
 from lorem_ipsum.model import AppContext
 from lorem_ipsum.model import BookRepo
 from lorem_ipsum.model import UserRepo
+from lorem_ipsum.model import WordRepo
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
@@ -123,6 +124,28 @@ class User(declarative_base()):
         return User(**user.as_dict())
 
 
+class Word(declarative_base()):
+    __tablename__ = 'words'
+
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    count = Column(Integer)
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    @staticmethod
+    def from_dict(data: dict):
+        return Word(**data)
+
+    def as_model(self) -> model.Word:
+        return model.Word(self.id, self.name, self.count)
+
+    @staticmethod
+    def from_model(word: model.Word):
+        return Word(**word.as_dict())
+
+
 class Book(declarative_base()):
     __tablename__ = 'books'
 
@@ -191,6 +214,37 @@ class PostgresUserRepo(UserRepo):
                                            salt=self._transaction_manager.config['password_encryption_key'].encode(
                                                'utf-8'))
         return encrypted_password
+
+
+class PostgresWordRepo(WordRepo):
+    def __init__(self, app_context: AppContext):
+        self._transaction_manager = app_context.transaction_manager
+
+    def get(self, id=None) -> model.Word:
+        _session = self._transaction_manager.transaction.session
+        word = _session.query(Word).filter(Word.id == id).first()
+        result = None
+        if word:
+            result = word.as_model()
+        return result
+
+    def delete(self, word: model.Word):
+        _session = self._transaction_manager.transaction.session
+        _user = _session.query(Word).filter(Word.id == word.id).first()
+        _session.delete(_user)
+
+    def get_all(self, limit=10, offset=1):
+        _session = self._transaction_manager.transaction.session
+        count = _session.query(Word).count()
+        words = _session.query(Word).limit(limit).offset(offset)
+        return {"total": count, "items": [word.as_model() for word in words]}
+
+    def save(self, word: model.Word) -> model.Word:
+        _word = Word.from_model(word)
+        LOGGER.info(f'data = {_word.as_dict()}')
+        _session = self._transaction_manager.transaction.session
+        _session.add(_word)
+        return _word.as_model()
 
 
 class PostgresBookRepo(BookRepo):
@@ -279,6 +333,13 @@ def db_setup(app_context: AppContext):
                 username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
                 password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
                 CONSTRAINT user_pk PRIMARY KEY (username)\
+            )')
+    _session.execute('CREATE TABLE IF NOT EXISTS public.words\
+            (\
+                id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+                name character varying(200) COLLATE pg_catalog."default" NOT NULL,\
+                count integer NOT NULL,\
+                CONSTRAINT word_pk PRIMARY KEY (id)\
             )')
     create_admin_user(app_context)
 

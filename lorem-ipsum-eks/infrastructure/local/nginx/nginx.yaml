@@ -34,6 +34,20 @@ spec:
             port:
               number: 80
       - pathType: Prefix
+        path: /words
+        backend:
+          service:
+            name: lorem-ipsum
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /stats
+        backend:
+          service:
+            name: lorem-ipsum
+            port:
+              number: 80
+      - pathType: Prefix
         path: /api/auth
         backend:
           service:
