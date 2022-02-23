@@ -118,9 +118,10 @@ def get_book(id):
 def get_all_books():
     _limit = int(request.args.get('limit', 20))
     _offset = int(request.args.get('offset', 1))
+    _includes = request.args.get('includes')
     LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}]]...')
-    result = app_context().book_service.get_all(limit=_limit, offset=_offset)
-    return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+    result = app_context().book_service.get_all(limit=_limit, offset=_offset, includes=_includes)
+    return response({"status_code": '200', 'body': to_json(result)})
 
 
 @books.route('/random', methods=['GET', 'OPTIONS'])

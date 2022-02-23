@@ -77,3 +77,13 @@ def word_valid():
            "name": name,
            "count": _faker.random_int(1, 50),
            }
+
+
+@pytest.fixture()
+def word_valid_max():
+    _faker = faker.Faker()
+    name = _faker.word()
+    yield {"id": name,
+           "name": name,
+           "count": 100,
+           }

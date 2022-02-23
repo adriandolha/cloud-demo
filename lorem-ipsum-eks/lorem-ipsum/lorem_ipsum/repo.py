@@ -1,5 +1,6 @@
 import logging
 import uuid
+from sqlalchemy.sql import functions
 from urllib.parse import quote
 
 import bcrypt
@@ -236,7 +237,7 @@ class PostgresWordRepo(WordRepo):
     def get_all(self, limit=10, offset=1):
         _session = self._transaction_manager.transaction.session
         count = _session.query(Word).count()
-        words = _session.query(Word).limit(limit).offset(offset)
+        words = _session.query(Word).order_by(Word.count.desc()).limit(limit).offset(offset)
         return {"total": count, "items": [word.as_model() for word in words]}
 
     def save(self, word: model.Word) -> model.Word:
@@ -259,11 +260,16 @@ class PostgresBookRepo(BookRepo):
         book = _session.query(Book).filter(Book.id == id).first()
         return book.as_model() if book else None
 
-    def get_all(self, limit=10, offset=1):
+    def get_all(self, limit=10, offset=1, includes=None):
         _session = self._transaction_manager.transaction.session
         count = _session.query(Book).count()
+        page_count = None
+        if includes == 'page_count':
+            page_count = _session.query(
+                functions.sum(Book.no_of_pages)
+            ).scalar()
         books = _session.query(Book).limit(limit).offset(offset)
-        return {"total": count, "items": [book.as_model() for book in books]}
+        return {"total": count, "page_count": page_count, "items": [book.as_model() for book in books]}
 
     def save(self, book: model.Book) -> model.Book:
         _book = Book.from_model(book)

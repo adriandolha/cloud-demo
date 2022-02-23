@@ -19,11 +19,27 @@ class TestBookApi:
         assert book['title'] == book_valid_add_request['title']
         assert 200 == response.status_code
 
+    def test_book_random(self, book_random_valid_get_request):
+        _response = app.random_book()
+        book = json.loads(_response.response[0].decode('utf-8'))
+        assert book['title']
+        assert book['no_of_pages'] == 3
+        assert 200 == _response.status_code
+
     def test_book_list_count(self, book_valid_get_request):
         response = app.get_all_books()
         books = json.loads(response.response[0].decode('utf-8'))
         print(books)
         assert books['total']
+        assert len(books['items']) == 2
+        assert 200 == response.status_code
+
+    def test_book_list_page_count(self, page_count_valid_get_request):
+        response = app.get_all_books()
+        books = json.loads(response.response[0].decode('utf-8'))
+        print(books)
+        assert books['total']
+        assert books['page_count'] == 10
         assert len(books['items']) == 2
         assert 200 == response.status_code
 

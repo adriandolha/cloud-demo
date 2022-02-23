@@ -36,10 +36,10 @@ class TestWordApi:
         assert words['total']
         assert len(words['items']) == 2
         assert 200 == response.status_code
-        assert lorem_ipsum.repo.Transaction.session.query.return_value.limit.call_args.args[0] == 3
-        assert lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.call_args.args[0] == 4
+        assert lorem_ipsum.repo.Transaction.session.query.return_value.order_by.return_value.limit.call_args.args[0] == 3
+        assert lorem_ipsum.repo.Transaction.session.query.return_value.order_by.return_value.limit.return_value.offset.call_args.args[0] == 4
 
-    def test_word_list_default_limit(self, word_valid_get_default_limit):
+    def test_word_list_default_limit_and_order_desc(self, word_valid_get_default_limit):
         response = app.get_all_words()
         words = json.loads(response.response[0].decode('utf-8'))
         assert words['total'] > 2

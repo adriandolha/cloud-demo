@@ -198,6 +198,28 @@ def book_valid_get_request(app_valid, book_valid):
 
 
 @pytest.fixture()
+def book_random_valid_get_request(app_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {'no_of_pages': '3'}
+        yield ''
+
+
+@pytest.fixture()
+def page_count_valid_get_request(app_valid, book_valid):
+    # from flask import request
+    import app
+    with app.app.test_request_context():
+        flask.request.args = {'limit': '2', 'includes': 'page_count'}
+        lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+        lorem_ipsum.repo.Transaction.session.query.return_value.scalar.return_value = 10
+        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
+            lorem_ipsum.repo.Book(**book_valid), lorem_ipsum.repo.Book(**book_valid)]
+        yield book_valid
+
+
+@pytest.fixture()
 def book_valid_get_request_limit_offset(app_valid, book_valid):
     # from flask import request
     import app
@@ -232,6 +254,16 @@ def word_valid():
 
 
 @pytest.fixture()
+def word_valid_max():
+    _faker = faker.Faker()
+    name = _faker.word()
+    yield {"id": name,
+           "name": name,
+           "count": 100,
+           }
+
+
+@pytest.fixture()
 def word_valid_add_request(word_valid, admin_token_valid):
     # from flask import request
     import app
@@ -240,10 +272,11 @@ def word_valid_add_request(word_valid, admin_token_valid):
         lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = lorem_ipsum.repo.Word(
             **word_valid)
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
+        lorem_ipsum.repo.Transaction.session.query.return_value.order_by.return_value.limit.return_value.offset.return_value = [
             lorem_ipsum.repo.Word(**word_valid), lorem_ipsum.repo.Word(**word_valid)]
         flask.request.data = to_json([word_valid]).encode('utf-8')
         yield word_valid
+
 
 @pytest.fixture()
 def stats_top_words_valid_request(word_valid, admin_token_valid):
@@ -267,7 +300,10 @@ def word_valid_get_request_limit_offset(app_valid, word_valid):
     with app.app.test_request_context():
         flask.request.args = {'limit': '3', 'offset': '4'}
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
+        lorem_ipsum.repo.Transaction.session.query.return_value \
+            .order_by.return_value \
+            .limit.return_value \
+            .offset.return_value = [
             lorem_ipsum.repo.Word(**word_valid), lorem_ipsum.repo.Word(**word_valid)]
         yield word_valid
 
@@ -279,6 +315,6 @@ def word_valid_get_default_limit(app_valid, word_valid):
     with app.app.test_request_context():
         flask.request.args = {}
         lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-        lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.return_value = [
+        lorem_ipsum.repo.Transaction.session.query.return_value.order_by.return_value.limit.return_value.offset.return_value = [
             lorem_ipsum.repo.Word(**word_valid)]
         yield book_valid

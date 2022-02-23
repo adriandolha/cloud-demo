@@ -71,9 +71,9 @@ class DefaultBookService(BookService):
         return self._app_context.book_repo.get(id).as_dict()
 
     @transaction
-    def get_all(self, id=None, limit=1, offset=1):
+    def get_all(self, id=None, limit=1, offset=1, includes=None):
         LOGGER.debug(f'using connection pool {Transaction.db()}')
-        results = self._app_context.book_repo.get_all(limit=limit, offset=offset)
+        results = self._app_context.book_repo.get_all(limit=limit, offset=offset, includes=includes)
         results['items'] = [book.as_dict() for book in results['items']]
         return results
 
@@ -84,13 +84,7 @@ class DefaultBookService(BookService):
         return True
 
     def random(self, no_of_pages: int):
-        _faker = faker.Faker()
-        _book = {f'page_{page}': [_faker.text(max_nb_chars=100) for i in range(30)] for page in range(no_of_pages)}
-        return {"author": _faker.name(),
-                "title": _faker.text(max_nb_chars=100),
-                "book": to_json(_book),
-                "no_of_pages": no_of_pages,
-                }
+        return Book.random(no_of_pages)
 
     @transaction
     def save(self, data_records):

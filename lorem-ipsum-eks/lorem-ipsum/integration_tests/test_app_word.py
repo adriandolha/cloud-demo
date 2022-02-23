@@ -59,13 +59,14 @@ class TestBookApi:
         assert len(words_for_offset2['items']) == 2
         assert words_for_offset1['items'][0]['id'] != words_for_offset2['items'][0]['id']
 
-    def test_word_list_default_limit(self, config_valid, word_valid, requests_standard_settings):
+    def test_word_list_default_limit_and_order_desc(self, config_valid, word_valid, word_valid_max, requests_standard_settings):
         self.add_word(word_valid, config_valid, requests_standard_settings)
-        self.add_word(word_valid, config_valid, requests_standard_settings)
-        response = requests.get(url=f'{config_valid["root_url"]}/words', **requests_standard_settings)
+        self.add_word(word_valid_max, config_valid, requests_standard_settings)
+        response = requests.get(url=f'{config_valid["root_url"]}/words?limit=1&offset=0', **requests_standard_settings)
         words = json.loads(response.content.decode('utf-8'))
         print(words)
         assert words['total'] >= 2
+        assert words['items'][0]['count'] == 100
         # assert len(books['items']) == 1
         assert 200 == response.status_code
 
