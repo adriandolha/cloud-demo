@@ -81,9 +81,7 @@ def word_valid():
 
 @pytest.fixture()
 def word_valid_max():
-    _faker = faker.Faker()
-    name = _faker.word()
-    yield {"id": name,
-           "name": name,
-           "count": 100,
+    yield {"id": 'wirdwrddfskjlfjsdlk',
+           "name": 'wirdwrddfskjlfjsdlk',
+           "count": 100000,
            }

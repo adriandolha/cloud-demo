@@ -86,6 +86,20 @@ function Books() {
       return view && <BookView book_data={book_data} show={view ? "true" : "false"} handleClose={handleClose}></BookView>
     }
 
+    const handleSearch = (event) => {
+      const query = event.target.value
+      BookService.search(query)
+        .then(res => res.json())
+        .then(new_data => {
+          console.log('new data', new_data);
+          setTableMetadata({ ...tableMetadata, data: new_data, pageIndex: 1 })
+        })
+        .catch((error) => {
+          console.log(`Error: ${error}`);
+          // setError(error);
+
+        });
+    }
     return (
       <React.Fragment>
         <AddBook onSave={() => {
@@ -105,6 +119,8 @@ function Books() {
         }}></AddBook>
 
         {showBook()}
+        <input id="search" type="text" onChange={handleSearch} className="me-1" /><i className="fas fa-search"></i>
+
         <ReactTable columns={columns} data={items} totalCount={totalCount} tableMetadataState={[tableMetadata, setTableMetadata]}>
         </ReactTable>
       </React.Fragment>

@@ -1,7 +1,47 @@
+from collections import Counter
+from enum import Enum
+
+from typing import List
+
+import re
+
 import faker
 from abc import ABC, abstractmethod
 
-from lorem_ipsum.serializers import to_json
+from lorem_ipsum.serializers import to_json, from_json
+import datetime
+
+
+class Events(Enum):
+    BOOK_UPDATED = "book.updated"
+    BOOK_DELETED = "book.deleted"
+    BOOK_INDEXED = "book.indexed"
+
+
+def model_as_dict_(object):
+    if object is None:
+        return None
+    return {k: v for k, v in object.__dict__.items() if not k.startswith('_')}
+
+
+class BaseModel:
+    def model_as_dict(self):
+        return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+
+
+class Event:
+    def __init__(self, id: str, name: str, data: str, created_at: datetime.datetime = None):
+        self.id = id
+        self.name = name
+        self.data = data
+        self.created_at = created_at
+
+    def as_dict(self):
+        return self.__dict__
+
+    @staticmethod
+    def from_dict(data: dict):
+        return Event(**data)
 
 
 class User:
@@ -17,21 +57,25 @@ class User:
         return User(**data)
 
 
-class Word:
-    def __init__(self, id: str, name: str, count: int):
+class Word(BaseModel):
+    def __init__(self, id: str, name: str, index:str, count: int):
         self.id = id
         self.name = name
+        self.index = index
         self.count = count
 
     def as_dict(self):
-        return self.__dict__
+        return BaseModel.model_as_dict(self)
+
+    def __eq__(self, other):
+        return other and self.id == other.id
 
     @staticmethod
     def from_dict(data: dict):
         return Word(**data)
 
 
-class Book:
+class Book(BaseModel):
     def __init__(self, id: str, author: str, title: str, no_of_pages: int, book: str):
         self.id = id
         self.author = author
@@ -40,7 +84,12 @@ class Book:
         self.book = book
 
     def as_dict(self):
-        return self.__dict__
+        return BaseModel.model_as_dict(self)
+
+    @property
+    def text(self):
+        book_text = ' '.join([' '.join(text) for (page, text) in from_json(self.book).items()])
+        return book_text
 
     @staticmethod
     def from_dict(data: dict):
@@ -100,6 +149,14 @@ class WordRepo(ABC):
     def save(self, word: Word):
         pass
 
+    @abstractmethod
+    def update_all(self, words: List[Word]):
+        pass
+
+    @abstractmethod
+    def find_by_ids(self, ids: List[str]):
+        pass
+
 
 class BookRepo(ABC):
     @abstractmethod
@@ -121,6 +178,8 @@ class BookRepo(ABC):
     def delete(self, book: Book):
         pass
 
+    def search(self, query: str):
+        pass
 
 class MetricsService(ABC):
     @abstractmethod
@@ -147,6 +206,8 @@ class BookService(ABC):
     def random(self, no_of_pages: int):
         pass
 
+    def search(self, query: str):
+        pass
 
 class WordService(ABC):
     @abstractmethod
@@ -201,6 +262,45 @@ class UserService(ABC):
         pass
 
 
+class EventService(ABC):
+    @abstractmethod
+    def get(self, id=None):
+        pass
+
+    @abstractmethod
+    def delete(self, id=None):
+        pass
+
+    @abstractmethod
+    def get_all(self, id=None, limit=1):
+        pass
+
+    @abstractmethod
+    def save(self, event: Event):
+        pass
+
+
+class EventRepo(ABC):
+    @abstractmethod
+    def get(self, id=None) -> Event:
+        pass
+
+    @abstractmethod
+    def get_all(self, limit=10, offset=1) -> dict:
+        pass
+
+    @abstractmethod
+    def save(self, event: Event):
+        pass
+
+    @abstractmethod
+    def next_id(self):
+        pass
+
+    def delete(self, event: Event):
+        pass
+
+
 class AppContext(ABC):
     def __init__(self):
         pass
@@ -228,6 +328,11 @@ class AppContext(ABC):
     @property
     @abstractmethod
     def user_repo(self) -> UserRepo:
+        pass
+
+    @property
+    @abstractmethod
+    def event_repo(self) -> EventRepo:
         pass
 
     @property

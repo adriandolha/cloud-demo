@@ -49,3 +49,6 @@ def create_flask_app():
 if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
     prepare_orm_for_gevent()
     create_flask_app()
+    from lorem_ipsum.search_engine import SearchEngine
+    SearchEngine.start_search_engine()
+

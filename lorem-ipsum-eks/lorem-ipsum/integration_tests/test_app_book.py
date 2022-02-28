@@ -8,7 +8,7 @@ import requests
 
 class TestBookApi:
     def test_book_list_one(self, config_valid, book_valid, requests_standard_settings):
-        _response= self.add_book(book_valid, config_valid, requests_standard_settings)
+        _response = self.add_book(book_valid, config_valid, requests_standard_settings)
         _book_json = from_json(_response.content.decode('utf-8'))
         print(_book_json)
         _uuid = _book_json['items'][0]['id']
@@ -16,6 +16,24 @@ class TestBookApi:
         book = json.loads(response.content.decode('utf-8'))
         print(book)
         assert book['title'] == book_valid['title']
+        assert 200 == response.status_code
+
+    def test_book_search(self, config_valid, book_valid, requests_standard_settings):
+        _response = self.add_book(book_valid, config_valid, requests_standard_settings)
+        _book_json = from_json(_response.content.decode('utf-8'))
+        print(_book_json)
+        from lorem_ipsum.model import Book
+        book = Book.from_dict(_book_json['items'][0])
+        print(book.text)
+        query = book.text.split(' ')[0]
+        print(query)
+        _uuid = _book_json['items'][0]['id']
+        response = requests.get(url=f'{config_valid["root_url"]}/books/search?query={query}',
+                                **requests_standard_settings)
+        books = [Book.from_dict(b) for b in json.loads(response.content.decode('utf-8'))['items']]
+        for b in books:
+            assert query in b.text
+        assert book.id in [book.id for book in books]
         assert 200 == response.status_code
 
     def test_book_delete(self, config_valid, book_valid, requests_standard_settings):
@@ -43,7 +61,8 @@ class TestBookApi:
     def test_book_list_page_count(self, config_valid, book_valid, requests_standard_settings):
         self.add_book(book_valid, config_valid, requests_standard_settings)
 
-        response = requests.get(url=f'{config_valid["root_url"]}/books?includes=page_count', **requests_standard_settings)
+        response = requests.get(url=f'{config_valid["root_url"]}/books?includes=page_count',
+                                **requests_standard_settings)
         books = json.loads(response.content.decode('utf-8'))
         print(books)
         assert books['total']

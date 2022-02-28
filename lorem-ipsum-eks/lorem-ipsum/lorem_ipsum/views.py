@@ -124,6 +124,16 @@ def get_all_books():
     return response({"status_code": '200', 'body': to_json(result)})
 
 
+@books.route('/search', methods=['GET', 'OPTIONS'])
+def search_books_by_query():
+    _limit = int(request.args.get('limit', 20))
+    _offset = int(request.args.get('offset', 1))
+    _query = request.args.get('query', '')
+    LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}], _query=[{_query}]]...')
+    result = app_context().book_service.search(query=_query)
+    return response({"status_code": '200', 'body': to_json(result)})
+
+
 @books.route('/random', methods=['GET', 'OPTIONS'])
 def random_book():
     no_of_pages = int(request.args.get('no_of_pages', 1))
@@ -246,6 +256,7 @@ class JsonCollector(object):
 
 
 @books.after_request
+@words.after_request
 def apply_cors(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add('Access-Control-Allow-Headers', "*")

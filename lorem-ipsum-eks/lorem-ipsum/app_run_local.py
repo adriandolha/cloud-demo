@@ -11,4 +11,9 @@ if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
             os.environ[k] = str(v)
     os.environ['env'] = 'test'
     import app
-    app.create_flask_app().run(port=5000, debug=True)
+
+    flask_app = app.create_flask_app()
+    from lorem_ipsum.search_engine import SearchEngine
+    SearchEngine.start_search_engine()
+    flask_app.run(port=5000, debug=False)
+

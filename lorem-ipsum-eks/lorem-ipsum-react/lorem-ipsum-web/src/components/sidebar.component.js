@@ -12,7 +12,7 @@ const Sidebar = () => {
   return (
     <div className="m-0 p-0" style={{ display: 'flex', height: '100vh', overflow: 'scroll initial' }}>
       <CDBSidebar textColor="#fff" backgroundColor="#333">
-        <CDBSidebarHeader prefix={<i className="fa fa-bars fa-large"></i>}>
+        <CDBSidebarHeader prefix={<i className="fas fa-book "></i>}>
           <a href="/home" className="text-decoration-none" style={{ color: 'inherit' }}>
             Lorem Ipsum
           </a>

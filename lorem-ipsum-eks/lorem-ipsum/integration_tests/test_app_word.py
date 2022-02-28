@@ -66,7 +66,7 @@ class TestBookApi:
         words = json.loads(response.content.decode('utf-8'))
         print(words)
         assert words['total'] >= 2
-        assert words['items'][0]['count'] == 100
+        assert words['items'][0]['count'] == word_valid_max['count']
         # assert len(books['items']) == 1
         assert 200 == response.status_code
 

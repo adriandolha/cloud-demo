@@ -1,3 +1,5 @@
+from typing import List
+
 import logging
 import uuid
 from sqlalchemy.sql import functions
@@ -5,7 +7,7 @@ from urllib.parse import quote
 
 import bcrypt
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, DateTime, func
 from sqlalchemy import create_engine, JSON, Integer
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,8 +19,33 @@ from lorem_ipsum.model import AppContext
 from lorem_ipsum.model import BookRepo
 from lorem_ipsum.model import UserRepo
 from lorem_ipsum.model import WordRepo
+from lorem_ipsum.model import EventRepo
+import sys
+import inspect
+
+from lorem_ipsum.serializers import from_json
 
 LOGGER = logging.getLogger('lorem-ipsum')
+
+
+def domain_model(function):
+    def wrapper(self, *args, **kwargs):
+        _model = function(self, *args, **kwargs)
+
+        _model.__setattr__('_entity', self)
+
+        def set_attr(_self, key, value):
+            # print(f'set {object} {key}:{value}')
+            _self.__dict__[key] = value
+            if _self.__dict__.get('_entity') is not None:
+                _self.__dict__['_entity'].__setattr__(key, value)
+
+        _model.__class__.__setattr__ = set_attr
+
+        return _model
+
+    wrapper.__name__ = function.__name__
+    return wrapper
 
 
 class Transaction:
@@ -47,17 +74,18 @@ class Transaction:
 
     def __enter__(self):
         self._session = self.__new_session()
+        LOGGER.debug(f'New session {self.session}')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            LOGGER.debug(f'Commit connection for session transaction {self.session.transaction}')
+            LOGGER.debug(f'Commit connection for session transaction {self.session}')
             self.session.commit()
         except:
             LOGGER.debug('Database error...')
             self.session.rollback()
             raise
         finally:
-            LOGGER.debug(f'Closing connection for session {self.session.transaction}')
+            LOGGER.debug(f'Closing connection for session {self.session}')
             self.session.close()
 
 
@@ -130,21 +158,51 @@ class Word(declarative_base()):
 
     id = Column(String, primary_key=True)
     name = Column(String)
+    index = Column(JSON)
     count = Column(Integer)
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
+    @domain_model
+    def as_model(self) -> model.Word:
+        word = model.Word(self.id, self.name, self.index, self.count)
+        return word
+
+    def __eq__(self, other):
+        return other and self.id == other.id
+
     @staticmethod
     def from_dict(data: dict):
         return Word(**data)
 
-    def as_model(self) -> model.Word:
-        return model.Word(self.id, self.name, self.count)
-
     @staticmethod
     def from_model(word: model.Word):
-        return Word(**word.as_dict())
+        word = Word(**word.as_dict())
+        return word
+
+
+class Event(declarative_base()):
+    __tablename__ = 'events'
+
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    data = Column(JSON)
+    created_at = Column(DateTime, server_default=func.now())
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.id) for c in self.__table__.columns}
+
+    @staticmethod
+    def from_dict(data: dict):
+        return Event(**data)
+
+    def as_model(self) -> model.Event:
+        return model.Event(self.id, self.name, self.data, self.created_at)
+
+    @staticmethod
+    def from_model(event: model.Event):
+        return Event(**event.as_dict())
 
 
 class Book(declarative_base()):
@@ -163,6 +221,7 @@ class Book(declarative_base()):
     def from_dict(data: dict):
         return Book(**data)
 
+    @domain_model
     def as_model(self) -> model.Book:
         return model.Book(self.id, self.author, self.title, self.no_of_pages, self.book)
 
@@ -247,6 +306,17 @@ class PostgresWordRepo(WordRepo):
         _session.add(_word)
         return _word.as_model()
 
+    def update_all(self, words: List[model.Word]):
+        _session = self._transaction_manager.transaction.session
+        word_entities = [word.__dict__.get('_entity') or Word.from_model(word) for word in words]
+        _session.bulk_save_objects(word_entities)
+
+    def find_by_ids(self, ids: List[str]):
+        _session = self._transaction_manager.transaction.session
+        count = _session.query(Word).filter(Word.id.in_(ids)).count()
+        words = _session.query(Word).filter(Word.id.in_(ids)).order_by(Word.count.desc())
+        return {"total": count, "items": [word.as_model() for word in words]}
+
 
 class PostgresBookRepo(BookRepo):
     def next_id(self):
@@ -280,9 +350,53 @@ class PostgresBookRepo(BookRepo):
 
     def delete(self, book: model.Book):
         _session = self._transaction_manager.transaction.session
-        _book = _session.query(Book).filter(Book.id == book.id).first()
+
+        _book = book.__dict__.get('_entity') or _session.query(Book).filter(Book.id == book.id).first()
 
         _session.delete(_book)
+
+    def search(self, query: str):
+        _session = self._transaction_manager.transaction.session
+        words = _session.query(Word).filter(Word.name.like(query)).all()
+        LOGGER.info(words)
+        book_ids = [item for sublist in [from_json(word.index) for word in words] for item in sublist]
+        LOGGER.info(book_ids)
+        count = len(book_ids)
+        books = _session.query(Book).filter(Book.id.in_(book_ids)).limit(15).offset(0).all()
+        return {"total": count, "items": [book.as_model() for book in books]}
+
+
+class PostgresEventRepo(EventRepo):
+    def next_id(self):
+        return str(uuid.uuid4())
+
+    def __init__(self, app_context: AppContext):
+        self._transaction_manager = app_context.transaction_manager
+
+    def get(self, id=None) -> model.Event:
+        _session = self._transaction_manager.transaction.session
+        event = _session.query(Event).filter(Event.id == id).first()
+        return event.as_model() if event else None
+
+    def get_all(self, limit=10, offset=1, event_type: model.Events = None):
+        _session = self._transaction_manager.transaction.session
+        count = _session.query(Event).count()
+        events = _session.query(Event).filter(Event.name == str(model.Events.BOOK_UPDATED)).limit(limit).offset(offset)
+        result = {"total": count, "items": [event.as_model() for event in events]}
+        return result
+
+    def save(self, event: model.Event) -> model.Event:
+        _event = Event.from_model(event)
+        LOGGER.info(f'data = {_event}')
+        _session = self._transaction_manager.transaction.session
+        _session.add(_event)
+        return _event.as_model()
+
+    def delete(self, event: model.Event):
+        _session = self._transaction_manager.transaction.session
+        _event = _session.query(Event).filter(Event.id == event.id).first()
+        LOGGER.info(f'Deleting event {_event.id}')
+        _session.delete(_event)
 
 
 def create_database_if_not_exists(config: dict):
@@ -344,8 +458,17 @@ def db_setup(app_context: AppContext):
             (\
                 id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
                 name character varying(200) COLLATE pg_catalog."default" NOT NULL,\
+                index jsonb NOT NULL,\
                 count integer NOT NULL,\
                 CONSTRAINT word_pk PRIMARY KEY (id)\
+            )')
+    _session.execute('CREATE TABLE IF NOT EXISTS public.events\
+            (\
+                id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+                name character varying(200) COLLATE pg_catalog."default" NOT NULL,\
+                data jsonb NOT NULL,\
+                created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,\
+                CONSTRAINT event_pk PRIMARY KEY (id)\
             )')
     create_admin_user(app_context)
 

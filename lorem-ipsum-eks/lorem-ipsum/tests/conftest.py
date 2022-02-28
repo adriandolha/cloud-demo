@@ -1,3 +1,7 @@
+from datetime import datetime
+
+import uuid
+
 import logging
 import os
 
@@ -59,6 +63,28 @@ def user_token_valid(app_valid):
 
 @pytest.fixture()
 def book_valid():
+    _faker = faker.Faker()
+    _book = {f'page_{page}': [_faker.text(max_nb_chars=100) for i in range(30)] for page in range(10)}
+    yield {"author": _faker.name(),
+           "title": _faker.text(max_nb_chars=5),
+           "book": to_json(_book),
+           "no_of_pages": 10,
+           }
+
+
+@pytest.fixture()
+def book_small_valid():
+    _book = {f'page_{page}': ["Just a sample page." for i in range(1)] for page in range(1)}
+    yield {'id': str(uuid.uuid4()),
+           "author": "My Author",
+           "title": "My Book",
+           "book": to_json(_book),
+           "no_of_pages": 10,
+           }
+
+
+@pytest.fixture()
+def book_words_valid():
     _faker = faker.Faker()
     _book = {f'page_{page}': [_faker.text(max_nb_chars=100) for i in range(30)] for page in range(10)}
     yield {"author": _faker.name(),
@@ -258,8 +284,8 @@ def word_valid_max():
     _faker = faker.Faker()
     name = _faker.word()
     yield {"id": name,
-           "name": name,
-           "count": 100,
+           "name": 'wirdwrddfskjlfjsdlk',
+           "count": 100000,
            }
 
 
@@ -318,3 +344,46 @@ def word_valid_get_default_limit(app_valid, word_valid):
         lorem_ipsum.repo.Transaction.session.query.return_value.order_by.return_value.limit.return_value.offset.return_value = [
             lorem_ipsum.repo.Word(**word_valid)]
         yield book_valid
+
+
+@pytest.fixture()
+def app_context(config_valid):
+    yield lorem_ipsum.create_app_context()
+
+
+@pytest.fixture()
+def book_updated_event_valid(app_context, book_small_valid):
+    from lorem_ipsum import model
+    from lorem_ipsum.repo import Word, Event
+    event_repo = app_context.event_repo
+
+    event = model.Event(id=event_repo.next_id(), name=str(model.Events.BOOK_UPDATED),
+                        data=to_json({'new': to_json(book_small_valid)}), created_at=datetime.utcnow())
+    _event_entity = lorem_ipsum.repo.Event(**event.as_dict())
+    orig_query = lorem_ipsum.repo.Transaction.session.query.return_value
+
+    def query_side_effect(args):
+        # print(f'Mock {args}')
+        if args == Event:
+            orig_query.count.return_value = 1
+            orig_query.filter.return_value.first.return_value = _event_entity
+            orig_query.filter.return_value.limit.return_value.offset.return_value = [_event_entity]
+        if args == Word:
+            index = {
+                book_small_valid['id']: 1
+            }
+            orig_query.filter.return_value.order_by.return_value = [lorem_ipsum.repo.Word(id=word,
+                                                                                          name=word,
+                                                                                          index=to_json(index),
+                                                                                          count=1)
+                                                                    for word in ['just', 'a', 'sample', 'page']]
+        return orig_query
+
+    lorem_ipsum.repo.Transaction.session.query.side_effect = query_side_effect
+    # lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 1
+    # lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = _event_entity
+    # lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
+    #     _event_entity]
+    # with mock.patch('lorem_ipsum.repo.Transaction._session_maker'):
+
+    yield event

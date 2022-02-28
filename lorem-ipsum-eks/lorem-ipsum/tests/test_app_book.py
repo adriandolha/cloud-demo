@@ -1,9 +1,12 @@
+import uuid
+
 import json
 import os
 
 os.environ['env'] = 'test'
 from lorem_ipsum.serializers import from_json
 import lorem_ipsum.views as app
+from lorem_ipsum.model import Book
 
 
 class TestBookApi:

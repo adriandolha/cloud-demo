@@ -8,9 +8,9 @@ from authlib.jose import jwt
 
 import lorem_ipsum.model
 from lorem_ipsum.model import MetricsService, BookService, UserService, WordService
-from lorem_ipsum.model import User, Book
-from lorem_ipsum.repo import Transaction, transaction, Word
-from lorem_ipsum.serializers import to_json
+from lorem_ipsum.model import User, Book, Word, Event, Events
+from lorem_ipsum.repo import Transaction, transaction
+from lorem_ipsum.serializers import to_json, from_json
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
@@ -91,6 +91,30 @@ class DefaultBookService(BookService):
         saved_records = []
         for record in data_records:
             book_repo = self._app_context.book_repo
+            event_repo = self._app_context.event_repo
+            book = None
+            old_book = None
+            if record.get('id') is not None:
+                book = book_repo.get(record['id'])
+                old_book = book
+
+            if book is None:
+                record['id'] = self._app_context.book_repo.next_id()
+                book = Book.from_dict(record)
+            event = Event(id=event_repo.next_id(),
+                          name=str(Events.BOOK_UPDATED),
+                          data=to_json({'new': to_json(book.as_dict()),
+                                        'old': to_json(old_book.as_dict()) if old_book else None})
+                          )
+            saved_records.append(book_repo.save(book).as_dict())
+            event_repo.save(event)
+        return {'items': saved_records, 'total': len(saved_records)}
+
+    @transaction
+    def save_words(self, data_records: dict):
+        saved_records = []
+        for record in data_records:
+            book_repo = self._app_context.word_repo
             book = None
             if record.get('id') is not None:
                 book = book_repo.get(record['id'])
@@ -99,6 +123,12 @@ class DefaultBookService(BookService):
                 book = Book.from_dict(record)
             saved_records.append(book_repo.save(book).as_dict())
         return {'items': saved_records, 'total': len(saved_records)}
+
+    @transaction
+    def search(self, query: str):
+        results = self._app_context.book_repo.search(query=query)
+        results['items'] = [book.as_dict() for book in results['items']]
+        return results
 
 
 class DefaultUserService(UserService):

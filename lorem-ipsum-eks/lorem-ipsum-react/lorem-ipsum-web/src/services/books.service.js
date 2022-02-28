@@ -11,7 +11,7 @@ class BookService {
             body: JSON.stringify([book_data])
         })
     }
-    random (noOfPages) {
+    random(noOfPages) {
         return fetch(`${API_URL}/books/random?no_of_pages=${noOfPages}`, {
             method: 'get',
             headers: new Headers({
@@ -20,8 +20,18 @@ class BookService {
             })
         })
     }
-    get_all (limit, offset) {
-        return fetch( `${API_URL}/books?limit=${limit}&offset=${offset}`, {
+    get_all(limit, offset, includes) {
+        const includes_param = (includes && `&includes=${includes}`) || ''
+        return fetch(`${API_URL}/books?limit=${limit}&offset=${offset}${includes_param}`, {
+            method: 'get',
+            headers: new Headers({
+                'Content-Type': 'application/json',
+                ...authHeader()
+            })
+        })
+    }
+    search(query) {
+        return fetch(`${API_URL}/books/search?query=${query}`, {
             method: 'get',
             headers: new Headers({
                 'Content-Type': 'application/json',
