@@ -8,7 +8,7 @@ import BookView from './book-view.component';
 import AddBook from './add-book.component';
 import BookService from '../services/books.service';
 
-const DEFAULT_PAGE_SIZE = 12
+const DEFAULT_PAGE_SIZE = 7
 const DEFAULT_OFFSET = 1
 
 const API_URL = "https://localhost";
