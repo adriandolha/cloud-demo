@@ -32,10 +32,15 @@ spec:
                   name: lorem-ipsum-auth
                   key: aurora-database
             - name: aurora_host
-#              value: "existing-peahen-postgresql.default.svc.cluster.local"
-              value: postgresql.platform.svc.cluster.local
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: aurora-host
             - name: aurora_port
-              value: "5432"
+              valueFrom:
+                secretKeyRef:
+                  name: lorem-ipsum-auth
+                  key: aurora-port
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
