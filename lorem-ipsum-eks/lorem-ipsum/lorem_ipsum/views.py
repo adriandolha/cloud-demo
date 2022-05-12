@@ -21,7 +21,7 @@ from flask import g
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
-swaggerui_blueprint = get_swaggerui_blueprint('/api/docs', '/books/spec')
+swaggerui_blueprint = get_swaggerui_blueprint('/books/docs', '/books/spec')
 
 
 @books.route("/spec")

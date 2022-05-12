@@ -13,7 +13,6 @@ from flask_swagger import swagger
 LOGGER = logging.getLogger('lorem-ipsum')
 token_auth = Blueprint('token_auth', __name__)
 users = Blueprint('users', __name__)
-swagger_bp = Blueprint('swagger', __name__)
 
 
 def app_context():
@@ -127,7 +126,7 @@ def requires_permission(permissions: list):
     return requires_permission_decorator
 
 
-@swagger_bp.route("/spec")
+@token_auth.route("/spec")
 def spec():
     swag = swagger(app)
     swag['info']['version'] = "1.0"
