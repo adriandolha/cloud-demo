@@ -75,6 +75,7 @@ def requires_permission(permissions: list):
             return _result
 
         wrapper.__name__ = function.__name__
+        wrapper.__doc__ = function.__doc__
         return wrapper
 
     return requires_permission_decorator
@@ -119,8 +120,8 @@ def raw_metrics(fields=''):
     return _metrics
 
 
-@requires_permission(['ROLE_ADMIN'])
 @books.route('/<id>', methods=['GET'])
+@requires_permission(['ROLE_ADMIN'])
 def get_book(id):
     """
         Get book
@@ -299,8 +300,8 @@ def random_book():
     return response({"status_code": '200', 'body': to_json(result)})
 
 
-@requires_permission(['ROLE_ADMIN'])
 @books.route('/', methods=['POST'])
+@requires_permission(['ROLE_ADMIN'])
 def save_book():
     """
         Save books
@@ -316,7 +317,10 @@ def save_book():
               required: true
               description: List of Books to be created
               schema:
-                $ref: "#/definitions/UsernamePassword"
+                type: array
+                items:
+                  oneOf:
+                    - $ref: "#/definitions/Book"
         responses:
                 200:
                     description: List of books created
@@ -334,8 +338,8 @@ def save_book():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
-@requires_permission(['ROLE_ADMIN'])
 @words.route('/', methods=['POST'])
+@requires_permission(['ROLE_ADMIN'])
 def save_word():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
@@ -343,8 +347,8 @@ def save_word():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
-@requires_permission(['ROLE_ADMIN'])
 @words.route('/<id>', methods=['GET'])
+@requires_permission(['ROLE_ADMIN'])
 def get_word(id):
     """
         Get word
@@ -401,8 +405,8 @@ def get_all_words():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
-@requires_permission(['ROLE_ADMIN'])
 @words.route('/<id>', methods=['DELETE'])
+@requires_permission(['ROLE_ADMIN'])
 def delete_word(id: str):
     """
         Delete word
@@ -440,8 +444,8 @@ def get_config():
     return response({"status_code": '200', 'body': to_json(public_config)})
 
 
-@requires_permission(['ROLE_ADMIN'])
 @books.route('/<id>', methods=['DELETE'])
+@requires_permission(['ROLE_ADMIN'])
 def delete_book(id: str):
     """
         Delete book

@@ -109,5 +109,5 @@ class TestBookApi:
     def test_book_add_insufficient_permissions(self, config_valid, book_valid, requests_user_token_settings):
         response = requests.post(url=f'{config_valid["root_url"]}/books',
                                  data=to_json([book_valid]).encode('utf-8'), **requests_user_token_settings)
-        assert 403 == response.status_code
+        assert response.status_code == 403
         assert from_json(response.content.decode('utf-8')) == 'Forbidden.'
