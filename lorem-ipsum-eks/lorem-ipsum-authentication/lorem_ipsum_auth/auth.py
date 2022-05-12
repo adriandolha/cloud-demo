@@ -4,14 +4,16 @@ import datetime
 import logging
 
 from authlib.jose import JsonWebKey, jwt
-from flask import g, jsonify, Blueprint, request, make_response
+from flask import g, jsonify, Blueprint, request, current_app as app, make_response
 from lorem_ipsum_auth import db, create_app_context
 from lorem_ipsum_auth.models import LoginType, User, Permission, BlacklistToken
 from lorem_ipsum_auth.serializers import from_json, to_json
+from flask_swagger import swagger
 
 LOGGER = logging.getLogger('lorem-ipsum')
 token_auth = Blueprint('token_auth', __name__)
 users = Blueprint('users', __name__)
+swagger_bp = Blueprint('swagger', __name__)
 
 
 def app_context():
@@ -125,8 +127,73 @@ def requires_permission(permissions: list):
     return requires_permission_decorator
 
 
+@swagger_bp.route("/spec")
+def spec():
+    swag = swagger(app)
+    swag['info']['version'] = "1.0"
+    swag['info']['title'] = "Lorem Ipsum Authentication"
+    return jsonify(swag)
+
+
 @token_auth.route('/signin', methods=['GET', 'POST'])
 def login():
+    """
+        Signin by POST credentials or UsernamePassword GET.
+        ---
+        definitions:
+          - schema:
+              id: UsernamePassword
+              properties:
+                username:
+                 type: string
+                 description: username
+                password:
+                  type: string
+                  description: password
+          - schema:
+              id: User
+              properties:
+                id:
+                 type: string
+                 description: user id
+                username:
+                 type: string
+                 description: username
+                email:
+                 type: string
+                 description: email
+                login_type:
+                 type: string
+                 description: Login type (e.g. google)
+                roles:
+                 type: array
+                 description: List of user roles.
+                 items:
+                   type: string
+          - schema:
+              id: LoginResponse
+              allOf:
+              - $ref: "#/definitions/User"
+              properties:
+                accessToken:
+                  type: string
+                  description: access token, JWT format
+        parameters:
+            - in: body
+              name: loginRequest
+              required: true
+              description: username and password
+              schema:
+                  $ref: "#/definitions/UsernamePassword"
+        responses:
+                200:
+                    description: User profile including access token.
+                    schema:
+                        $ref: '#/definitions/LoginResponse'
+                401:
+                    description: Invalid username or password.
+    """
+
     if request.method == 'POST':
         _request = from_json(request.data.decode('utf-8'))
         username = _request['username']
@@ -144,9 +211,26 @@ def login():
     return jsonify({**user.to_json(), 'access_token': access_token}), 200
 
 
-@token_auth.route('/signout', methods=['GET'])
 @requires_permission([])
+@token_auth.route('/signout', methods=['GET'])
 def logout():
+    """
+        Logout.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                200:
+                    description: Logged out.
+                    schema:
+                        $ref: '#/definitions/LoginResponse'
+                401:
+                    description: Invalid token.
+    """
     if not BlacklistToken.query.filter_by(token=g.access_token).first():
         blacklist_token = BlacklistToken(token=g.access_token)
         db.session.add(blacklist_token)
@@ -156,6 +240,39 @@ def logout():
 
 @token_auth.route('/signup', methods=['POST'])
 def register():
+    """
+        Signin by POST credentials or UsernamePassword GET.
+        ---
+        definitions:
+          - schema:
+              id: RegisterRequest
+              properties:
+                username:
+                 type: string
+                 description: username
+                password:
+                  type: string
+                  description: password
+                email:
+                  type: string
+                  description: email
+
+        parameters:
+            - in: body
+              name: registerRequest
+              required: true
+              description: username and password
+              schema:
+                  $ref: "#/definitions/RegisterRequest"
+        responses:
+                200:
+                    description: User profile including access token.
+                    schema:
+                        $ref: '#/definitions/LoginResponse'
+                401:
+                    description: Invalid username or password.
+    """
+
     _request = from_json(request.data.decode('utf-8'))
     if User.query.filter_by(username=_request['username']).first():
         return jsonify('User already registered'), 400
@@ -169,9 +286,27 @@ def register():
     return jsonify({**user.to_json(), 'access_token': access_token}), 200
 
 
-@token_auth.route('/profile', methods=['GET'])
 @requires_permission([Permission.PROFILE])
+@token_auth.route('/profile', methods=['GET'])
 def profile():
+    """
+        Get user profile.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                200:
+                    description: User profile.
+                    schema:
+                        $ref: '#/definitions/User'
+                401:
+                    description: Invalid token.
+    """
+
     user = g.user
     return jsonify(user.to_json()), 200
 
@@ -189,6 +324,14 @@ def get_jwk():
 
 @token_auth.route('/.well-known/jwks.json', methods=['GET'])
 def jwk():
+    """
+        Get JWK.
+        ---
+        responses:
+                200:
+                    description: Return JWK.
+    """
+
     LOGGER.debug('JWK...')
     key = get_jwk()
     LOGGER.debug(key)
@@ -196,9 +339,25 @@ def jwk():
     return jsonify(key)
 
 
-@users.route('/<username>', methods=['DELETE'])
 @requires_permission([Permission.ADMIN])
+@users.route('/<username>', methods=['DELETE'])
 def delete_user(username):
+    """
+        Delete user.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                204:
+                    description: User deleted.
+                401:
+                    description: Invalid token.
+    """
+
     LOGGER.info('Delete user...')
     user = User.query.filter_by(username=username).first()
     if user:
@@ -207,9 +366,32 @@ def delete_user(username):
     return '', 204
 
 
-@users.route('/<username>', methods=['GET'])
 @requires_permission([Permission.ADMIN])
+@users.route('/<username>', methods=['GET'])
 def get_user(username):
+    """
+        Get user.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: query
+              name: username
+              required: true
+              type: string
+              description: username
+        responses:
+                200:
+                    description: User profile.
+                    schema:
+                        $ref: '#/definitions/User'
+                401:
+                    description: Invalid token.
+    """
+
     LOGGER.info('Get user...')
     user = User.query.filter_by(username=username).first()
     if not user:

@@ -2,10 +2,11 @@ import logging
 from flask_bootstrap import Bootstrap
 
 from flask import Flask, g
+from flask_swagger_ui import get_swaggerui_blueprint
 
 import gevent_psycopg2
 import lorem_ipsum_auth
-from lorem_ipsum_auth.auth import token_auth, users
+from lorem_ipsum_auth.auth import token_auth, users, swagger_bp
 from lorem_ipsum_auth.models import AnonymousUser, Role, User
 from lorem_ipsum_auth.routes import auth, main
 
@@ -55,6 +56,9 @@ def create_flask_app():
     app.register_blueprint(google_oauth, url_prefix='/api/auth/google')
     app.register_blueprint(token_auth, url_prefix='/api/auth')
     app.register_blueprint(users, url_prefix='/api/users')
+    app.register_blueprint(swagger_bp, url_prefix='/')
+    swaggerui_blueprint = get_swaggerui_blueprint('/api/docs', '/spec')
+    app.register_blueprint(swaggerui_blueprint)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.anonymous_user = AnonymousUser

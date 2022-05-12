@@ -1,7 +1,7 @@
 from authlib.jose import JsonWebKey
 from functools import lru_cache
 
-from flask import current_app as app
+from flask import current_app as app, jsonify
 from flask import Blueprint
 from lorem_ipsum.serializers import to_json, from_json
 from flask import request
@@ -11,6 +11,8 @@ import uuid
 import sys
 import json
 from prometheus_client import Metric
+from flask_swagger import swagger
+from flask_swagger_ui import get_swaggerui_blueprint
 
 books = Blueprint('books', __name__)
 words = Blueprint('words', __name__)
@@ -18,6 +20,17 @@ users = Blueprint('users', __name__)
 from flask import g
 
 LOGGER = logging.getLogger('lorem-ipsum')
+
+swaggerui_blueprint = get_swaggerui_blueprint('/api/docs', '/books/spec')
+
+
+@books.route("/spec")
+def spec():
+    swag = swagger(app)
+    swag['info']['base'] = "http://localhost:5000"
+    swag['info']['version'] = "1.0"
+    swag['info']['title'] = "Lorem Ipsum"
+    return jsonify(swag)
 
 
 def response(api_response):
@@ -106,9 +119,52 @@ def raw_metrics(fields=''):
     return _metrics
 
 
-@books.route('/<id>', methods=['GET'])
 @requires_permission(['ROLE_ADMIN'])
+@books.route('/<id>', methods=['GET'])
 def get_book(id):
+    """
+        Get book
+        ---
+        definitions:
+          - schema:
+              id: Book
+              properties:
+                id:
+                 type: string
+                 description: book id (uuid)
+                no_of_pages:
+                 type: integer
+                 description: Number of pages
+                author:
+                  type: string
+                  description: book author full name
+                title:
+                  type: string
+                  description: book title
+                book:
+                  type: string
+                  description: book content as JSON containing a list of pages
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: path
+              name: id
+              description: Unique id of the book
+              required: true
+              type: string
+        responses:
+                200:
+                    description: Book found
+                    schema:
+                        $ref: '#/definitions/Book'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
     LOGGER.info('Get all data...')
     result = app_context().book_service.get(id)
     return response({"status_code": '200', 'body': to_json(result)})
@@ -116,6 +172,51 @@ def get_book(id):
 
 @books.route('/', methods=['GET', 'OPTIONS'])
 def get_all_books():
+    """
+        Get books
+        ---
+        definitions:
+          - schema:
+              id: BookPaginationResult
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total number of items.
+                items:
+                  type: array
+                  description: List of books
+                  items:
+                    oneOf:
+                      - $ref: "#/definitions/Book"
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: query
+              name: limit
+              description: Limit the number of items returned
+              type: integer
+            - in: query
+              name: offset
+              description: Offset of items result
+              type: integer
+            - in: query
+              name: includes
+              description: List of fields to include, separated by comma
+              type: string
+        responses:
+                200:
+                    description: List of books
+                    schema:
+                        $ref: '#/definitions/BookPaginationResult'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
     _limit = int(request.args.get('limit', 20))
     _offset = int(request.args.get('offset', 1))
     _includes = request.args.get('includes')
@@ -126,6 +227,38 @@ def get_all_books():
 
 @books.route('/search', methods=['GET', 'OPTIONS'])
 def search_books_by_query():
+    """
+        Search books
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: query
+              name: limit
+              description: Limit the number of items returned
+              type: integer
+            - in: query
+              name: offset
+              description: Offset of items result
+              type: integer
+            - in: query
+              name: query
+              description: Search query, e.g. word to search for
+              type: string
+        responses:
+                200:
+                    description: List of books
+                    schema:
+                        $ref: '#/definitions/BookPaginationResult'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
     _limit = int(request.args.get('limit', 20))
     _offset = int(request.args.get('offset', 1))
     _query = request.args.get('query', '')
@@ -136,23 +269,73 @@ def search_books_by_query():
 
 @books.route('/random', methods=['GET', 'OPTIONS'])
 def random_book():
+    """
+        Generate random book
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: query
+              name: no_of_paged
+              description: Limit the number of items returned
+              type: integer
+        responses:
+                200:
+                    description: Random book
+                    schema:
+                        $ref: '#/definitions/Book'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
     no_of_pages = int(request.args.get('no_of_pages', 1))
     LOGGER.info(f'Generate book, no_of_pages=[{no_of_pages}]]...')
     result = app_context().book_service.random(no_of_pages=no_of_pages)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
-@books.route('/', methods=['POST'])
 @requires_permission(['ROLE_ADMIN'])
+@books.route('/', methods=['POST'])
 def save_book():
+    """
+        Save books
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: body
+              name: books
+              required: true
+              description: List of Books to be created
+              schema:
+                $ref: "#/definitions/UsernamePassword"
+        responses:
+                200:
+                    description: List of books created
+                    schema:
+                        $ref: '#/definitions/BookPaginationResult'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
     result = app_context().book_service.save(_request)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
-@words.route('/', methods=['POST'])
 @requires_permission(['ROLE_ADMIN'])
+@words.route('/', methods=['POST'])
 def save_word():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
@@ -160,9 +343,50 @@ def save_word():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
-@words.route('/<id>', methods=['GET'])
 @requires_permission(['ROLE_ADMIN'])
+@words.route('/<id>', methods=['GET'])
 def get_word(id):
+    """
+        Get word
+        ---
+        definitions:
+          - schema:
+              id: Word
+              properties:
+                id:
+                 type: string
+                 description: word id (same as word name at this point)
+                count:
+                 type: integer
+                 description: Word frequency
+                index:
+                  type: string
+                  description: Word index
+                name:
+                  type: string
+                  description: Word name, could be different than id
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: path
+              name: id
+              description: Unique id of the word
+              required: true
+              type: string
+        responses:
+                200:
+                    description: Word found
+                    schema:
+                        $ref: '#/definitions/Word'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
     LOGGER.info('Get all data...')
     result = app_context().word_service.get(id)
     return response({"status_code": '200', 'body': to_json(result)})
@@ -177,9 +401,32 @@ def get_all_words():
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 
 
-@words.route('/<id>', methods=['DELETE'])
 @requires_permission(['ROLE_ADMIN'])
+@words.route('/<id>', methods=['DELETE'])
 def delete_word(id: str):
+    """
+        Delete word
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: path
+              name: id
+              description: Unique id of the word
+              required: true
+              type: string
+        responses:
+                204:
+                    description: Word deleted
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
     LOGGER.info(f'Delete word {id}...')
     app_context().word_service.delete(id)
     return '', 204
@@ -193,9 +440,32 @@ def get_config():
     return response({"status_code": '200', 'body': to_json(public_config)})
 
 
-@books.route('/<id>', methods=['DELETE'])
 @requires_permission(['ROLE_ADMIN'])
+@books.route('/<id>', methods=['DELETE'])
 def delete_book(id: str):
+    """
+        Delete book
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: path
+              name: id
+              description: Unique id of the book
+              required: true
+              type: string
+        responses:
+                204:
+                    description: Book deleted
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
     LOGGER.info(f'Delete book {id}...')
     app_context().book_service.delete(id)
     return '', 204

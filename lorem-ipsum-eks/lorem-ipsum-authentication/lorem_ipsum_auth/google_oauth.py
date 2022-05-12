@@ -56,6 +56,14 @@ def configure_oauth():
 
 @google_oauth.route('/login')
 def google_login():
+    """
+        Initiate google authorization code oauth.
+        ---
+        responses:
+                200:
+                    description: Redirect to google oauth.
+
+    """
     # Google Oauth Config
     # Get client_id and client_secret from environment variables
     # For developement purpose you can directly put it
@@ -69,6 +77,17 @@ def google_login():
 
 @google_oauth.route('/auth/')
 def google_auth():
+    """
+        Redirect uri after google authorization code oauth. Authenticates user using google information, login_type
+        set to google.
+        ---
+        responses:
+                200:
+                    description: Redirect to home page.
+                401:
+                    description: Authentication issue.
+    """
+
     _token = oauth.google.authorize_access_token()
     google_user = oauth.google.parse_id_token(_token)
     LOGGER.debug(f" Google User {google_user}")

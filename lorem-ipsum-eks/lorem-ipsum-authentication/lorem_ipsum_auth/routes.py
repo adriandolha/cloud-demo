@@ -1,7 +1,7 @@
 import logging
 
 from authlib.jose import jwt
-from flask import Blueprint, flash, url_for, request, jsonify, current_app, make_response
+from flask import Blueprint, flash, url_for, request, jsonify, current_app as app, make_response
 from flask import render_template, redirect
 from flask_login import login_user, login_required, logout_user, current_user
 

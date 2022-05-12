@@ -1,10 +1,10 @@
 import json
 import logging
+import uuid
 from collections import namedtuple
+from functools import lru_cache
 
 import time
-import uuid
-from functools import lru_cache
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.flask_oauth2 import current_token
 from authlib.jose import JsonWebKey, jwt
@@ -13,7 +13,6 @@ from flask import Blueprint, request, session, url_for, g
 from flask import current_app as app
 from flask import render_template, redirect, jsonify
 from werkzeug.security import gen_salt
-from flask import _app_ctx_stack
 
 import lorem_ipsum_auth
 from .models import db, User, OAuth2Client, OAuth2Token
@@ -185,8 +184,8 @@ def revoke_token():
     return authorization.create_endpoint_response('revocation')
 
 
-@bp.route('/api/me')
 @require_oauth('profile')
+@bp.route('/api/me')
 def api_me():
     user = current_token.user
     return jsonify(id=user.id, username=user.username)
