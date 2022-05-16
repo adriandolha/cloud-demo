@@ -29,12 +29,24 @@ class TestBookApi:
         assert book['no_of_pages'] == 3
         assert 200 == _response.status_code
 
-    def test_book_list_count(self, book_valid_get_request):
+    def test_book_list_count(self, book_valid_get_request, request_valid_admin):
         response = app.get_all_books()
         books = json.loads(response.response[0].decode('utf-8'))
         print(books)
         assert books['total']
         assert len(books['items']) == 2
+        assert 200 == response.status_code
+
+    def test_book_list_user_books(self, book_valid_get_request_user, user_admin_valid):
+        import lorem_ipsum
+        response = app.get_all_books()
+        books = json.loads(response.response[0].decode('utf-8'))
+        print(books)
+        book_filter_args = lorem_ipsum.repo.Transaction.session.query.return_value.filter.call_args.args
+        assert book_filter_args[0].right.value == user_admin_valid['username']
+        assert books['total']
+        assert len(books['items']) == 1
+        assert books['items'][0]['owner_id'] == user_admin_valid['username']
         assert 200 == response.status_code
 
     def test_book_list_page_count(self, page_count_valid_get_request):
@@ -53,8 +65,8 @@ class TestBookApi:
         assert books['total']
         assert len(books['items']) == 2
         assert 200 == response.status_code
-        assert lorem_ipsum.repo.Transaction.session.query.return_value.limit.call_args.args[0] == 3
-        assert lorem_ipsum.repo.Transaction.session.query.return_value.limit.return_value.offset.call_args.args[0] == 4
+        assert lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.call_args.args[0] == 3
+        assert lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.call_args.args[0] == 4
 
     def test_book_list_default_limit(self, book_valid_get_default_limit):
         response = app.get_all_books()
@@ -72,3 +84,11 @@ class TestBookApi:
         response = app.save_book()
         assert 403 == response.status_code
         assert from_json(response.response[0].decode('utf-8')) == 'Forbidden.'
+
+    def test__options_method_no_auth(self, book_add_request_options_method_no_auth):
+        response = app.get_all_books()
+        assert 200 == response.status_code
+        assert from_json(response.response[0].decode('utf-8')) == 'ok'
+        response = app.save_book()
+        assert 200 == response.status_code
+        assert from_json(response.response[0].decode('utf-8')) == 'ok'

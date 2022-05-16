@@ -2,11 +2,11 @@ import os
 
 import faker
 import pytest
-
+import requests
 from lorem_ipsum.serializers import to_json
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def config_valid():
     import json
     config_file = f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-integration.json"
@@ -19,6 +19,16 @@ def config_valid():
                 os.environ[k] = str(v)
     else:
         _config = os.environ
+
+    def get_access_token(credentials: dict):
+        _response = requests.post(url='https://localhost/api/auth/signin',
+                                  data=to_json(credentials), verify=False)
+        return json.loads(_response.content.decode('utf-8'))['access_token']
+
+    _config['admin_token'] = get_access_token(
+        {'username': _config['admin_user'], 'password': _config['admin_password']})
+    _config['user_token'] = get_access_token({'username': _config['guest_user'], 'password': _config['guest_password']})
+
     return _config
 
 

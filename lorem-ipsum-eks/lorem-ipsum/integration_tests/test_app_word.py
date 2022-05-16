@@ -6,7 +6,7 @@ from lorem_ipsum.serializers import from_json, to_json
 import requests
 
 
-class TestBookApi:
+class TestWordApi:
     def test_word_list_one(self, config_valid, word_valid, requests_standard_settings):
         _response= self.add_word(word_valid, config_valid, requests_standard_settings)
         _word_json = from_json(_response.content.decode('utf-8'))

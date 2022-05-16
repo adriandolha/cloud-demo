@@ -45,9 +45,14 @@ class Event:
 
 
 class User:
-    def __init__(self, username: str, password: str):
+
+    def __init__(self, id: int, username: str, password_hash: str, email: str, login_type: str, role_id: int):
         self.username = username
-        self.password = password
+        self.password_hash = password_hash
+        self.email = email
+        self.id = id
+        self.login_type = login_type
+        self.role_id = role_id
 
     def as_dict(self):
         return self.__dict__
@@ -58,7 +63,7 @@ class User:
 
 
 class Word(BaseModel):
-    def __init__(self, id: str, name: str, index:str, count: int):
+    def __init__(self, id: str, name: str, index: str, count: int):
         self.id = id
         self.name = name
         self.index = index
@@ -76,8 +81,9 @@ class Word(BaseModel):
 
 
 class Book(BaseModel):
-    def __init__(self, id: str, author: str, title: str, no_of_pages: int, book: str):
+    def __init__(self, id: str, owner_id: str, author: str, title: str, no_of_pages: int, book: str):
         self.id = id
+        self.owner_id = owner_id
         self.author = author
         self.title = title
         self.no_of_pages = no_of_pages
@@ -96,13 +102,14 @@ class Book(BaseModel):
         return Book(**data)
 
     @staticmethod
-    def random(no_of_pages: int):
+    def random(no_of_pages: int, owner_id: str):
         _faker = faker.Faker()
         _book = {f'page_{page}': [_faker.text(max_nb_chars=100) for i in range(30)] for page in range(no_of_pages)}
         return {"author": _faker.name(),
                 "title": _faker.text(max_nb_chars=100),
                 "book": to_json(_book),
                 "no_of_pages": no_of_pages,
+                "owner_id": owner_id
                 }
 
 
@@ -164,7 +171,7 @@ class BookRepo(ABC):
         pass
 
     @abstractmethod
-    def get_all(self, limit=10, offset=1, includes=None):
+    def get_all(self, limit=10, offset=1, includes=None, owner_id=None):
         pass
 
     @abstractmethod
@@ -181,6 +188,7 @@ class BookRepo(ABC):
     def search(self, query: str):
         pass
 
+
 class MetricsService(ABC):
     @abstractmethod
     def metrics(self, fields: list = []):
@@ -193,7 +201,7 @@ class BookService(ABC):
         pass
 
     @abstractmethod
-    def get_all(self, id=None, limit=1, offset=1, includes=None):
+    def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None):
         pass
 
     @abstractmethod
@@ -203,11 +211,12 @@ class BookService(ABC):
     def delete(self, id: str):
         pass
 
-    def random(self, no_of_pages: int):
+    def random(self, no_of_pages: int, owner_id: str):
         pass
 
     def search(self, query: str):
         pass
+
 
 class WordService(ABC):
     @abstractmethod

@@ -204,7 +204,7 @@ def login():
     user = User.query.filter_by(username=username).filter_by(
         login_type=LoginType.BASIC).first()
     if user is None or not user.verify_password(password):
-        return jsonify('User already registered')('Invalid username or password'), 401
+        return jsonify('Invalid username or password'), 401
     access_token = issue_token_for_user(user)
     LOGGER.debug(f'Access token {access_token}')
     return jsonify({**user.to_json(), 'access_token': access_token}), 200

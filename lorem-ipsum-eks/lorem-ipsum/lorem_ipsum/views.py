@@ -50,9 +50,20 @@ def get_jwk():
     return _jwks
 
 
+def should_skip_auth(flask_request):
+    """
+    Return true if should skip auth, e.g. when method is OPTIONS like when performing a React request.
+    :param flask_request: Flask request.
+    :return:
+    """
+    return flask_request.method in ['HEAD', 'OPTIONS']
+
+
 def requires_permission(permissions: list):
     def requires_permission_decorator(function):
         def wrapper(*args, **kwargs):
+            if should_skip_auth(request):
+                return jsonify('ok')
             LOGGER.info(f'Authorization...\n{request.headers}')
             user_service = app_context().user_service
             access_token = request.headers.get('X-Token-String')
@@ -71,6 +82,17 @@ def requires_permission(permissions: list):
             LOGGER.debug(f'Required: {permissions} Actual: {user_permissions}')
             if not set(permissions).issubset(user_permissions):
                 return response({'body': to_json('Forbidden.'), 'status_code': '403'})
+            username = payload.get('sub')
+            if not username:
+                LOGGER.debug(f'Payload sub not found.')
+
+                return response({'body': to_json('Forbidden.'), 'status_code': '403'})
+
+            user = user_service.get(username)
+            if not user:
+                LOGGER.debug(f'User {username} not found.')
+                return response({'body': to_json('Forbidden.'), 'status_code': '403'})
+            g.user = lorem_ipsum.model.User.from_dict(user)
             _result = function(*args, **kwargs)
             return _result
 
@@ -172,6 +194,7 @@ def get_book(id):
 
 
 @books.route('/', methods=['GET', 'OPTIONS'])
+@requires_permission(['ROLE_ADMIN'])
 def get_all_books():
     """
         Get books
@@ -222,7 +245,8 @@ def get_all_books():
     _offset = int(request.args.get('offset', 1))
     _includes = request.args.get('includes')
     LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}]]...')
-    result = app_context().book_service.get_all(limit=_limit, offset=_offset, includes=_includes)
+    result = app_context().book_service.get_all(limit=_limit, offset=_offset, includes=_includes,
+                                                owner_id=g.user.username)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
@@ -269,6 +293,7 @@ def search_books_by_query():
 
 
 @books.route('/random', methods=['GET', 'OPTIONS'])
+@requires_permission(['ROLE_ADMIN'])
 def random_book():
     """
         Generate random book
@@ -296,7 +321,7 @@ def random_book():
 
     no_of_pages = int(request.args.get('no_of_pages', 1))
     LOGGER.info(f'Generate book, no_of_pages=[{no_of_pages}]]...')
-    result = app_context().book_service.random(no_of_pages=no_of_pages)
+    result = app_context().book_service.random(no_of_pages=no_of_pages, owner_id=g.user.username)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
@@ -334,6 +359,8 @@ def save_book():
 
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
+    for _book in _request:
+        _book['owner_id'] = g.user.username
     result = app_context().book_service.save(_request)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
 

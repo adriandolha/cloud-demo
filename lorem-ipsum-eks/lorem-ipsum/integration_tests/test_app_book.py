@@ -58,6 +58,18 @@ class TestBookApi:
         assert len(books['items']) >= 1
         assert 200 == response.status_code
 
+    def test_book_list_users_books(self, config_valid, book_valid, requests_standard_settings):
+        self.add_book(book_valid, config_valid, requests_standard_settings)
+
+        response = requests.get(url=f'{config_valid["root_url"]}/books?limit=10', **requests_standard_settings)
+        books = json.loads(response.content.decode('utf-8'))
+        print(books)
+        assert 200 == response.status_code
+        assert books['total']
+        assert len(books['items']) >= 1
+        for book in books['items']:
+            assert book['owner_id'] == 'admin'
+
     def test_book_list_page_count(self, config_valid, book_valid, requests_standard_settings):
         self.add_book(book_valid, config_valid, requests_standard_settings)
 

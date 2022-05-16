@@ -29,7 +29,7 @@ def get_ssm_secret(parameter_name, decrypt=True):
 def configure_logging():
     logging.basicConfig(format='%(asctime)s.%(msecs)03dZ %(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.setLevel(logging.INFO)
+    LOGGER.setLevel(logging.DEBUG)
     # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
     # LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info('logging configured...')

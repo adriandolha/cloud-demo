@@ -71,9 +71,9 @@ class DefaultBookService(BookService):
         return self._app_context.book_repo.get(id).as_dict()
 
     @transaction
-    def get_all(self, id=None, limit=1, offset=1, includes=None):
+    def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None):
         LOGGER.debug(f'using connection pool {Transaction.db()}')
-        results = self._app_context.book_repo.get_all(limit=limit, offset=offset, includes=includes)
+        results = self._app_context.book_repo.get_all(limit=limit, offset=offset, includes=includes, owner_id=owner_id)
         results['items'] = [book.as_dict() for book in results['items']]
         return results
 
@@ -83,8 +83,8 @@ class DefaultBookService(BookService):
         self._app_context.book_repo.delete(_book)
         return True
 
-    def random(self, no_of_pages: int):
-        return Book.random(no_of_pages)
+    def random(self, no_of_pages: int, owner_id: str):
+        return Book.random(no_of_pages, owner_id)
 
     @transaction
     def save(self, data_records):

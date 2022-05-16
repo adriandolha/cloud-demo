@@ -7,7 +7,7 @@ import lorem_ipsum.views as app
 
 
 class TestWordApi:
-    def test_word_list_one(self, word_valid_add_request):
+    def test_word_list_one(self, word_valid_add_request, request_valid_admin):
         _response = app.save_word()
         assert _response.status_code == 200
         _word_json = from_json(_response.response[0].decode('utf-8'))

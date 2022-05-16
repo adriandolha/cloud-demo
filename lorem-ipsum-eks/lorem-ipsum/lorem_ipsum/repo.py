@@ -135,18 +135,22 @@ def transaction(function):
 class User(declarative_base()):
     __tablename__ = 'users'
 
-    username = Column(String, primary_key=True)
-    password = Column(String)
+    id = Column(Integer, primary_key=True)
+    username = Column(String)
+    password_hash = Column(String)
+    login_type = Column(String)
+    role_id = Column(Integer)
+    email = Column(String)
 
     def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns if c != User.password}
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns if c != User.password_hash}
 
     @staticmethod
     def from_dict(data: dict):
         return User(**data)
 
     def as_model(self) -> model.User:
-        return model.User(self.username, self.password)
+        return model.User(self.id, self.username, self.password_hash, self.email, self.login_type, self.role_id)
 
     @staticmethod
     def from_model(user: model.User):
@@ -209,6 +213,7 @@ class Book(declarative_base()):
     __tablename__ = 'books'
 
     id = Column(String, primary_key=True)
+    owner_id = Column(String)
     author = Column(String)
     title = Column(String)
     no_of_pages = Column(Integer)
@@ -223,7 +228,7 @@ class Book(declarative_base()):
 
     @domain_model
     def as_model(self) -> model.Book:
-        return model.Book(self.id, self.author, self.title, self.no_of_pages, self.book)
+        return model.Book(self.id, self.owner_id, self.author, self.title, self.no_of_pages, self.book)
 
     @staticmethod
     def from_model(book: model.Book):
@@ -330,7 +335,7 @@ class PostgresBookRepo(BookRepo):
         book = _session.query(Book).filter(Book.id == id).first()
         return book.as_model() if book else None
 
-    def get_all(self, limit=10, offset=1, includes=None):
+    def get_all(self, limit=10, offset=1, includes=None, owner_id=None):
         _session = self._transaction_manager.transaction.session
         count = _session.query(Book).count()
         page_count = None
@@ -338,7 +343,11 @@ class PostgresBookRepo(BookRepo):
             page_count = _session.query(
                 functions.sum(Book.no_of_pages)
             ).scalar()
-        books = _session.query(Book).limit(limit).offset(offset)
+        if owner_id:
+            books = _session.query(Book).filter(Book.owner_id == owner_id).limit(limit).offset(offset)
+        else:
+            books = _session.query(Book).limit(limit).offset(offset)
+
         return {"total": count, "page_count": page_count, "items": [book.as_model() for book in books]}
 
     def save(self, book: model.Book) -> model.Book:
@@ -441,6 +450,7 @@ def db_setup(app_context: AppContext):
     _session.execute('CREATE TABLE IF NOT EXISTS public.books\
             (\
                 id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+                owner_id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
                 author character varying(50) COLLATE pg_catalog."default" NOT NULL,\
                 title character varying(100) COLLATE pg_catalog."default" NOT NULL,\
                 no_of_pages integer NOT NULL,\
@@ -448,12 +458,12 @@ def db_setup(app_context: AppContext):
                 CONSTRAINT book_pk PRIMARY KEY (id)\
             )')
 
-    _session.execute('CREATE TABLE IF NOT EXISTS public.users\
-            (\
-                username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
-                password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
-                CONSTRAINT user_pk PRIMARY KEY (username)\
-            )')
+    # _session.execute('CREATE TABLE IF NOT EXISTS public.users\
+    #         (\
+    #             username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
+    #             password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
+    #             CONSTRAINT user_pk PRIMARY KEY (username)\
+    #         )')
     _session.execute('CREATE TABLE IF NOT EXISTS public.words\
             (\
                 id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
@@ -470,7 +480,7 @@ def db_setup(app_context: AppContext):
                 created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,\
                 CONSTRAINT event_pk PRIMARY KEY (id)\
             )')
-    create_admin_user(app_context)
+    # create_admin_user(app_context)
 
 
 def create_admin_user(app_context):
