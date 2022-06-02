@@ -1,12 +1,9 @@
-import uuid
-
 import json
 import os
 
 os.environ['env'] = 'test'
 from lorem_ipsum.serializers import from_json
 import lorem_ipsum.views as app
-from lorem_ipsum.model import Book
 
 
 class TestBookApi:
@@ -17,10 +14,10 @@ class TestBookApi:
         print(_book_json)
         _uuid = _book_json['items'][0]['id']
         response = app.get_book(_uuid)
+        assert 200 == response.status_code
         book = json.loads(response.response[0].decode('utf-8'))
         print(book)
         assert book['title'] == book_valid_add_request['title']
-        assert 200 == response.status_code
 
     def test_book_random(self, book_random_valid_get_request):
         _response = app.random_book()
@@ -80,10 +77,10 @@ class TestBookApi:
         assert from_json(response.response[0].decode('utf-8'))['items'][0]['title']
         assert 200 == response.status_code
 
-    def test_book_add_insufficient_permissions(self, book_add_request_insufficient_permissions):
-        response = app.save_book()
+    def test_book_add_insufficient_permissions(self, client, book_valid, user_token_valid, book_add_request_insufficient_permissions):
+        response = client.post('/books', json=json.dumps([book_valid]), headers={'Authorization': f'Bearer {user_token_valid}'})
         assert 403 == response.status_code
-        assert from_json(response.response[0].decode('utf-8')) == 'Forbidden.'
+        assert from_json(response.data.decode('utf-8')) == 'Forbidden.'
 
     def test__options_method_no_auth(self, book_add_request_options_method_no_auth):
         response = app.get_all_books()

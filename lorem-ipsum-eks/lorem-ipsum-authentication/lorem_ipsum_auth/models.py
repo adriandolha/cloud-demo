@@ -1,8 +1,10 @@
 import datetime
+from enum import Enum
 
 from flask import current_app
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import Serializer
+from sqlalchemy import ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from lorem_ipsum_auth import db, login_manager
@@ -11,6 +13,14 @@ from lorem_ipsum_auth import db, login_manager
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+class Permissions(Enum):
+    BOOKS_ADD = 'books:add'
+    BOOKS_READ = 'books:read'
+    BOOKS_WRITE = 'books:write'
+    USERS_ADMIN = 'users:admin'
+    USERS_PROFILE = 'users:profile'
 
 
 class BlacklistToken(db.Model):
@@ -96,7 +106,12 @@ class User(UserMixin, db.Model):
                 'username': self.username,
                 'email': self.email,
                 'login_type': self.login_type,
-                'roles': [self.role.name]}
+                'roles': [self.role.name],
+                'permissions': [p.id for p in self.role.permissions]}
+
+    @staticmethod
+    def from_dict(data: dict):
+        return User(**data)
 
     @staticmethod
     def reset_password(token, new_password):
@@ -133,39 +148,47 @@ class User(UserMixin, db.Model):
         db.session.commit()
 
 
+role_permissions = db.Table(
+    'roles_permissions',
+    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'), primary_key=True),
+    db.Column('permission_id', db.String(64), db.ForeignKey('permissions.id'), primary_key=True))
+
+
 class Role(db.Model):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
     default = db.Column(db.Boolean, default=False, index=True)
-    permissions = db.Column(db.Integer)
+    permissions = db.relationship('Permission', secondary=role_permissions, back_populates="roles")
     users = db.relationship('User', backref='role', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super(Role, self).__init__(**kwargs)
         if self.permissions is None:
-            self.permissions = 0
+            self.permissions = []
 
     def add_permission(self, perm):
         if not self.has_permission(perm):
-            self.permissions += perm
+            self.permissions.append(perm)
 
     def remove_permission(self, perm):
         if self.has_permission(perm):
-            self.permissions -= perm
+            self.permissions.remove(perm)
 
     def reset_permissions(self):
-        self.permissions = 0
+        self.permissions = []
 
     def has_permission(self, perm):
-        return self.permissions & perm == perm
+        return perm in self.permissions
 
     @staticmethod
     def insert_roles():
         roles = {
-            'ROLE_USER': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.PROFILE],
-            'ROLE_MODERATOR': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.PROFILE],
-            'ROLE_ADMIN': [Permission.ADD, Permission.READ, Permission.WRITE, Permission.ADMIN, Permission.PROFILE],
+            'ROLE_USER': [Permissions.BOOKS_ADD, Permissions.BOOKS_READ, Permissions.BOOKS_WRITE,
+                          Permissions.USERS_PROFILE],
+            'ROLE_MODERATOR': [Permissions.USERS_PROFILE],
+            'ROLE_ADMIN': [Permissions.BOOKS_ADD, Permissions.BOOKS_READ, Permissions.BOOKS_WRITE,
+                           Permissions.USERS_PROFILE, Permissions.USERS_ADMIN],
         }
         default_role = 'ROLE_USER'
         for r in roles:
@@ -174,18 +197,44 @@ class Role(db.Model):
                 role = Role(name=r)
             role.reset_permissions()
             for perm in roles[r]:
-                role.add_permission(perm)
+                _permission = Permission.query.filter_by(name=perm.value).first()
+                role.add_permission(_permission)
             role.default = (role.name == default_role)
             db.session.add(role)
         db.session.commit()
 
 
-class Permission:
-    ADD = 1
-    READ = 2
-    WRITE = 4
-    ADMIN = 16
-    PROFILE = 32
+class Permission(db.Model):
+    __tablename__ = 'permissions'
+    id = db.Column(db.String(100), primary_key=True)
+    name = db.Column(db.String(100), unique=True)
+    roles = db.relationship('Role', secondary=role_permissions, back_populates="permissions")
+
+    def __init__(self, **kwargs):
+        super(Permission, self).__init__(**kwargs)
+
+    def __eq__(self, other):
+        return other and other.id == self.id
+
+    def to_enum(self) -> Permissions:
+        return Permissions(self.name)
+
+    @staticmethod
+    def from_enum(perm: Permissions):
+        return Permission(id=perm.value, name=perm.value)
+
+    @staticmethod
+    def from_str(perm: str):
+        return Permission(id=perm, name=perm)
+
+    @staticmethod
+    def insert_permissions():
+        for permission in Permissions:
+            _permission = Permission.query.filter_by(name=permission.value).first()
+            if _permission is None:
+                _permission = Permission(id=permission.value, name=permission.value)
+                db.session.add(_permission)
+        db.session.commit()
 
 
 class LoginType:

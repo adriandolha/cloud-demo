@@ -2,6 +2,8 @@ import logging
 import os
 
 import lorem_ipsum
+from lorem_ipsum.auth import ExceptionHandlers
+
 from flask import Flask, jsonify
 from prometheus_flask_exporter import PrometheusMetrics
 
@@ -39,12 +41,13 @@ def create_flask_app():
     app.register_blueprint(users, url_prefix="/users")
     app.register_blueprint(words, url_prefix="/words")
     app.register_blueprint(swaggerui_blueprint)
-
+    ExceptionHandlers(app)
     _app_context = lorem_ipsum.create_app()
     _app_context.run_database_setup()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.info(app.config)
-    start_prometheus_metrics(app)
+    if _app_context.config['prometheus_metrics']:
+        start_prometheus_metrics(app)
     return app
 
 

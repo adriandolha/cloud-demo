@@ -7,7 +7,7 @@ import boto3
 
 from lorem_ipsum.config import get_config
 from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo, PostgresEventRepo, \
-    PostgresWordRepo, \
+    PostgresWordRepo, PostgresBlacklistTokenRepo, \
     create_database_if_not_exists
 from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, WordRepo, EventRepo, WordService, \
     AppContext
@@ -29,7 +29,7 @@ def get_ssm_secret(parameter_name, decrypt=True):
 def configure_logging():
     logging.basicConfig(format='%(asctime)s.%(msecs)03dZ %(levelname)s:%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     LOGGER = logging.getLogger('lorem-ipsum')
-    LOGGER.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.INFO)
     # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
     # LOGGER.addHandler(logging.StreamHandler())
     LOGGER.info('logging configured...')
@@ -37,11 +37,13 @@ def configure_logging():
 
 class DefaultAppContext(AppContext):
     def __init__(self):
+        AppContext.__init__(self)
         self._config = get_config()
         self._transaction_manager = TransactionManager(self)
         self._book_repo = PostgresBookRepo(self)
         self._book_service = DefaultBookService(self)
         self._user_repo = PostgresUserRepo(self)
+        self._blacklist_token_repo = PostgresBlacklistTokenRepo(self)
         self._event_repo = PostgresEventRepo(self)
         self._user_service = DefaultUserService(self)
         self._word_repo = PostgresWordRepo(self)
@@ -66,6 +68,10 @@ class DefaultAppContext(AppContext):
     @property
     def user_repo(self):
         return self._user_repo
+
+    @property
+    def blacklist_token_repo(self):
+        return self._blacklist_token_repo
 
     @property
     def word_repo(self):

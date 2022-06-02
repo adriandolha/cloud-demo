@@ -21,10 +21,12 @@ from lorem_ipsum.serializers import to_json
 def db_session():
     with mock.patch('lorem_ipsum.repo.Transaction._db'):
         with mock.patch('lorem_ipsum.repo.Transaction._session_maker'):
-            with mock.patch('lorem_ipsum.repo.Transaction.session'):
-                with mock.patch('lorem_ipsum.repo.Transaction.pool'):
-                    with mock.patch('lorem_ipsum.repo.TransactionManager.create_db_engine'):
-                        yield
+            with mock.patch('lorem_ipsum.repo.Transaction.session') as session:
+                with mock.patch("lorem_ipsum.repo.PostgresBlacklistTokenRepo.get"):
+                    lorem_ipsum.repo.PostgresBlacklistTokenRepo.get.return_value = None
+                    with mock.patch('lorem_ipsum.repo.Transaction.pool'):
+                        with mock.patch('lorem_ipsum.repo.TransactionManager.create_db_engine'):
+                            yield
 
 
 @pytest.fixture()
@@ -39,6 +41,7 @@ def config_valid(db_session):
                 os.environ[k] = str(v)
     else:
         _config = os.environ
+    os.environ['prometheus_metrics'] = 'False'
     print('Config...')
     print(_config)
     return _config
@@ -46,28 +49,48 @@ def config_valid(db_session):
 
 @pytest.fixture()
 def app_valid(config_valid, db_session):
-    lorem_ipsum.create_app()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.setLevel(logging.DEBUG)
+    import app
+    app.create_flask_app()
+    with app.app.test_request_context():
+        yield
 
+@pytest.fixture()
+def client(app_valid):
+    import app
+    return app.app.test_client()
 
 @pytest.fixture()
 def request_valid_admin(admin_token_valid, user_admin_valid):
     import app
     with mock.patch("lorem_ipsum.repo.PostgresUserRepo.get"):
         lorem_ipsum.repo.PostgresUserRepo.get.return_value = lorem_ipsum.model.User.from_dict(user_admin_valid)
-        with app.app.test_request_context(headers={'X-Token-String': admin_token_valid}):
+        with app.app.test_request_context(headers={'Authorization': f'Bearer {admin_token_valid}'}):
             yield
 
 
 @pytest.fixture()
-def admin_token_valid(app_valid):
-    yield os.getenv('admin_token')
+def request_valid_user(user_valid, user_token_valid):
+    import app
+    with mock.patch("lorem_ipsum.repo.PostgresUserRepo.get"):
+        lorem_ipsum.repo.PostgresUserRepo.get.return_value = lorem_ipsum.model.User.from_dict(user_valid)
+        with app.app.test_request_context(headers={'Authorization': f'Bearer {user_token_valid}'}):
+            yield
 
 
 @pytest.fixture()
-def user_token_valid(app_valid):
-    yield os.getenv('user_token')
+def admin_token_valid(app_valid, user_admin_valid):
+    from lorem_ipsum.auth import issue_token_for_user
+    from lorem_ipsum.model import User
+    yield issue_token_for_user(User.from_dict(user_admin_valid))
+
+
+@pytest.fixture()
+def user_token_valid(app_valid, user_valid):
+    from lorem_ipsum.auth import issue_token_for_user
+    from lorem_ipsum.model import User
+    yield issue_token_for_user(User.from_dict(user_valid))
 
 
 @pytest.fixture()
@@ -145,7 +168,24 @@ def user_admin_valid():
            "password_hash": 'fake_admin_password',
            "email": "admin@yahoo.com",
            "login_type": "basic",
-           "role_id": 1,
+           "role": {"id": 1, "name": "admin", "default": False, "users": [],
+                    "permissions": [{"id": "books:add", "name": "books:add", "roles": []},
+                                    {"id": "books:read", "name": "books:read", "roles": []},
+                                    {"id": "books:write", "name": "books:write", "roles": []},
+                                    {"id": "users:admin", "name": "users:admin", "roles": []}]},
+           "id": 1
+           }
+
+
+@pytest.fixture()
+def user_valid():
+    yield {"username": 'user',
+           "password_hash": 'fake_user_password',
+           "email": "user@yahoo.com",
+           "login_type": "basic",
+           "role": {"id": 2, "name": "user", "default": False, "users": [],
+                    "permissions": [{"id": "users:profile", "name": "users:profile", "roles": []},
+                                    {"id": "books:read", "name": "books:read", "roles": []}]},
            "id": 1
            }
 
@@ -159,6 +199,7 @@ def user_valid2():
            "role_id": 1,
            "id": 1
            }
+
 
 @pytest.fixture()
 def config_valid_request(config_valid):
@@ -255,10 +296,6 @@ def user_valid_list_default_limit(user_valid2, user_valid1, app_valid):
 
 @pytest.fixture()
 def book_valid_add_request(book_valid, book_valid_request, admin_token_valid, request_valid_admin):
-    # from flask import request
-    import app
-
-    # book_valid = book_valid
     lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = lorem_ipsum.repo.Book(
         **book_valid)
     flask.request.data = to_json([book_valid_request]).encode('utf-8')
@@ -278,13 +315,11 @@ def book_valid_add_request_user(book_valid, book_valid_user, admin_token_valid):
 
 
 @pytest.fixture()
-def book_add_request_insufficient_permissions(book_valid, user_token_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context(headers={'X-Token-String': user_token_valid}):
-        book_valid = book_valid
-        flask.request.data = to_json([book_valid]).encode('utf-8')
-        yield book_valid
+def book_add_request_insufficient_permissions(book_valid, request_valid_user):
+    book_valid = book_valid
+    flask.request.data = to_json([book_valid]).encode('utf-8')
+    yield book_valid
+
 
 @pytest.fixture()
 def book_add_request_options_method_no_auth(book_valid, user_token_valid):
@@ -294,6 +329,7 @@ def book_add_request_options_method_no_auth(book_valid, user_token_valid):
         book_valid = book_valid
         flask.request.method = 'OPTIONS'
         yield book_valid
+
 
 @pytest.fixture()
 def book_valid_get_request(app_valid, book_valid, request_valid_admin):
@@ -307,43 +343,36 @@ def book_valid_get_request(app_valid, book_valid, request_valid_admin):
 
 
 @pytest.fixture()
-def book_valid_get_request_user(app_valid, book_valid, book_valid_user, admin_token_valid, user_admin_valid):
+def book_valid_get_request_user(app_valid, book_valid, book_valid_user, admin_token_valid, user_admin_valid,
+                                request_valid_admin):
     # from flask import request
     import app
     from lorem_ipsum import model
     from lorem_ipsum.repo import Book, User
-    with app.app.test_request_context(headers={'X-Token-String': admin_token_valid}):
-        flask.request.args = {'limit': '2'}
-        orig_query = lorem_ipsum.repo.Transaction.session.query.return_value
+    flask.request.args = {'limit': '2'}
+    orig_query = lorem_ipsum.repo.Transaction.session.query.return_value
 
-        def query_side_effect(args):
-            # print(f'Mock {args}')
-            if args == Book:
-                lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-                lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
-                    lorem_ipsum.repo.Book(**book_valid)
-                ]
+    def query_side_effect(args):
+        # print(f'Mock {args}')
+        if args == Book:
+            lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+            lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
+                lorem_ipsum.repo.Book(**book_valid)
+            ]
 
-            if args == User:
-                lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = \
-                    lorem_ipsum.repo.User(**user_admin_valid)
-            return orig_query
+        if args == User:
+            lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = \
+                lorem_ipsum.repo.User(**user_admin_valid)
+        return orig_query
 
-        lorem_ipsum.repo.Transaction.session.query.side_effect = query_side_effect
+    lorem_ipsum.repo.Transaction.session.query.side_effect = query_side_effect
 
-        yield book_valid
+    yield book_valid
 
 
 @pytest.fixture()
-def book_random_valid_get_request(app_valid, admin_token_valid, user_admin_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        with app.app.test_request_context(headers={'X-Token-String': admin_token_valid}):
-            lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = lorem_ipsum.repo.User(
-                **user_admin_valid)
-            flask.request.args = {'no_of_pages': '3'}
-            yield ''
+def book_random_valid_get_request(app_valid, admin_token_valid, request_valid_admin):
+    flask.request.args = {'no_of_pages': '3'}
 
 
 @pytest.fixture()

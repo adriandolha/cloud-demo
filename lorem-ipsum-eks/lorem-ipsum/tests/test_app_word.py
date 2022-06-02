@@ -54,10 +54,10 @@ class TestWordApi:
         assert from_json(response.response[0].decode('utf-8'))['items'][0]['name']
         assert 200 == response.status_code
 
-    def test_word_add_insufficient_permissions(self, book_add_request_insufficient_permissions):
-        response = app.save_word()
+    def test_word_add_insufficient_permissions(self, user_token_valid, client, word_valid, book_add_request_insufficient_permissions):
+        response = client.post('/words', json=json.dumps([word_valid]), headers={'Authorization': f'Bearer {user_token_valid}'})
         assert 403 == response.status_code
-        assert from_json(response.response[0].decode('utf-8')) == 'Forbidden.'
+        assert from_json(response.data.decode('utf-8')) == 'Forbidden.'
 
     def test_domain_model_sync_with_data_model_on_set_attr(self):
         from lorem_ipsum.repo import Word

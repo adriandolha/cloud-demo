@@ -33,6 +33,7 @@ def get_config():
         'google_client_id': os.getenv('google_client_id'),
         'google_client_secret': os.getenv('google_client_secret'),
         'jwk_public_key_path': os.getenv('jwk_public_key_path', '/jwk/certs/public.key'),
+        'db_setup': True if os.getenv('db_setup', 'True') == 'True' else False,
         'jwk_private_key_path': os.getenv('jwk_private_key_path', '/jwk/certs/private.key')
     })
     LOGGER = logging.getLogger('lorem-ipsum')

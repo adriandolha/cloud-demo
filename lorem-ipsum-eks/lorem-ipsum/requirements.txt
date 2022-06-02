@@ -13,3 +13,4 @@ prometheus-flask-exporter
 requests
 flask_swagger==0.2.14
 flask_swagger_ui==3.36.0
+pytest-profiling

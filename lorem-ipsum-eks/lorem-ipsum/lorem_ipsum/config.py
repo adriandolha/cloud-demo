@@ -32,8 +32,10 @@ def get_config():
         'password_encryption_key': os.getenv('password_encryption_key'),
         'admin_password': os.getenv('admin_password'),
         'admin_user': os.getenv('admin_user'),
+        'prometheus_metrics': True if os.getenv('prometheus_metrics', default='True') == 'True' else False,
         'pod_name': os.getenv('pod_name', default='pod_name'),
         'jwk_public_key_path': os.getenv('jwk_public_key_path', '/jwk/certs/public.key'),
+        'jwk_private_key_path': os.getenv('jwk_private_key_path', '/jwk/certs/private.key'),
         'auth0_public_key': os.getenv('auth0_public_key')
     })
     LOGGER = logging.getLogger('lorem-ipsum')

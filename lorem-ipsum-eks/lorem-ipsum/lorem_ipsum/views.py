@@ -1,11 +1,11 @@
-from authlib.jose import JsonWebKey
-from functools import lru_cache
-
 from flask import current_app as app, jsonify
 from flask import Blueprint
+
+from lorem_ipsum.model import Permissions
 from lorem_ipsum.serializers import to_json, from_json
 from flask import request
 import lorem_ipsum
+from lorem_ipsum.auth import requires_permission
 import logging
 import uuid
 import sys
@@ -35,73 +35,6 @@ def spec():
 
 def response(api_response):
     return app.response_class(response=api_response['body'], status=api_response['status_code'])
-
-
-@lru_cache()
-def get_jwk():
-    LOGGER.debug('Loading jwk from public key...')
-    key_data = None
-    with open(app_context().config['jwk_public_key_path'], 'rb') as _key_file:
-        key_data = _key_file.read()
-    LOGGER.debug(key_data)
-    key = JsonWebKey.import_key(key_data, {'kty': 'RSA'})
-    _jwks = {'keys': [{**key.as_dict(), 'kid': 'demo_key'}]}
-    LOGGER.debug(_jwks)
-    return _jwks
-
-
-def should_skip_auth(flask_request):
-    """
-    Return true if should skip auth, e.g. when method is OPTIONS like when performing a React request.
-    :param flask_request: Flask request.
-    :return:
-    """
-    return flask_request.method in ['HEAD', 'OPTIONS']
-
-
-def requires_permission(permissions: list):
-    def requires_permission_decorator(function):
-        def wrapper(*args, **kwargs):
-            if should_skip_auth(request):
-                return jsonify('ok')
-            LOGGER.info(f'Authorization...\n{request.headers}')
-            user_service = app_context().user_service
-            access_token = request.headers.get('X-Token-String')
-            if not access_token:
-                authorization_header = request.headers.get('Authorization')
-                if not authorization_header:
-                    return response({'body': to_json('Forbidden.'), 'status_code': '403'})
-                access_token = authorization_header.split('Bearer')[1].strip()
-
-            payload = user_service.decode_auth_token(access_token, get_jwk())
-            LOGGER.debug(payload)
-            user_permissions = payload.get('roles', [])
-            payload_scope = payload.get('scope')
-            if payload_scope:
-                user_permissions = payload_scope.split()
-            LOGGER.debug(f'Required: {permissions} Actual: {user_permissions}')
-            if not set(permissions).issubset(user_permissions):
-                return response({'body': to_json('Forbidden.'), 'status_code': '403'})
-            username = payload.get('sub')
-            if not username:
-                LOGGER.debug(f'Payload sub not found.')
-
-                return response({'body': to_json('Forbidden.'), 'status_code': '403'})
-
-            user = user_service.get(username)
-            if not user:
-                LOGGER.debug(f'User {username} not found.')
-                return response({'body': to_json('Forbidden.'), 'status_code': '403'})
-            g.user = lorem_ipsum.model.User.from_dict(user)
-            _result = function(*args, **kwargs)
-            return _result
-
-        wrapper.__name__ = function.__name__
-        wrapper.__doc__ = function.__doc__
-        return wrapper
-
-    return requires_permission_decorator
-
 
 def api_context(event, context):
     if not event:
@@ -143,7 +76,7 @@ def raw_metrics(fields=''):
 
 
 @books.route('/<id>', methods=['GET'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.BOOKS_READ])
 def get_book(id):
     """
         Get book
@@ -194,7 +127,7 @@ def get_book(id):
 
 
 @books.route('/', methods=['GET', 'OPTIONS'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.BOOKS_READ])
 def get_all_books():
     """
         Get books
@@ -293,7 +226,7 @@ def search_books_by_query():
 
 
 @books.route('/random', methods=['GET', 'OPTIONS'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.BOOKS_READ])
 def random_book():
     """
         Generate random book
@@ -326,7 +259,7 @@ def random_book():
 
 
 @books.route('/', methods=['POST'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.BOOKS_ADD])
 def save_book():
     """
         Save books
@@ -366,7 +299,7 @@ def save_book():
 
 
 @words.route('/', methods=['POST'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.USERS_ADMIN])
 def save_word():
     LOGGER.info('Adding data...')
     _request = from_json(request.data.decode('utf-8'))
@@ -375,7 +308,7 @@ def save_word():
 
 
 @words.route('/<id>', methods=['GET'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.USERS_ADMIN])
 def get_word(id):
     """
         Get word
@@ -433,7 +366,7 @@ def get_all_words():
 
 
 @words.route('/<id>', methods=['DELETE'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.USERS_ADMIN])
 def delete_word(id: str):
     """
         Delete word
@@ -472,7 +405,7 @@ def get_config():
 
 
 @books.route('/<id>', methods=['DELETE'])
-@requires_permission(['ROLE_ADMIN'])
+@requires_permission([Permissions.BOOKS_WRITE])
 def delete_book(id: str):
     """
         Delete book

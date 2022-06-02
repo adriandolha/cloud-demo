@@ -14,6 +14,8 @@ from lorem_ipsum_auth import AppContext
 
 LOGGER = logging.getLogger('lorem-ipsum')
 
+Base = declarative_base()
+
 
 class Transaction:
     _db = None
@@ -90,7 +92,7 @@ def transaction(function):
     return wrapper
 
 
-class User(declarative_base()):
+class User(Base):
     __tablename__ = 'users1'
 
     username = Column(String, primary_key=True)

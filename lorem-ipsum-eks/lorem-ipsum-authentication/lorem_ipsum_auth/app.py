@@ -7,9 +7,9 @@ from flask_swagger_ui import get_swaggerui_blueprint
 import gevent_psycopg2
 import lorem_ipsum_auth
 from lorem_ipsum_auth import login_manager, db
-from lorem_ipsum_auth.auth import token_auth, users
+from lorem_ipsum_auth.auth import token_auth, users, ExceptionHandlers
 from lorem_ipsum_auth.google_oauth import google_oauth
-from lorem_ipsum_auth.models import AnonymousUser, Role, User
+from lorem_ipsum_auth.models import AnonymousUser, Role, User, Permission
 from lorem_ipsum_auth.routes import auth, main
 
 
@@ -27,7 +27,7 @@ def create_flask_app():
     app = Flask(__name__)
     _app_context = lorem_ipsum_auth.create_app()
     _config = _app_context.config
-    LOGGER = logging.getLogger('lorem-ipsum')
+    LOGGER = logging.getLogger('lorem-ipsum-auth')
     app.config.update({
         'SECRET_KEY': _app_context.user_service.secret_key(),
         'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
@@ -35,19 +35,15 @@ def create_flask_app():
         'SQLALCHEMY_DATABASE_URI': _app_context.transaction_manager.database_connection_string,
     })
 
-    # app = create_app({
-    #     'SECRET_KEY': app_context.user_service.secret_key(),
-    #     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
-    #     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    #     'SQLALCHEMY_DATABASE_URI': app_context.transaction_manager.database_connection_string,
-    # })
-    @app.before_first_request
-    def create_tables():
-        db.create_all()
-        LOGGER.debug('Setting roles...')
-        Role.insert_roles()
-        LOGGER.debug('Setting users...')
-        User.insert_users(_config)
+    if _app_context.config['db_setup']:
+        @app.before_first_request
+        def create_tables():
+            db.create_all()
+            LOGGER.debug('Setting roles...')
+            Permission.insert_permissions()
+            Role.insert_roles()
+            LOGGER.debug('Setting users...')
+            User.insert_users(_config)
 
     db.init_app(app)
     app.register_blueprint(auth)
@@ -62,6 +58,6 @@ def create_flask_app():
     login_manager.anonymous_user = AnonymousUser
     app.url_map.strict_slashes = False
     Bootstrap(app)
-
+    ExceptionHandlers(app)
     LOGGER.debug(app.config)
     return app

@@ -1,16 +1,10 @@
 import logging
 import os
-import boto3
-import flask
 import pytest
 import mock
-# from mock import mock
-
-import lorem_ipsum_auth
-from lorem_ipsum_auth.serializers import to_json
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def config_valid():
     import json
     with open(f"{os.path.expanduser('~')}/.cloud-projects/lorem-ipsum-local-integration.json", "r") as _file:
@@ -18,105 +12,127 @@ def config_valid():
         print(json)
         for k, v in json.items():
             os.environ[k] = str(v)
-    lorem_ipsum_auth.create_app()
+        os.environ['db_setup'] = 'False'
+        yield os.environ
+
+
+@pytest.fixture()
+def db_session(config_valid):
+    with mock.patch('flask_sqlalchemy.SQLAlchemy.get_app'):
+        with mock.patch('flask_sqlalchemy.SQLAlchemy.get_engine'):
+            with mock.patch('flask_sqlalchemy.SQLAlchemy.create_session'):
+                with mock.patch('flask_sqlalchemy.SignallingSession'):
+                    with mock.patch('flask_sqlalchemy.SQLAlchemy.create_scoped_session'):
+                        yield
+
+
+@pytest.fixture()
+def query_mock(db_session):
+    with mock.patch('flask_sqlalchemy._QueryProperty.__get__') as q_mock:
+        with mock.patch('lorem_ipsum_auth.repo.Transaction._db'):
+            from lorem_ipsum_auth.repo import Transaction
+            Transaction._db = None
+            with mock.patch('lorem_ipsum_auth.repo.Transaction._session_maker'):
+                with mock.patch('lorem_ipsum_auth.repo.Transaction.session'):
+                    with mock.patch('lorem_ipsum_auth.repo.Transaction.pool'):
+                        from lorem_ipsum_auth.models import User, Role, Permission, BlacklistToken
+                        User.query = mock.MagicMock()
+                        Role.query = mock.MagicMock()
+                        Permission.query = mock.MagicMock()
+                        BlacklistToken.query = mock.MagicMock()
+
+                        def _filter_by(*args, **kwargs):
+                            _mock = mock.MagicMock()
+                            _mock.first.return_value = Permission.from_str(kwargs['name'])
+                            return _mock
+
+                        Permission.query.filter_by.side_effect = _filter_by
+                        BlacklistToken.query.filter_by.return_value.first.return_value = None
+                        yield q_mock
+
+
+@pytest.fixture()
+def login_valid_request(query_mock, user_admin_valid, role_admin_valid):
+    from lorem_ipsum_auth.models import User, Role, Permission
+
+    Role.query.filter_by.return_value.first.return_value = Role(id=role_admin_valid['id'],
+                                                                name=role_admin_valid['name'],
+                                                                permissions=[Permission.from_str(perm) for perm in
+                                                                             role_admin_valid['permissions']])
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    User.query.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    yield user_admin_valid
+
+
+@pytest.fixture()
+def signup_valid_request(query_mock, user_admin_valid, role_admin_valid):
+    from lorem_ipsum_auth.models import User, Role, Permission
+    Role.query.filter_by.return_value.first.return_value = Role(id=role_admin_valid['id'],
+                                                                name=role_admin_valid['name'],
+                                                                permissions=[Permission.from_str(perm) for perm in
+                                                                             role_admin_valid['permissions']])
+    User.query.filter_by.return_value.first.return_value = None
+    yield user_admin_valid
+
+
+@pytest.fixture()
+def app(db_session):
+    import lorem_ipsum_auth.app
+    app = lorem_ipsum_auth.app.create_flask_app()
     LOGGER = logging.getLogger('lorem-ipsum-auth')
     LOGGER.setLevel(logging.DEBUG)
+    app.config.update({
+        "TESTING": True,
+    })
+    # yield app
+    with app.test_request_context():
+        yield app
 
 
 @pytest.fixture()
-def app():
-    app = lorem_ipsum_auth.create_app()
-    LOGGER = logging.getLogger('lorem-ipsum-auth')
-    LOGGER.setLevel(logging.DEBUG)
-    return app
+def client(app):
+    return app.test_client()
 
 
-@pytest.fixture()
-def admin_token_valid(config_valid):
-    yield os.getenv('admin_token')
+@pytest.fixture(scope='session')
+def user_admin_valid():
+    import werkzeug.security
+    yield {"username": 'admin',
+           "password_hash": werkzeug.security.generate_password_hash('fake_admin_password'),
+           "email": "admin@yahoo.com",
+           "login_type": "basic",
+           "role_id": 1,
+           "id": 1
+           }
 
 
-@pytest.fixture()
-def user_token_valid(config_valid):
-    yield os.getenv('user_token')
-
-
-@pytest.fixture()
-def user_valid1():
-
-    yield {"username": 'test_user1',
-           "password": 'pwd',
-           "email": "test_user1@gmail.com"
+@pytest.fixture(scope='session')
+def user_valid():
+    import werkzeug.security
+    yield {"username": 'admin',
+           "password_hash": werkzeug.security.generate_password_hash('fake_admin_password'),
+           "email": "admin@yahoo.com",
+           "login_type": "basic",
+           "role_id": 2,
+           "id": 2
            }
 
 
 @pytest.fixture()
-def user_valid2():
-    yield {"username": 'test_user2',
-           "password": 'pwd'
-           }
+def role_user_valid():
+    yield {
+        "name": "ROLE_USER",
+        "id": 2,
+        "permissions": ['books:add', 'books:read', 'books:write', 'users:profile']
+    }
 
 
 @pytest.fixture()
-def valid_user_token():
-    yield {"username": 'test_user2',
-           "password": 'pwd'
-           }
-
-
-@pytest.fixture()
-def config_valid_request(config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        yield True
-
-
-@pytest.fixture()
-def metrics_request_with_fields(config_valid):
-    import app
-    with app.app.test_request_context():
-        flask.request.args = {'fields': 'connections,threads'}
-        yield flask.request.args
-
-
-@pytest.fixture()
-def metrics_request_no_fields(config_valid):
-    import app
-    with app.app.test_request_context():
-        yield flask.request.args
-
-
-@pytest.fixture()
-def user_valid_list_one_request(user_valid1):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        flask.request.data = to_json([user_valid1]).encode('utf-8')
-        yield user_valid1
-        app.app_context().user_service.delete(user_valid1['username'])
-
-
-@pytest.fixture()
-def user_valid_list_request(user_valid2, config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid2])
-        flask.request.data = to_json([user_valid2]).encode('utf-8')
-        yield user_valid2
-        app.app_context().user_service.delete(user_valid2['username'])
-
-
-@pytest.fixture()
-def user_valid_list_default_limit(user_valid2, user_valid1, config_valid):
-    # from flask import request
-    import app
-    with app.app.test_request_context():
-        app.app_context().user_service.save([user_valid1])
-        app.app_context().user_service.save([user_valid2])
-
-        flask.request.args = {}
-        yield user_valid2
-        app.app_context().user_service.delete(user_valid1['username'])
-        app.app_context().user_service.delete(user_valid2['username'])
+def role_admin_valid():
+    yield {
+        "name": "ROLE_USER",
+        "id": 2,
+        "permissions": ['books:add', 'books:read', 'books:write', 'users:profile', 'users:admin']
+    }

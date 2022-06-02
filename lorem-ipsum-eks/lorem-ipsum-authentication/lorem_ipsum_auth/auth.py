@@ -6,11 +6,11 @@ import logging
 from authlib.jose import JsonWebKey, jwt
 from flask import g, jsonify, Blueprint, request, current_app as app, make_response
 from lorem_ipsum_auth import db, create_app_context
-from lorem_ipsum_auth.models import LoginType, User, Permission, BlacklistToken
+from lorem_ipsum_auth.models import LoginType, User, Permission, BlacklistToken, Permissions
 from lorem_ipsum_auth.serializers import from_json, to_json
 from flask_swagger import swagger
 
-LOGGER = logging.getLogger('lorem-ipsum')
+LOGGER = logging.getLogger('lorem-ipsum-auth')
 token_auth = Blueprint('token_auth', __name__)
 users = Blueprint('users', __name__)
 
@@ -22,12 +22,18 @@ def app_context():
 
 
 def new_token(payload: dict):
-    with open(app_context().config['jwk_private_key_path'], 'rb') as f:
-        key = JsonWebKey.import_key(f.read())
+    key = jwk_key()
     header = {'alg': 'RS256', 'kid': 'demo_key'}
     token = jwt.encode(header, payload, key)
     LOGGER.debug(token)
     return token.decode('utf-8')
+
+
+@lru_cache()
+def jwk_key():
+    with open(app_context().config['jwk_private_key_path'], 'rb') as f:
+        key = JsonWebKey.import_key(f.read())
+    return key
 
 
 def issue_token_for_user(user: User):
@@ -81,7 +87,7 @@ class BearerTokenValidator:
     def check_has_permissions(self, user: User, permissions: list):
         has_permissions = True
         for permission in permissions:
-            if not user.role.has_permission(permission):
+            if not user.role.has_permission(Permission.from_enum(permission)):
                 LOGGER.debug(f'Missing permission {permission}.')
                 has_permissions = False
         LOGGER.debug(f'Required permissions: {permissions}')
@@ -102,11 +108,22 @@ class BearerTokenValidator:
         return BearerTokenValidator(access_token)
 
 
+def should_skip_auth(flask_request):
+    """
+    Return true if should skip auth, e.g. when method is OPTIONS like when performing a React request.
+    :param flask_request: Flask request.
+    :return:
+    """
+    return flask_request.method in ['HEAD', 'OPTIONS']
+
+
 def requires_permission(permissions: list):
     def requires_permission_decorator(function):
         def wrapper(*args, **kwargs):
             LOGGER.info(f'Authorization...\n{request.headers}')
-            authorization_header = request.headers['Authorization']
+            if should_skip_auth(request):
+                return jsonify('ok')
+            authorization_header = request.headers.get('Authorization')
             bearer_token_validator = BearerTokenValidator.from_authorization_header(authorization_header) \
                 .check_is_blacklisted() \
                 .check_username_claim()
@@ -124,6 +141,19 @@ def requires_permission(permissions: list):
         return wrapper
 
     return requires_permission_decorator
+
+
+class ExceptionHandlers:
+    def __init__(self, app):
+        @app.errorhandler(AuthorizationError)
+        def handle_authorization_exception(e):
+            """Return403 forbidden."""
+            return jsonify(str(e)), 403
+
+        @app.errorhandler(AuthenticationError)
+        def handle_authentication_exception(e):
+            """Return401 authentication error."""
+            return jsonify(str(e)), 401
 
 
 @token_auth.route("/spec")
@@ -210,8 +240,8 @@ def login():
     return jsonify({**user.to_json(), 'access_token': access_token}), 200
 
 
-@requires_permission([])
 @token_auth.route('/signout', methods=['GET'])
+@requires_permission([])
 def logout():
     """
         Logout.
@@ -285,8 +315,8 @@ def register():
     return jsonify({**user.to_json(), 'access_token': access_token}), 200
 
 
-@requires_permission([Permission.PROFILE])
 @token_auth.route('/profile', methods=['GET'])
+@requires_permission([Permissions.USERS_PROFILE])
 def profile():
     """
         Get user profile.
@@ -338,8 +368,8 @@ def jwk():
     return jsonify(key)
 
 
-@requires_permission([Permission.ADMIN])
 @users.route('/<username>', methods=['DELETE'])
+@requires_permission([Permissions.USERS_ADMIN])
 def delete_user(username):
     """
         Delete user.
@@ -365,8 +395,8 @@ def delete_user(username):
     return '', 204
 
 
-@requires_permission([Permission.ADMIN])
 @users.route('/<username>', methods=['GET'])
+@requires_permission([Permissions.USERS_ADMIN])
 def get_user(username):
     """
         Get user.

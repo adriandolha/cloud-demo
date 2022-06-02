@@ -1,31 +1,32 @@
-from typing import List
-
+from __future__ import annotations
+import datetime
 import logging
 import uuid
-from sqlalchemy.sql import functions
+from typing import List
 from urllib.parse import quote
 
 import bcrypt
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from sqlalchemy import Column, String, DateTime, func
+from sqlalchemy import Column, String, DateTime, func, Boolean, Table, ForeignKey
 from sqlalchemy import create_engine, JSON, Integer
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy.pool import QueuePool
+from sqlalchemy.sql import functions
 
 import lorem_ipsum.model as model
 from lorem_ipsum.model import AppContext
+from lorem_ipsum.model import BlacklistTokenRepo
 from lorem_ipsum.model import BookRepo
+from lorem_ipsum.model import EventRepo
 from lorem_ipsum.model import UserRepo
 from lorem_ipsum.model import WordRepo
-from lorem_ipsum.model import EventRepo
-import sys
-import inspect
-
 from lorem_ipsum.serializers import from_json
 
 LOGGER = logging.getLogger('lorem-ipsum')
+
+Base = declarative_base()
 
 
 def domain_model(function):
@@ -113,7 +114,7 @@ class TransactionManager:
     def create_db_engine(user: str, password: str, host: str, port: str, database: str, minconn: str, maxconn: str):
         # we need to encode passowrd in case it contains special chars
         encoded_password = quote(password)
-        _db = create_engine(f"postgres://{user}:{encoded_password}@{host}:{port}/{database}",
+        _db = create_engine(f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}",
                             pool_size=minconn, max_overflow=maxconn - minconn, poolclass=QueuePool, echo=False)
         return _db
 
@@ -132,32 +133,143 @@ def transaction(function):
     return wrapper
 
 
-class User(declarative_base()):
+class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
     username = Column(String)
     password_hash = Column(String)
     login_type = Column(String)
-    role_id = Column(Integer)
+    role_id = Column(Integer, ForeignKey("roles.id"))
+    role = relationship("Role", back_populates="users")
     email = Column(String)
+
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns if c != User.password_hash}
 
     @staticmethod
     def from_dict(data: dict):
-        return User(**data)
+        user = User(**data)
+        user.role = Role(**data['role'])
+        return user
 
     def as_model(self) -> model.User:
-        return model.User(self.id, self.username, self.password_hash, self.email, self.login_type, self.role_id)
+        _user = model.User(self.id, self.username, self.password_hash, self.email, self.login_type, None)
+        if self.role:
+            _user.role = self.role.as_model(includes=['permissions'])
+        return _user
 
     @staticmethod
     def from_model(user: model.User):
-        return User(**user.as_dict())
+        user = User(**user.as_dict())
+        user.role = Role.from_model(**user.role)
+        return user
 
 
-class Word(declarative_base()):
+role_permissions = Table(
+    'roles_permissions',
+    Base.metadata,
+    Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True),
+    Column('permission_id', String(64), ForeignKey('permissions.id'), primary_key=True))
+
+
+class Role(Base):
+    __tablename__ = 'roles'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), unique=True)
+    default = Column(Boolean, default=False, index=True)
+    permissions = relationship('Permission', secondary=role_permissions, back_populates="roles")
+    users = relationship('User', back_populates="role")
+
+    def __init__(self, **kwargs):
+        super(Role, self).__init__(**kwargs)
+        if self.permissions is None:
+            self.permissions = []
+
+    def as_model(self, includes: list = ('users', 'permissions')) -> model.Role:
+        _role = model.Role(self.id, self.name, self.default, [], [])
+        _users = [user.as_model() for user in self.users] if 'users' in includes else []
+        _permissions = [permission.as_model(includes=[]) for permission in
+                        self.permissions] if 'permissions' in includes else []
+        _role.permissions = _permissions
+        _role.users = _users
+        return _role
+
+    @staticmethod
+    def from_model(role: model.Role):
+        _role = Role(**role.as_dict())
+        _role.users = [User.from_model(user) for user in role.users]
+        _role.permissions = [Permission.from_model(perm) for perm in role.permissions]
+        return role
+
+
+class Permission(Base):
+    __tablename__ = 'permissions'
+    id = Column(String(100), primary_key=True)
+    name = Column(String(100), unique=True)
+    roles = relationship('Role', secondary=role_permissions, back_populates="permissions")
+
+    def __init__(self, **kwargs):
+        super(Permission, self).__init__(**kwargs)
+
+    def __eq__(self, other):
+        return other and other.id == self.id
+
+    def as_model(self, includes: list = ('roles')) -> model.Permission:
+        permission = model.Permission(self.id, self.name, [])
+
+        _roles = [role.as_model() for role in self.roles] if 'roles' in includes else []
+        permission.roles = _roles
+        return permission
+
+    @staticmethod
+    def from_model(perm: model.Permission) -> Permission:
+        permission = Permission(**perm.as_dict())
+        _roles = [Role.from_model(role) for role in perm.roles]
+        permission.roles = _roles
+        return permission
+
+    @staticmethod
+    def from_str(perm: str):
+        return Permission(id=perm, name=perm)
+
+
+class BlacklistToken(Base):
+    """
+    Token Model for storing blacklisted JWT tokens
+    """
+    __tablename__ = 'blacklist_tokens'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    token = Column(String(2000), unique=True, nullable=False)
+    blacklisted_on = Column(DateTime, nullable=False)
+
+    def __init__(self, token):
+        self.token = token
+        self.blacklisted_on = datetime.datetime.now()
+
+    def __repr__(self):
+        return '<id: token: {}'.format(self.token)
+
+    def as_dict(self) -> dict:
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    @staticmethod
+    def from_dict(data: dict):
+        return BlacklistToken(**data)
+
+    def as_model(self) -> model.BlacklistToken:
+        return model.BlacklistToken(self.id, self.token, self.blacklisted_on)
+
+    @staticmethod
+    def from_model(blacklist_token: model.BlacklistToken):
+        return BlacklistToken(**blacklist_token.as_dict())
+
+
+class Word(Base):
     __tablename__ = 'words'
 
     id = Column(String, primary_key=True)
@@ -186,7 +298,7 @@ class Word(declarative_base()):
         return word
 
 
-class Event(declarative_base()):
+class Event(Base):
     __tablename__ = 'events'
 
     id = Column(String, primary_key=True)
@@ -209,7 +321,7 @@ class Event(declarative_base()):
         return Event(**event.as_dict())
 
 
-class Book(declarative_base()):
+class Book(Base):
     __tablename__ = 'books'
 
     id = Column(String, primary_key=True)
@@ -233,6 +345,16 @@ class Book(declarative_base()):
     @staticmethod
     def from_model(book: model.Book):
         return Book(**book.as_dict())
+
+
+class PostgresBlacklistTokenRepo(BlacklistTokenRepo):
+    def __init__(self, app_context: AppContext):
+        self._transaction_manager = app_context.transaction_manager
+
+    def get(self, auth_token: str) -> model.BlacklistToken:
+        _session = self._transaction_manager.transaction.session
+        _token = _session.query(BlacklistToken).filter(BlacklistToken.token == auth_token).first()
+        return _token.as_model() if _token else None
 
 
 class PostgresUserRepo(UserRepo):

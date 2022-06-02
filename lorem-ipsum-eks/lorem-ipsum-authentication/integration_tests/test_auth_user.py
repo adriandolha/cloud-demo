@@ -17,7 +17,7 @@ class TestJWT:
         assert _response_data['access_token']
         assert _response_data['roles'] == ['ROLE_USER']
 
-    def test_login(self, config_valid):
+    def test_login_guest_user(self, config_valid):
         _response = requests.get(url=f'{config_valid["root_url"]}/api/auth/signin',
                                  headers={'Content-Type': 'application/json'}, timeout=3,
                                  auth=HTTPBasicAuth(config_valid['guest_user'], config_valid['guest_password']))
@@ -30,6 +30,22 @@ class TestJWT:
         assert _response_data['roles'] == ['ROLE_USER']
         assert _response_data['email'] == 'guest@gmail.com'
         assert _response_data['username'] == 'guest'
+        assert _response_data['permissions'] == ['books:add', 'books:read', 'books:write', 'users:profile']
+
+    def test_login_admin_permissions(self, config_valid):
+        _response = requests.get(url=f'{config_valid["root_url"]}/api/auth/signin',
+                                 headers={'Content-Type': 'application/json'}, timeout=3,
+                                 auth=HTTPBasicAuth(config_valid['guest_user'], config_valid['guest_password']))
+        print(_response.content)
+        assert _response.status_code == 200
+        _response_data = from_json(_response.content.decode('utf-8'))
+        print(_response_data)
+        assert _response_data['access_token']
+        assert _response_data['id']
+        assert _response_data['roles'] == ['ROLE_USER']
+        assert _response_data['email'] == 'guest@gmail.com'
+        assert _response_data['username'] == 'guest'
+        assert _response_data['permissions'] == ['books:add', 'books:read', 'books:write', 'users:profile']
 
     def test_profile(self, config_valid, admin_access_token):
         _response = requests.get(url=f'{config_valid["root_url"]}/api/auth/profile',

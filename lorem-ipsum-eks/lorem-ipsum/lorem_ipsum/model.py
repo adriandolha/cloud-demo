@@ -1,15 +1,11 @@
-from collections import Counter
-from enum import Enum
-
-from typing import List
-
-import re
-
-import faker
+from __future__ import annotations
+import datetime
 from abc import ABC, abstractmethod
+from enum import Enum
+from typing import List
+import faker
 
 from lorem_ipsum.serializers import to_json, from_json
-import datetime
 
 
 class Events(Enum):
@@ -44,22 +40,119 @@ class Event:
         return Event(**data)
 
 
-class User:
-
-    def __init__(self, id: int, username: str, password_hash: str, email: str, login_type: str, role_id: int):
+class User(BaseModel):
+    def __init__(self, id: int, username: str, password_hash: str, email: str, login_type: str, role: Role):
         self.username = username
         self.password_hash = password_hash
         self.email = email
         self.id = id
         self.login_type = login_type
-        self.role_id = role_id
+        self.role = role
+
+    def as_dict(self):
+        user = self.__dict__
+        user['role'] = self.role.as_dict()
+        return user
+
+    @staticmethod
+    def from_dict(data: dict):
+        user = User(**data)
+        user.role = Role.from_dict(data['role'])
+        return user
+
+
+class Permissions(Enum):
+    BOOKS_ADD = 'books:add'
+    BOOKS_READ = 'books:read'
+    BOOKS_WRITE = 'books:write'
+    USERS_ADMIN = 'users:admin'
+    USERS_PROFILE = 'users:profile'
+
+
+class Permission(BaseModel):
+    def __init__(self, id: str, name: str, roles: list[Role]):
+        self.id = id
+        self.name = name
+        self.roles = roles
+
+    def as_dict(self):
+        perm = self.__dict__
+        perm['roles'] = [role.as_dict() for role in self.roles]
+        return perm
+
+    def to_enum(self) -> Permissions:
+        return Permissions(self.name)
+
+    def __eq__(self, other):
+        return other and other.id == self.id
+
+    @staticmethod
+    def from_dict(data: dict):
+        permission = Permission(**data)
+        permission.roles = [Role.from_dict(role) for role in data["roles"]]
+        return permission
+
+    @staticmethod
+    def from_enum(perm: Permissions):
+        return Permission(id=perm.value, name=perm.value, roles=[])
+
+
+class Role(BaseModel):
+    def __init__(self, id: str, name: str, default: bool, users: list[User], permissions: list[Permission]):
+        self.id = id
+        self.name = name
+        self.default = default
+        self.permissions = permissions
+        self.users = users
+
+    def as_dict(self):
+        _role = self.__dict__
+        _role['users'] = [user.as_dict() for user in self.users]
+        _role['permissions'] = [perm.as_dict() for perm in self.permissions]
+        return _role
+
+    @staticmethod
+    def from_dict(data: dict):
+        role = Role(**data)
+        role.users = [User.from_dict(user) for user in data['users']]
+        role.permissions = [Permission.from_dict(perm) for perm in data['permissions']]
+        return role
+
+    def add_permission(self, perm):
+        if not self.has_permission(perm):
+            self.permissions.append(perm)
+
+    def remove_permission(self, perm):
+        if self.has_permission(perm):
+            self.permissions.remove(perm)
+
+    def reset_permissions(self):
+        self.permissions = []
+
+    def has_permission(self, perm):
+        return perm in self.permissions
+
+
+class BlacklistToken(BaseModel):
+    def __init__(self, id: int, token: str, blacklisted_on: datetime):
+        self.id = id
+        self.token = token
+        self.blacklisted_on = blacklisted_on
+
+    @staticmethod
+    def check_blacklist(auth_token: str, repo: BlacklistTokenRepo):
+        # check whether auth token has been blacklisted
+        result = repo.get(auth_token)
+        if result is None:
+            return False
+        return True
 
     def as_dict(self):
         return self.__dict__
 
     @staticmethod
     def from_dict(data: dict):
-        return User(**data)
+        return BlacklistToken(**data)
 
 
 class Word(BaseModel):
@@ -115,6 +208,12 @@ class Book(BaseModel):
 
 def start_mappers():
     pass
+
+
+class BlacklistTokenRepo(ABC):
+    @abstractmethod
+    def get(self, auth_token: str):
+        pass
 
 
 class UserRepo(ABC):
@@ -332,6 +431,11 @@ class AppContext(ABC):
     @property
     @abstractmethod
     def book_repo(self) -> BookRepo:
+        pass
+
+    @property
+    @abstractmethod
+    def blacklist_token_repo(self) -> BlacklistTokenRepo:
         pass
 
     @property

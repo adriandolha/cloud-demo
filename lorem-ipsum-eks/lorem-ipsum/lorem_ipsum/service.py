@@ -68,7 +68,8 @@ class DefaultBookService(BookService):
     @transaction
     def get(self, id=None):
         LOGGER.debug(f'using connection pool {Transaction.db()}')
-        return self._app_context.book_repo.get(id).as_dict()
+        _book = self._app_context.book_repo.get(id)
+        return _book.as_dict() if _book else None
 
     @transaction
     def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None):
