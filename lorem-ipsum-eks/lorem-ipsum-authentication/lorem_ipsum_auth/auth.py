@@ -5,8 +5,8 @@ import logging
 
 from authlib.jose import JsonWebKey, jwt
 from flask import g, jsonify, Blueprint, request, current_app as app, make_response
-from lorem_ipsum_auth import db, create_app_context
-from lorem_ipsum_auth.models import LoginType, User, Permission, BlacklistToken, Permissions
+from lorem_ipsum_auth import db, create_app_context, api
+from lorem_ipsum_auth.models import LoginType, User, Permission, BlacklistToken, Permissions, Role, ValidationError
 from lorem_ipsum_auth.serializers import from_json, to_json
 from flask_swagger import swagger
 
@@ -138,6 +138,7 @@ def requires_permission(permissions: list):
             return _result
 
         wrapper.__name__ = function.__name__
+        wrapper.__doc__ = function.__doc__
         return wrapper
 
     return requires_permission_decorator
@@ -154,6 +155,11 @@ class ExceptionHandlers:
         def handle_authentication_exception(e):
             """Return401 authentication error."""
             return jsonify(str(e)), 401
+
+        @app.errorhandler(ValidationError)
+        def handle_authentication_exception(e):
+            """Return401 authentication error."""
+            return jsonify(str(e)), 400
 
 
 @token_auth.route("/spec")
@@ -395,6 +401,61 @@ def delete_user(username):
     return '', 204
 
 
+@token_auth.route('/roles/<name>', methods=['DELETE'])
+@requires_permission([Permissions.USERS_ADMIN])
+def delete_role(name):
+    """
+        Delete user.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                204:
+                    description: User deleted.
+                401:
+                    description: Invalid token.
+    """
+
+    LOGGER.info('Delete user...')
+    role = Role.query.filter_by(name=name).first()
+    if role:
+        db.session.delete(role)
+        db.session.commit()
+    return '', 204
+
+
+@token_auth.route('/permissions/<name>', methods=['DELETE'])
+@requires_permission([Permissions.USERS_ADMIN])
+def delete_permission(name):
+    """
+        Delete permission.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                204:
+                    description: Permission deleted.
+                401:
+                    description: Authentication error.
+                401:
+                    description: Authorization error.
+    """
+
+    permission = Permission.query.filter_by(name=name).first()
+    if permission:
+        db.session.delete(permission)
+        db.session.commit()
+    return '', 204
+
+
 @users.route('/<username>', methods=['GET'])
 @requires_permission([Permissions.USERS_ADMIN])
 def get_user(username):
@@ -426,6 +487,105 @@ def get_user(username):
     if not user:
         return jsonify('Not found.'), 404
     return jsonify(user.to_json()), 200
+
+
+@token_auth.route('/roles', methods=['POST'])
+@requires_permission([Permissions.USERS_ADMIN])
+def add_role():
+    """
+        Add role.
+        ---
+        definitions:
+          - schema:
+              id: Role
+              properties:
+                name:
+                 type: string
+                 description: role name
+                default:
+                 type: boolean
+                 description: is default
+                permissions:
+                 type: array
+                 description: List of permissions
+                 items:
+                    oneOf:
+                      - $ref: "#/definitions/Permission"
+        parameters:
+            - in: body
+              name: role
+              required: true
+              description: role
+              schema:
+                  $ref: "#/definitions/Role"
+        responses:
+                200:
+                    description: New role.
+                    schema:
+                        $ref: '#/definitions/Role'
+                401:
+                    description: Invalid username or password.
+    """
+    _request = from_json(request.data.decode('utf-8'))
+    api_role = api.Role(**_request)
+    existing_role = Role.query.filter_by(name=api_role.name).first()
+    if existing_role:
+        raise ValidationError('Role already exists.')
+    permissions = []
+    for api_permission in api_role.permissions:
+        permission = Permission.query.filter_by(name=api_permission.name).first()
+        if not permission:
+            raise ValidationError(f'Permission {api_permission.name} not found.')
+        permissions.append(permission)
+    role = Role(name=api_role.name, default=api_role.default, permissions=permissions)
+    db.session.add(role)
+    db.session.commit()
+    return jsonify(api.Role.from_orm(role).dict()), 200
+
+
+@token_auth.route('/permissions', methods=['POST'])
+@requires_permission([Permissions.USERS_ADMIN])
+def add_permission():
+    """
+        Add permission.
+        ---
+        definitions:
+          - schema:
+              id: Permission
+              properties:
+                id:
+                 type: string
+                 description: permission id
+                name:
+                 type: string
+                 description: permission name
+
+        parameters:
+            - in: body
+              name: permission
+              required: true
+              description: permission
+              schema:
+                  $ref: "#/definitions/Permission"
+        responses:
+                200:
+                    description: New permission.
+                    schema:
+                        $ref: '#/definitions/Permission'
+                401:
+                    description: Authentication error.
+                403:
+                    description: Forbidden.
+    """
+    _request = from_json(request.data.decode('utf-8'))
+    api_permission = api.Permission(**_request)
+    existing_permission = Permission.query.filter_by(name=api_permission.name).first()
+    if existing_permission:
+        raise ValidationError('Permission already exists.')
+    permission = Permission(id=api_permission.name, name=api_permission.name)
+    db.session.add(permission)
+    db.session.commit()
+    return jsonify(api.Permission.from_orm(permission).dict()), 200
 
 
 @token_auth.after_request

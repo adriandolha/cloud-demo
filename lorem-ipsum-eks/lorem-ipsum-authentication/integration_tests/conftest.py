@@ -99,3 +99,16 @@ def admin_access_token_logout(config_valid):
     password = config_valid['admin_password']
     access_token = _get_access_token(config_valid, password, username)
     yield access_token
+
+
+@pytest.fixture()
+def role_editor_valid():
+    yield {'default': False, 'id': None, 'name': 'ROLE_EDITOR',
+           'permissions': [{'id': 'books:read', 'name': 'books:read'}, {'id': 'books:write', 'name': 'books:write'},
+                           {'id': 'books:add', 'name': 'books:add'}, {'id': 'users:profile', 'name': 'users:profile'}]}
+
+
+@pytest.fixture()
+def permission_edit_books_valid():
+    yield {'id': 'books:edit', 'name': 'books:edit',
+           }

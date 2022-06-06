@@ -8,6 +8,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from lorem_ipsum_auth import db
 
 
+class ValidationError(ValueError):
+    pass
+
+
 class Permissions(Enum):
     BOOKS_ADD = 'books:add'
     BOOKS_READ = 'books:read'
@@ -143,8 +147,8 @@ class User(db.Model):
 
 role_permissions = db.Table(
     'roles_permissions',
-    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'), primary_key=True),
-    db.Column('permission_id', db.String(64), db.ForeignKey('permissions.id'), primary_key=True))
+    db.Column('role_id', db.Integer, db.ForeignKey('roles.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('permission_id', db.String(64), db.ForeignKey('permissions.id', ondelete='CASCADE'), primary_key=True))
 
 
 class Role(db.Model):
@@ -212,6 +216,9 @@ class Permission(db.Model):
     def to_enum(self) -> Permissions:
         return Permissions(self.name)
 
+    def as_dict(self):
+        return {'id': self.id, 'name': self.name}
+
     @staticmethod
     def from_enum(perm: Permissions):
         return Permission(id=perm.value, name=perm.value)
@@ -233,4 +240,3 @@ class Permission(db.Model):
 class LoginType:
     BASIC = 'basic'
     GOOGLE = 'google'
-

@@ -67,6 +67,59 @@ def login_valid_request(query_mock, user_admin_valid, role_admin_valid):
 
 
 @pytest.fixture()
+def role_add_valid_request(query_mock, user_admin_valid, role_editor_valid):
+    from lorem_ipsum_auth.models import User, Role
+    orig_query = Role.query.filter_by.return_value
+
+    def _filter_by(*args, **kwargs):
+        if kwargs.get('name') == role_editor_valid['name']:
+            _mock = mock.MagicMock()
+            _mock.first.return_value = None
+            return _mock
+        return orig_query
+
+    Role.query.filter_by.side_effect = _filter_by
+
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    User.query.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    yield user_admin_valid
+
+
+@pytest.fixture()
+def permission_add_valid_request(query_mock, user_admin_valid, permission_edit_books_valid):
+    from lorem_ipsum_auth.models import User, Permission
+    orig_query = Permission.query.filter_by.return_value
+
+    def _filter_by(*args, **kwargs):
+        if kwargs.get('name') == permission_edit_books_valid['name']:
+            _mock = mock.MagicMock()
+            _mock.first.return_value = None
+            return _mock
+        return orig_query
+
+    Permission.query.filter_by.side_effect = _filter_by
+    yield user_admin_valid
+
+
+@pytest.fixture()
+def role_add_existing_request(query_mock, user_admin_valid, role_editor_valid):
+    from lorem_ipsum_auth.models import User, Role, Permission
+
+    Role.query.filter_by.return_value.first.return_value = Role(id=role_editor_valid['id'],
+                                                                name=role_editor_valid['name'],
+                                                                permissions=[Permission.from_str(perm) for perm in
+                                                                             role_editor_valid['permissions']])
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    User.query.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    Permission.query.filter_by.return_value.first.return_value = Permission.from_str('books:add')
+    yield user_admin_valid
+
+
+@pytest.fixture()
 def signup_valid_request(query_mock, user_admin_valid, role_admin_valid):
     from lorem_ipsum_auth.models import User, Role, Permission
     Role.query.filter_by.return_value.first.return_value = Role(id=role_admin_valid['id'],
@@ -136,3 +189,47 @@ def role_admin_valid():
         "id": 2,
         "permissions": ['books:add', 'books:read', 'books:write', 'users:profile', 'users:admin']
     }
+
+
+@pytest.fixture()
+def permission_edit_books_valid():
+    yield {
+        "name": "books:edit",
+        "id": 'books:edit'}
+
+
+@pytest.fixture()
+def role_editor_valid():
+    from lorem_ipsum_auth.models import Permissions, Permission
+    yield {
+        "name": "ROLE_EDITOR",
+        "id": 5,
+        "default": False,
+        "permissions": [Permission.from_enum(Permissions.BOOKS_READ).as_dict(),
+                        Permission.from_enum(Permissions.BOOKS_WRITE).as_dict(),
+                        Permission.from_enum(Permissions.BOOKS_ADD).as_dict(),
+                        Permission.from_enum(Permissions.USERS_PROFILE).as_dict(),
+                        ]
+    }
+
+
+def issue_token(user: dict, role: dict) -> str:
+    from lorem_ipsum_auth.models import User, Permission, Role
+    from lorem_ipsum_auth.auth import issue_token_for_user
+    role = Role(id=user['id'], name=role['name'],
+                permissions=[Permission.from_str(perm) for perm in role['permissions']])
+    Role.query.filter_by.return_value.first.return_value = role
+    user = User.from_dict(user)
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = user
+    User.query.filter_by.return_value.first.return_value = user
+    return issue_token_for_user(user)
+
+
+@pytest.fixture()
+def admin_access_token(config_valid, user_admin_valid, role_admin_valid, query_mock):
+    return issue_token(user_admin_valid, role_admin_valid)
+
+
+@pytest.fixture()
+def user_access_token(config_valid, user_valid, role_user_valid, query_mock):
+    return issue_token(user_valid, role_user_valid)
