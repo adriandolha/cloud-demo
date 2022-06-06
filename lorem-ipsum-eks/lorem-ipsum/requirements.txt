@@ -3,7 +3,7 @@ pytest
 mock
 psycopg2==2.8.5
 gunicorn
-flask
+flask==2.1.2
 gevent
 Faker
 bcrypt

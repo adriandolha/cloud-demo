@@ -1,6 +1,7 @@
 from __future__ import annotations
 import datetime
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 from typing import List
 import faker
@@ -12,6 +13,16 @@ class Events(Enum):
     BOOK_UPDATED = "book.updated"
     BOOK_DELETED = "book.deleted"
     BOOK_INDEXED = "book.indexed"
+
+
+class BookViews(Enum):
+    MY_BOOKS = "my_books"
+    SHARED_BOOKS = "shared_books"
+
+    @staticmethod
+    def from_value(val: str):
+        by_value = {member.value: member for name, member in BookViews.__members__.items()}
+        return by_value[val]
 
 
 def model_as_dict_(object):
@@ -38,6 +49,14 @@ class Event:
     @staticmethod
     def from_dict(data: dict):
         return Event(**data)
+
+
+@dataclass
+class ObjectPermission(BaseModel):
+    user_id: str
+    object_id: str
+    object_type: str
+    permission_id: str
 
 
 class User(BaseModel):
@@ -67,6 +86,10 @@ class Permissions(Enum):
     BOOKS_WRITE = 'books:write'
     USERS_ADMIN = 'users:admin'
     USERS_PROFILE = 'users:profile'
+
+
+class ObjectType(Enum):
+    BOOK = 'book'
 
 
 class Permission(BaseModel):
@@ -264,13 +287,19 @@ class WordRepo(ABC):
         pass
 
 
+class StatsRepo(ABC):
+    @abstractmethod
+    def get(self) -> Stats:
+        pass
+
+
 class BookRepo(ABC):
     @abstractmethod
     def get(self, id=None) -> Book:
         pass
 
     @abstractmethod
-    def get_all(self, limit=10, offset=1, includes=None, owner_id=None):
+    def get_all(self, limit=10, offset=1, includes=None, owner_id=None, view=BookViews.MY_BOOKS):
         pass
 
     @abstractmethod
@@ -287,10 +316,33 @@ class BookRepo(ABC):
     def search(self, query: str):
         pass
 
+    def share_book_with_user(self, book: Book, user: User):
+        pass
+
+    def get_permissions(self, book: Book) -> list[ObjectPermission]:
+        pass
+
 
 class MetricsService(ABC):
     @abstractmethod
     def metrics(self, fields: list = []):
+        pass
+
+
+@dataclass
+class Stats:
+    """Class for keeping track of an item in inventory."""
+    no_of_books: int
+    no_of_pages: int
+    no_of_words: int
+
+    def as_dict(self) -> dict:
+        return self.__dict__
+
+
+class StatsService:
+    @abstractmethod
+    def get(self) -> dict:
         pass
 
 
@@ -300,7 +352,7 @@ class BookService(ABC):
         pass
 
     @abstractmethod
-    def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None):
+    def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None, view: BookViews = BookViews.MY_BOOKS):
         pass
 
     @abstractmethod
@@ -314,6 +366,9 @@ class BookService(ABC):
         pass
 
     def search(self, query: str):
+        pass
+
+    def share_book_with_user(self, id: str, username: str):
         pass
 
 
@@ -416,6 +471,16 @@ class AppContext(ABC):
     @property
     @abstractmethod
     def user_service(self) -> UserService:
+        pass
+
+    @property
+    @abstractmethod
+    def stats_service(self) -> StatsService:
+        pass
+
+    @property
+    @abstractmethod
+    def stats_repo(self) -> StatsRepo:
         pass
 
     @property

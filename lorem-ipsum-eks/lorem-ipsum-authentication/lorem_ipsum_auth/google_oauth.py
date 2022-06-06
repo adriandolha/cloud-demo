@@ -3,7 +3,6 @@ import logging
 from authlib.integrations.flask_client import OAuth
 from flask import Blueprint, url_for, g, redirect, request, flash, jsonify, session
 from flask import current_app as app
-from flask_login import login_user
 
 from lorem_ipsum_auth import AppContext, db
 from lorem_ipsum_auth.auth import issue_token_for_user
@@ -103,7 +102,7 @@ def google_auth():
         db.session.add(user)
         db.session.commit()
     if user is not None and user.verify_password(_password):
-        login_user(user, remember=False)
+        # login_user(user, remember=False)
         next = request.args.get('next')
         if next is None or not next.startswith('/'):
             next = url_for('main.index')

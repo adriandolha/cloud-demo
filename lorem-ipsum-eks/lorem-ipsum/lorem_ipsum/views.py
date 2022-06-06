@@ -1,7 +1,7 @@
 from flask import current_app as app, jsonify
 from flask import Blueprint
 
-from lorem_ipsum.model import Permissions
+from lorem_ipsum.model import Permissions, BookViews
 from lorem_ipsum.serializers import to_json, from_json
 from flask import request
 import lorem_ipsum
@@ -17,6 +17,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 books = Blueprint('books', __name__)
 words = Blueprint('words', __name__)
 users = Blueprint('users', __name__)
+stats = Blueprint('stats', __name__)
 from flask import g
 
 LOGGER = logging.getLogger('lorem-ipsum')
@@ -35,6 +36,7 @@ def spec():
 
 def response(api_response):
     return app.response_class(response=api_response['body'], status=api_response['status_code'])
+
 
 def api_context(event, context):
     if not event:
@@ -126,6 +128,46 @@ def get_book(id):
     return response({"status_code": '200', 'body': to_json(result)})
 
 
+@stats.route('/', methods=['GET'])
+@requires_permission([Permissions.USERS_ADMIN])
+def get_stats():
+    """
+        Get stats, e.g. total no of books, pages and words
+        ---
+        definitions:
+          - schema:
+              id: Stats
+              properties:
+                no_of_books:
+                 type: integer
+                 description: no of books
+                no_of_pages:
+                 type: integer
+                 description: no of pages
+                no_of_words:
+                 type: integer
+                 description: no of pages
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                200:
+                    description: Stats ok
+                    schema:
+                        $ref: '#/definitions/Stats'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+    LOGGER.info('Get stats...')
+    result = app_context().stats_service.get()
+    return response({"status_code": '200', 'body': to_json(result)})
+
+
 @books.route('/', methods=['GET', 'OPTIONS'])
 @requires_permission([Permissions.BOOKS_READ])
 def get_all_books():
@@ -164,6 +206,10 @@ def get_all_books():
               name: includes
               description: List of fields to include, separated by comma
               type: string
+            - in: query
+              name: view
+              description: Books view: my_books, shared_books
+              type: string
         responses:
                 200:
                     description: List of books
@@ -176,10 +222,12 @@ def get_all_books():
     """
     _limit = int(request.args.get('limit', 20))
     _offset = int(request.args.get('offset', 1))
+    _view = BookViews.from_value(request.args.get('view', BookViews.MY_BOOKS.value))
+
     _includes = request.args.get('includes')
-    LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}]]...')
+    LOGGER.info(f'Get all data [limit={_limit}, offset=[{_offset}], view={_view}]...')
     result = app_context().book_service.get_all(limit=_limit, offset=_offset, includes=_includes,
-                                                owner_id=g.user.username)
+                                                owner_id=g.user.username, view=_view)
     return response({"status_code": '200', 'body': to_json(result)})
 
 
@@ -296,6 +344,51 @@ def save_book():
         _book['owner_id'] = g.user.username
     result = app_context().book_service.save(_request)
     return response({"status_code": '200', 'body': to_json({"items": result['items'], "total": result['total']})})
+
+
+@books.route('/<id>/share', methods=['POST'])
+@requires_permission([Permissions.BOOKS_READ])
+def share_book(id):
+    """
+        Save books
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: body
+              name: user
+              required: true
+              description: User to share book with
+            - in: path
+              name: id
+              description: Unique id of the book to share
+              required: true
+              type: string
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    description: The user name.
+        responses:
+                204:
+                    description: Book shared successfully
+                    schema:
+                        $ref: '#/definitions/BookPaginationResult'
+                401:
+                    description: Authentication error
+                403:
+                    description: Authorization error
+    """
+
+    LOGGER.info('Sharing book...')
+    _request = from_json(request.data.decode('utf-8'))
+
+    app_context().book_service.share_book_with_user(id, _request['username'])
+    return '', 204
 
 
 @words.route('/', methods=['POST'])

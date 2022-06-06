@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import uuid
-
+import sys
 import logging
 import os
 
@@ -9,8 +9,10 @@ import faker
 import flask
 import mock
 import pytest
+from flask import Flask
 
 import lorem_ipsum
+from lorem_ipsum.model import Stats, ObjectPermission, ObjectType, Permissions
 from lorem_ipsum.serializers import to_json
 
 
@@ -52,14 +54,16 @@ def app_valid(config_valid, db_session):
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.setLevel(logging.DEBUG)
     import app
-    app.create_flask_app()
+    flask_app = Flask('lorem-ipsum')
+    app.create_flask_app(flask_app)
     with app.app.test_request_context():
-        yield
+        yield flask_app
+
 
 @pytest.fixture()
 def client(app_valid):
-    import app
-    return app.app.test_client()
+    return app_valid.test_client()
+
 
 @pytest.fixture()
 def request_valid_admin(admin_token_valid, user_admin_valid):
@@ -68,6 +72,20 @@ def request_valid_admin(admin_token_valid, user_admin_valid):
         lorem_ipsum.repo.PostgresUserRepo.get.return_value = lorem_ipsum.model.User.from_dict(user_admin_valid)
         with app.app.test_request_context(headers={'Authorization': f'Bearer {admin_token_valid}'}):
             yield
+
+
+def loaded_modules():
+    from types import ModuleType as MT
+    all_modules = [k for k, v in globals().items() if type(v) is MT and not k.startswith('__')]
+    ", ".join(all_modules)
+    return all_modules
+
+
+@pytest.fixture()
+def request_stats_valid(admin_token_valid, stats_valid):
+    with mock.patch("lorem_ipsum.DefaultAppContext.stats_repo") as m:
+        m.get.return_value = Stats(**stats_valid)
+        yield stats_valid
 
 
 @pytest.fixture()
@@ -103,6 +121,15 @@ def book_valid():
            "no_of_pages": 10,
            "owner_id": "admin"
            }
+
+
+@pytest.fixture()
+def stats_valid():
+    yield {
+        'no_of_books': 10,
+        'no_of_pages': 100,
+        'no_of_words': 1000
+    }
 
 
 @pytest.fixture()
@@ -336,7 +363,7 @@ def book_valid_get_request(app_valid, book_valid, request_valid_admin):
     # from flask import request
     import app
     flask.request.args = {'limit': '2'}
-    lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+    lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.count.return_value = 3
     lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
         lorem_ipsum.repo.Book(**book_valid), lorem_ipsum.repo.Book(**book_valid)]
     yield book_valid
@@ -355,7 +382,7 @@ def book_valid_get_request_user(app_valid, book_valid, book_valid_user, admin_to
     def query_side_effect(args):
         # print(f'Mock {args}')
         if args == Book:
-            lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+            lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.count.return_value = 3
             lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
                 lorem_ipsum.repo.Book(**book_valid)
             ]
@@ -380,8 +407,8 @@ def page_count_valid_get_request(app_valid, book_valid, request_valid_admin):
     # from flask import request
     import app
     flask.request.args = {'limit': '2', 'includes': 'page_count'}
-    lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
-    lorem_ipsum.repo.Transaction.session.query.return_value.scalar.return_value = 10
+    lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.count.return_value = 3
+    lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.scalar.return_value = 10
     lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
         lorem_ipsum.repo.Book(**book_valid), lorem_ipsum.repo.Book(**book_valid)]
     yield book_valid
@@ -392,7 +419,7 @@ def book_valid_get_request_limit_offset(app_valid, book_valid, request_valid_adm
     # from flask import request
     import app
     flask.request.args = {'limit': '3', 'offset': '4'}
-    lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+    lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.count.return_value = 3
     lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
         lorem_ipsum.repo.Book(**book_valid), lorem_ipsum.repo.Book(**book_valid)]
     yield book_valid
@@ -403,10 +430,45 @@ def book_valid_get_default_limit(app_valid, book_valid, request_valid_admin):
     # from flask import request
     import app
     flask.request.args = {}
-    lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 3
+    lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.count.return_value = 3
     lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
         lorem_ipsum.repo.Book(**book_valid)]
     yield book_valid
+
+
+@pytest.fixture()
+def book_valid_get_request_shared_with_me(app_valid, book_small_valid, request_valid_admin):
+    lorem_ipsum.repo.Transaction.session.query.return_value \
+        .join.return_value \
+        .filter.return_value \
+        .count.return_value = 3
+    lorem_ipsum.repo.Transaction.session.query.return_value \
+        .join.return_value \
+        .filter \
+        .return_value \
+        .scalar.return_value = 10
+
+    lorem_ipsum.repo.Transaction.session.query.return_value \
+        .join.return_value \
+        .filter.return_value \
+        .limit.return_value \
+        .offset.return_value = [
+        lorem_ipsum.repo.Book(**book_small_valid)]
+    yield book_valid
+
+
+@pytest.fixture()
+def book_repo(app_valid):
+    with mock.patch('lorem_ipsum.DefaultAppContext.book_repo') as m:
+        yield m
+
+
+@pytest.fixture()
+def book_valid_get_request_shared_with_me_again(app_valid, book_small_valid, request_valid_admin, book_repo):
+    book_repo.get_permissions.return_value = [
+        ObjectPermission(object_id=book_small_valid['id'], user_id='moderator', object_type=ObjectType.BOOK.value,
+                         permission_id=Permissions.BOOKS_READ.value)]
+    yield book_small_valid
 
 
 @pytest.fixture()
@@ -518,10 +580,5 @@ def book_updated_event_valid(app_context, book_small_valid):
         return orig_query
 
     lorem_ipsum.repo.Transaction.session.query.side_effect = query_side_effect
-    # lorem_ipsum.repo.Transaction.session.query.return_value.count.return_value = 1
-    # lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = _event_entity
-    # lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.return_value = [
-    #     _event_entity]
-    # with mock.patch('lorem_ipsum.repo.Transaction._session_maker'):
 
     yield event

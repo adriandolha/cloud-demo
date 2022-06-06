@@ -7,7 +7,7 @@ import boto3
 
 from lorem_ipsum.config import get_config
 from lorem_ipsum.repo import transaction, PostgresBookRepo, TransactionManager, PostgresUserRepo, PostgresEventRepo, \
-    PostgresWordRepo, PostgresBlacklistTokenRepo, \
+    PostgresWordRepo, PostgresBlacklistTokenRepo, PostgresStatsRepo, \
     create_database_if_not_exists
 from lorem_ipsum.model import UserRepo, MetricsService, BookService, UserService, WordRepo, EventRepo, WordService, \
     AppContext
@@ -15,6 +15,8 @@ from lorem_ipsum.service import DefaultBookService
 from lorem_ipsum.service import DefaultMetricsService
 from lorem_ipsum.service import DefaultUserService
 from lorem_ipsum.service import DefaultWordService
+from lorem_ipsum.service import DefaultStatsService
+
 import lorem_ipsum.model as model
 
 
@@ -47,8 +49,10 @@ class DefaultAppContext(AppContext):
         self._event_repo = PostgresEventRepo(self)
         self._user_service = DefaultUserService(self)
         self._word_repo = PostgresWordRepo(self)
+        self._stats_repo = PostgresStatsRepo(self)
         self._word_service = DefaultWordService(self)
         self._metrics_service = DefaultMetricsService(self)
+        self._stats_service = DefaultStatsService(self)
 
     def init(self):
         pass
@@ -70,6 +74,10 @@ class DefaultAppContext(AppContext):
         return self._user_repo
 
     @property
+    def stats_repo(self):
+        return self._stats_repo
+
+    @property
     def blacklist_token_repo(self):
         return self._blacklist_token_repo
 
@@ -88,6 +96,10 @@ class DefaultAppContext(AppContext):
     @property
     def user_service(self):
         return self._user_service
+
+    @property
+    def stats_service(self):
+        return self._stats_service
 
     @property
     def word_service(self):

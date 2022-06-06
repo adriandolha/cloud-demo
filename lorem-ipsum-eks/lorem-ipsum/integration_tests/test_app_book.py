@@ -58,17 +58,23 @@ class TestBookApi:
         assert len(books['items']) >= 1
         assert 200 == response.status_code
 
-    def test_book_list_users_books(self, config_valid, book_valid, requests_standard_settings):
+    def test_book_list_users_books(self, config_valid, book_valid, user_valid, requests_standard_settings,
+                                   requests_user_token_settings):
         self.add_book(book_valid, config_valid, requests_standard_settings)
+        self.add_book(book_valid, config_valid, requests_user_token_settings)
+        response = requests.get(url=f'{config_valid["root_url"]}/stats', **requests_standard_settings)
+        stats = json.loads(response.content.decode('utf-8'))
 
-        response = requests.get(url=f'{config_valid["root_url"]}/books?limit=10', **requests_standard_settings)
+        response = requests.get(url=f'{config_valid["root_url"]}/books?limit=10&includes=page_count',
+                                **requests_user_token_settings)
         books = json.loads(response.content.decode('utf-8'))
-        print(books)
-        assert 200 == response.status_code
+        assert response.status_code == 200
         assert books['total']
         assert len(books['items']) >= 1
+        assert stats['no_of_pages'] > books['page_count']
+        assert stats['no_of_books'] > books['total']
         for book in books['items']:
-            assert book['owner_id'] == 'admin'
+            assert book['owner_id'] == user_valid['username']
 
     def test_book_list_page_count(self, config_valid, book_valid, requests_standard_settings):
         self.add_book(book_valid, config_valid, requests_standard_settings)
@@ -76,7 +82,6 @@ class TestBookApi:
         response = requests.get(url=f'{config_valid["root_url"]}/books?includes=page_count',
                                 **requests_standard_settings)
         books = json.loads(response.content.decode('utf-8'))
-        print(books)
         assert books['total']
         assert books['page_count'] > 0
         assert len(books['items']) >= 1
@@ -107,7 +112,6 @@ class TestBookApi:
         self.add_book(book_valid, config_valid, requests_standard_settings)
         response = requests.get(url=f'{config_valid["root_url"]}/books', **requests_standard_settings)
         books = json.loads(response.content.decode('utf-8'))
-        print(books)
         assert books['total'] >= 2
         # assert len(books['items']) == 1
         assert 200 == response.status_code
@@ -118,8 +122,29 @@ class TestBookApi:
         assert from_json(response.content.decode('utf-8'))['items'][0]['title']
         assert 200 == response.status_code
 
-    def test_book_add_insufficient_permissions(self, config_valid, book_valid, requests_user_token_settings):
+    def test_book_add_insufficient_permissions(self, config_valid, book_valid, requests_moderator_token_settings):
         response = requests.post(url=f'{config_valid["root_url"]}/books',
-                                 data=to_json([book_valid]).encode('utf-8'), **requests_user_token_settings)
+                                 data=to_json([book_valid]).encode('utf-8'), **requests_moderator_token_settings)
         assert response.status_code == 403
         assert from_json(response.content.decode('utf-8')) == 'Forbidden.'
+
+    def test_book_views_shared_books(self, config_valid, book_valid, requests_standard_settings,
+                                     requests_user_token_settings, user_valid):
+        self.add_book(book_valid, config_valid, requests_standard_settings)
+        response = requests.post(url=f'{config_valid["root_url"]}/books',
+                                 data=to_json([book_valid]).encode('utf-8'), **requests_standard_settings)
+        assert response.status_code == 200
+        book_id = from_json(response.content.decode('utf-8'))['items'][0]['id']
+
+        response = requests.post(url=f'{config_valid["root_url"]}/books/{book_id}/share',
+                                 data=to_json({'username': 'admin'}).encode('utf-8'), **requests_standard_settings)
+        assert response.status_code == 204
+        response = requests.get(url=f'{config_valid["root_url"]}/books?includes=page_count&view=shared_books',
+                                **requests_user_token_settings)
+        assert response.status_code == 200
+        books = json.loads(response.content.decode('utf-8'))
+        assert books['total']
+        assert books['page_count'] > 0
+        assert len(books['items']) >= 1
+        book_id = from_json(response.content.decode('utf-8'))['items'][0]['owner_id'] == user_valid['username']
+

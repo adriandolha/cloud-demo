@@ -63,11 +63,23 @@ class TestBookApi:
         assert len(books['items']) == 2
         assert 200 == response.status_code
         assert lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.call_args.args[0] == 3
-        assert lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.call_args.args[0] == 4
+        assert \
+            lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.limit.return_value.offset.call_args.args[
+                0] == 4
 
     def test_book_list_default_limit(self, book_valid_get_default_limit):
         response = app.get_all_books()
         books = json.loads(response.response[0].decode('utf-8'))
+        assert books['total'] > 2
+        assert len(books['items']) == 1
+        assert 200 == response.status_code
+
+    def test_book_shared_with_me_view(self, client, admin_token_valid, book_valid_get_request_shared_with_me,
+                                      user_token_valid):
+        response = client.get('/books?view=shared_books&includes=page_count',
+                              headers={'Authorization': f'Bearer {user_token_valid}'})
+        assert 200 == response.status_code
+        books = json.loads(response.data.decode('utf-8'))
         assert books['total'] > 2
         assert len(books['items']) == 1
         assert 200 == response.status_code
@@ -77,15 +89,39 @@ class TestBookApi:
         assert from_json(response.response[0].decode('utf-8'))['items'][0]['title']
         assert 200 == response.status_code
 
-    def test_book_add_insufficient_permissions(self, client, book_valid, user_token_valid, book_add_request_insufficient_permissions):
-        response = client.post('/books', json=json.dumps([book_valid]), headers={'Authorization': f'Bearer {user_token_valid}'})
+    def test_book_add_insufficient_permissions(self, client, book_valid, user_token_valid,
+                                               book_add_request_insufficient_permissions):
+        response = client.post('/books', json=json.dumps([book_valid]),
+                               headers={'Authorization': f'Bearer {user_token_valid}'})
         assert 403 == response.status_code
         assert from_json(response.data.decode('utf-8')) == 'Forbidden.'
 
-    def test__options_method_no_auth(self, book_add_request_options_method_no_auth):
+    def test_options_method_no_auth(self, book_add_request_options_method_no_auth):
         response = app.get_all_books()
         assert 200 == response.status_code
         assert from_json(response.response[0].decode('utf-8')) == 'ok'
         response = app.save_book()
         assert 200 == response.status_code
         assert from_json(response.response[0].decode('utf-8')) == 'ok'
+
+    def test_book_get_all_has_only_users_books(self, client, request_stats_valid, admin_token_valid):
+        response = client.get('/stats', headers={'Authorization': f'Bearer {admin_token_valid}'})
+        assert 200 == response.status_code
+        stats = json.loads(response.data.decode('utf-8'))
+        assert stats['no_of_books'] == request_stats_valid['no_of_books']
+        assert stats['no_of_pages'] == request_stats_valid['no_of_pages']
+        assert stats['no_of_words'] == request_stats_valid['no_of_words']
+
+    def test_book_shared_with_me_again(self, client, admin_token_valid, book_repo,
+                                       book_valid_get_request_shared_with_me_again,
+                                       book_small_valid, user_valid):
+        response = client.post(f'/books/{book_small_valid["id"]}/share', json={'username': 'moderator'},
+                               headers={'Authorization': f'Bearer {admin_token_valid}'})
+        assert response.status_code == 204
+        book_repo.share_book_with_user.assert_not_called()
+
+    def test_book_share_book_valid(self, client, book_small_valid, book_valid_get_default_limit, admin_token_valid,
+                                   user_token_valid):
+        response = client.post(f'/books/{book_small_valid["id"]}/share', json={'username': 'moderator'},
+                               headers={'Authorization': f'Bearer {admin_token_valid}'})
+        assert response.status_code == 204

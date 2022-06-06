@@ -22,6 +22,7 @@ from lorem_ipsum.model import BookRepo
 from lorem_ipsum.model import EventRepo
 from lorem_ipsum.model import UserRepo
 from lorem_ipsum.model import WordRepo
+from lorem_ipsum.model import StatsRepo
 from lorem_ipsum.serializers import from_json
 
 LOGGER = logging.getLogger('lorem-ipsum')
@@ -174,6 +175,19 @@ role_permissions = Table(
     Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True),
     Column('permission_id', String(64), ForeignKey('permissions.id'), primary_key=True))
+
+
+class ObjectPermissions(Base):
+    __tablename__ = 'object_permissions'
+
+    user_id = Column(String(100), primary_key=True)
+    object_id = Column(String(100), primary_key=True)
+    permission_id = Column(String(100), primary_key=True)
+    object_type = Column(String(100), unique=True)
+
+    def as_model(self) -> model.ObjectPermission:
+        return model.ObjectPermission(user_id=self.user_id, object_id=self.object_id, object_type=self.object_type,
+                                      permission_id=self.permission_id)
 
 
 class Role(Base):
@@ -445,6 +459,25 @@ class PostgresWordRepo(WordRepo):
         return {"total": count, "items": [word.as_model() for word in words]}
 
 
+class PostgresStatsRepo(StatsRepo):
+    def __init__(self, app_context: AppContext):
+        self._transaction_manager = app_context.transaction_manager
+
+    def _books_stats(self):
+        _session = self._transaction_manager.transaction.session
+        return [row for row in _session.execute(
+            'select count(b.id) as no_of_books, sum(b.no_of_pages) as no_of_pages from books b')][0]
+
+    def _words_stats(self):
+        _session = self._transaction_manager.transaction.session
+        return [row for row in _session.execute('select count(w.id) as no_of_words from words w')][0]
+
+    def get(self) -> model.Stats:
+        _books_stats = self._books_stats()
+        _words_stats = self._words_stats()
+        return model.Stats(_books_stats['no_of_books'], _books_stats['no_of_pages'], _words_stats['no_of_words'])
+
+
 class PostgresBookRepo(BookRepo):
     def next_id(self):
         return str(uuid.uuid4())
@@ -457,20 +490,43 @@ class PostgresBookRepo(BookRepo):
         book = _session.query(Book).filter(Book.id == id).first()
         return book.as_model() if book else None
 
-    def get_all(self, limit=10, offset=1, includes=None, owner_id=None):
+    def get_my_books(self, limit=10, offset=1, includes=None, owner_id=None):
         _session = self._transaction_manager.transaction.session
-        count = _session.query(Book).count()
+
+        count = _session.query(Book).filter(Book.owner_id == owner_id).count()
         page_count = None
         if includes == 'page_count':
             page_count = _session.query(
                 functions.sum(Book.no_of_pages)
-            ).scalar()
+            ).filter(Book.owner_id == owner_id).scalar()
         if owner_id:
             books = _session.query(Book).filter(Book.owner_id == owner_id).limit(limit).offset(offset)
         else:
             books = _session.query(Book).limit(limit).offset(offset)
 
         return {"total": count, "page_count": page_count, "items": [book.as_model() for book in books]}
+
+    def get_shared_books(self, limit=10, offset=1, includes=None):
+        _session = self._transaction_manager.transaction.session
+
+        count = _session.query(Book).join(ObjectPermissions, Book.id == ObjectPermissions.object_id).filter(
+            ObjectPermissions.object_type == 'book').count()
+        page_count = None
+        if includes == 'page_count':
+            page_count = _session.query(
+                functions.sum(Book.no_of_pages)
+            ).join(ObjectPermissions, Book.id == ObjectPermissions.object_id).filter(
+                ObjectPermissions.object_type == 'book').scalar()
+        books = _session.query(Book).join(ObjectPermissions, Book.id == ObjectPermissions.object_id).filter(
+            ObjectPermissions.object_type == 'book').limit(limit).offset(offset)
+        return {"total": count, "page_count": page_count, "items": [book.as_model() for book in books]}
+
+    def get_all(self, limit=10, offset=1, includes=None, owner_id=None, view=model.BookViews.MY_BOOKS):
+        if view == model.BookViews.MY_BOOKS:
+            return self.get_my_books(limit, offset, includes, owner_id)
+        if view == model.BookViews.SHARED_BOOKS:
+            return self.get_shared_books(limit, offset, includes)
+        raise NotImplementedError(f'View {view} not supported')
 
     def save(self, book: model.Book) -> model.Book:
         _book = Book.from_model(book)
@@ -495,6 +551,19 @@ class PostgresBookRepo(BookRepo):
         count = len(book_ids)
         books = _session.query(Book).filter(Book.id.in_(book_ids)).limit(15).offset(0).all()
         return {"total": count, "items": [book.as_model() for book in books]}
+
+    def get_permissions(self, book: model.Book) -> list[model.ObjectPermission]:
+        _session = self._transaction_manager.transaction.session
+        _permissions = []
+        result = _session.query(ObjectPermissions).filter(ObjectPermissions.object_id == book.id).all()
+        return [perm.as_model() for perm in result]
+
+    def share_book_with_user(self, book: Book, user: User):
+        _object_permissions = ObjectPermissions(object_id=book.id, user_id=user.id, object_type='book',
+                                                permission_id=model.Permissions.BOOKS_READ.value)
+        LOGGER.info(f'data = {_object_permissions}')
+        _session = self._transaction_manager.transaction.session
+        _session.add(_object_permissions)
 
 
 class PostgresEventRepo(EventRepo):
@@ -580,12 +649,6 @@ def db_setup(app_context: AppContext):
                 CONSTRAINT book_pk PRIMARY KEY (id)\
             )')
 
-    # _session.execute('CREATE TABLE IF NOT EXISTS public.users\
-    #         (\
-    #             username character varying(50) COLLATE pg_catalog."default" NOT NULL,\
-    #             password character varying(200) COLLATE pg_catalog."default" NOT NULL,\
-    #             CONSTRAINT user_pk PRIMARY KEY (username)\
-    #         )')
     _session.execute('CREATE TABLE IF NOT EXISTS public.words\
             (\
                 id character varying(50) COLLATE pg_catalog."default" NOT NULL,\
@@ -601,6 +664,14 @@ def db_setup(app_context: AppContext):
                 data jsonb NOT NULL,\
                 created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,\
                 CONSTRAINT event_pk PRIMARY KEY (id)\
+            )')
+    _session.execute('CREATE TABLE IF NOT EXISTS public.object_permissions\
+            (\
+                user_id integer NOT NULL,\
+                object_id character varying(200) NOT NULL,\
+                object_type character varying(200) NOT NULL,\
+                permission_id character varying(200) NOT NULL,\
+                CONSTRAINT object_permissions_pk PRIMARY KEY (user_id, object_id, permission_id)\
             )')
     # create_admin_user(app_context)
 

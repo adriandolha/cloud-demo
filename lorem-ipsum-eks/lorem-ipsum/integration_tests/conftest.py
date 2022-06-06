@@ -68,9 +68,9 @@ def user_valid2():
 
 
 @pytest.fixture
-def requests_standard_settings(config_valid):
+def requests_standard_settings(config_valid, admin_token_valid):
     return {"headers": {'Content-Type': 'application/json',
-                        'Authorization': f"Bearer {config_valid['admin_token']}"}, "timeout": 10}
+                        'Authorization': f"Bearer {admin_token_valid}"}, "timeout": 10}
 
 
 @pytest.fixture()
@@ -87,7 +87,29 @@ def user_moderator_valid():
 
 
 @pytest.fixture()
-def user_token_valid(config_valid, user_moderator_valid):
+def user_valid():
+    yield {"username": 'guest',
+           "password_hash": 'fake_user',
+           "email": "guest@yahoo.com",
+           "login_type": "basic",
+           "role": {"id": 2, "name": "user", "default": False, "users": [],
+                    "permissions": [{"id": "users:profile", "name": "users:profile", "roles": []},
+                                    {"id": "books:read", "name": "books:read", "roles": []},
+                                    {"id": "books:add", "name": "books:add", "roles": []}]
+                    },
+           "id": 1
+           }
+
+
+@pytest.fixture()
+def user_token_valid(config_valid, user_valid):
+    from lorem_ipsum.auth import issue_token_for_user
+    from lorem_ipsum.model import User
+    yield issue_token_for_user(User.from_dict(user_valid))
+
+
+@pytest.fixture()
+def moderator_token_valid(config_valid, user_moderator_valid):
     from lorem_ipsum.auth import issue_token_for_user
     from lorem_ipsum.model import User
     yield issue_token_for_user(User.from_dict(user_moderator_valid))
@@ -97,6 +119,12 @@ def user_token_valid(config_valid, user_moderator_valid):
 def requests_user_token_settings(config_valid, user_token_valid):
     return {"headers": {'Content-Type': 'application/json',
                         'Authorization': f'Bearer {user_token_valid}'}, "timeout": 10}
+
+
+@pytest.fixture
+def requests_moderator_token_settings(config_valid, moderator_token_valid):
+    return {"headers": {'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {moderator_token_valid}'}, "timeout": 10}
 
 
 @pytest.fixture()

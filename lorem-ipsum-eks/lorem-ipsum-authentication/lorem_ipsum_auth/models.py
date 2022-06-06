@@ -2,17 +2,10 @@ import datetime
 from enum import Enum
 
 from flask import current_app
-from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import Serializer
-from sqlalchemy import ForeignKey
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from lorem_ipsum_auth import db, login_manager
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+from lorem_ipsum_auth import db
 
 
 class Permissions(Enum):
@@ -50,7 +43,7 @@ class BlacklistToken(db.Model):
         return '<id: token: {}'.format(self.token)
 
 
-class User(UserMixin, db.Model):
+class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(64), unique=True, index=True)
@@ -241,10 +234,3 @@ class LoginType:
     BASIC = 'basic'
     GOOGLE = 'google'
 
-
-class AnonymousUser(AnonymousUserMixin):
-    def can(self, permissions):
-        return False
-
-    def is_administrator(self):
-        return False

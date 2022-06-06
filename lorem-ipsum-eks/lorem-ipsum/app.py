@@ -8,7 +8,6 @@ from flask import Flask, jsonify
 from prometheus_flask_exporter import PrometheusMetrics
 
 import gevent_psycopg2
-from lorem_ipsum.views import words, swaggerui_blueprint
 
 app = Flask('lorem-ipsum')
 LOGGER = logging.getLogger('lorem-ipsum')
@@ -33,22 +32,24 @@ def start_prometheus_metrics(app):
     REGISTRY.register(JsonCollector())
 
 
-def create_flask_app():
-    global app
-    from lorem_ipsum.views import books, users
-    app.url_map.strict_slashes = False
-    app.register_blueprint(books, url_prefix="/books")
-    app.register_blueprint(users, url_prefix="/users")
-    app.register_blueprint(words, url_prefix="/words")
-    app.register_blueprint(swaggerui_blueprint)
-    ExceptionHandlers(app)
+def create_flask_app(flask_app=app):
+    # global app
+    from lorem_ipsum.views import books, users, words, stats, swaggerui_blueprint
+
+    flask_app.url_map.strict_slashes = False
+    flask_app.register_blueprint(books, url_prefix="/books")
+    flask_app.register_blueprint(users, url_prefix="/users")
+    flask_app.register_blueprint(words, url_prefix="/words")
+    flask_app.register_blueprint(stats, url_prefix="/stats")
+    flask_app.register_blueprint(swaggerui_blueprint)
+    ExceptionHandlers(flask_app)
     _app_context = lorem_ipsum.create_app()
     _app_context.run_database_setup()
     LOGGER = logging.getLogger('lorem-ipsum')
     LOGGER.info(app.config)
     if _app_context.config['prometheus_metrics']:
-        start_prometheus_metrics(app)
-    return app
+        start_prometheus_metrics(flask_app)
+    return flask_app
 
 
 if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':

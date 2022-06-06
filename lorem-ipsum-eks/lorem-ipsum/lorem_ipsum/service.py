@@ -7,12 +7,22 @@ import sys
 from authlib.jose import jwt
 
 import lorem_ipsum.model
-from lorem_ipsum.model import MetricsService, BookService, UserService, WordService
-from lorem_ipsum.model import User, Book, Word, Event, Events
+from lorem_ipsum.model import MetricsService, BookService, UserService, WordService, StatsService
+from lorem_ipsum.model import User, Book, Word, Event, Events, BookViews, ObjectType
 from lorem_ipsum.repo import Transaction, transaction
 from lorem_ipsum.serializers import to_json, from_json
 
 LOGGER = logging.getLogger('lorem-ipsum')
+
+
+class DefaultStatsService(StatsService):
+    def __init__(self, app_context: lorem_ipsum.model.AppContext):
+        self._app_context = app_context
+
+    @transaction
+    def get(self) -> dict:
+        stats = self._app_context.stats_repo.get()
+        return stats.as_dict()
 
 
 class DefaultMetricsService(MetricsService):
@@ -72,9 +82,10 @@ class DefaultBookService(BookService):
         return _book.as_dict() if _book else None
 
     @transaction
-    def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None):
+    def get_all(self, id=None, limit=1, offset=1, includes=None, owner_id=None, view=BookViews.MY_BOOKS):
         LOGGER.debug(f'using connection pool {Transaction.db()}')
-        results = self._app_context.book_repo.get_all(limit=limit, offset=offset, includes=includes, owner_id=owner_id)
+        results = self._app_context.book_repo.get_all(limit=limit, offset=offset, includes=includes, owner_id=owner_id,
+                                                      view=view)
         results['items'] = [book.as_dict() for book in results['items']]
         return results
 
@@ -130,6 +141,19 @@ class DefaultBookService(BookService):
         results = self._app_context.book_repo.search(query=query)
         results['items'] = [book.as_dict() for book in results['items']]
         return results
+
+    @transaction
+    def share_book_with_user(self, id: str, username: str):
+        book = self._app_context.book_repo.get(id)
+        user = self._app_context.user_repo.get(username)
+        existing_permissions = self._app_context.book_repo.get_permissions(book)
+        is_already_shared = False
+        for perm in existing_permissions:
+            if perm.user_id == username and perm.object_id == id and perm.object_type == ObjectType.BOOK.value:
+                is_already_shared = True
+                LOGGER.debug(f'Book {id} is already shared with user {username}')
+        if not is_already_shared:
+            self._app_context.book_repo.share_book_with_user(book, user)
 
 
 class DefaultUserService(UserService):

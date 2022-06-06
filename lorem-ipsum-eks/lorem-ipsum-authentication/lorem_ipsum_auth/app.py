@@ -1,16 +1,14 @@
 import logging
 
 from flask import Flask
-from flask_bootstrap import Bootstrap
 from flask_swagger_ui import get_swaggerui_blueprint
 
 import gevent_psycopg2
 import lorem_ipsum_auth
-from lorem_ipsum_auth import login_manager, db
+from lorem_ipsum_auth import db
 from lorem_ipsum_auth.auth import token_auth, users, ExceptionHandlers
 from lorem_ipsum_auth.google_oauth import google_oauth
-from lorem_ipsum_auth.models import AnonymousUser, Role, User, Permission
-from lorem_ipsum_auth.routes import auth, main
+from lorem_ipsum_auth.models import Role, User, Permission
 
 
 def prepare_orm_for_gevent():
@@ -46,18 +44,17 @@ def create_flask_app():
             User.insert_users(_config)
 
     db.init_app(app)
-    app.register_blueprint(auth)
-    app.register_blueprint(main)
     app.register_blueprint(google_oauth, url_prefix='/api/auth/google')
     app.register_blueprint(token_auth, url_prefix='/api/auth')
     app.register_blueprint(users, url_prefix='/api/users')
     swaggerui_blueprint = get_swaggerui_blueprint('/api/auth/docs', '/api/auth/spec')
     app.register_blueprint(swaggerui_blueprint)
-    login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
-    login_manager.anonymous_user = AnonymousUser
     app.url_map.strict_slashes = False
-    Bootstrap(app)
     ExceptionHandlers(app)
+
+    @app.route('/health', methods=['GET'])
+    def health():
+        LOGGER.info('Checking system health...')
+        return 'all_good'
     LOGGER.debug(app.config)
     return app

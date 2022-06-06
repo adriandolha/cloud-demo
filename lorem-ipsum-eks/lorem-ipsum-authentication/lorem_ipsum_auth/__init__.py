@@ -4,13 +4,11 @@ import platform
 from functools import lru_cache
 
 import boto3
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
 import lorem_ipsum_auth
 
 db = SQLAlchemy()
-login_manager = LoginManager()
 
 
 def get_ssm_secret(parameter_name, decrypt=True):

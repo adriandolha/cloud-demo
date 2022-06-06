@@ -1,3 +1,4 @@
+import logging
 import os
 
 if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
@@ -13,6 +14,8 @@ if __name__ == "__main__" or __name__ == 'app' and os.getenv('env') != 'test':
     import app
 
     flask_app = app.create_flask_app()
+    LOGGER = logging.getLogger('lorem-ipsum')
+    LOGGER.setLevel(logging.DEBUG)
     from lorem_ipsum.search_engine import SearchEngine
     SearchEngine.start_search_engine()
     flask_app.run(port=5000, debug=False)
