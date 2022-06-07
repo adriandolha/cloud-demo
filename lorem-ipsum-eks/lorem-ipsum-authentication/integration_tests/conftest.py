@@ -55,7 +55,8 @@ def delete_user(admin_access_token, config_valid, username):
 @pytest.fixture()
 def user_valid2():
     yield {"username": 'test_user2',
-           "password": 'pwd'
+           "password": 'pwd',
+           "email": "test_user2@gmail.com"
            }
 
 
@@ -106,6 +107,15 @@ def role_editor_valid():
     yield {'default': False, 'id': None, 'name': 'ROLE_EDITOR',
            'permissions': [{'id': 'books:read', 'name': 'books:read'}, {'id': 'books:write', 'name': 'books:write'},
                            {'id': 'books:add', 'name': 'books:add'}, {'id': 'users:profile', 'name': 'users:profile'}]}
+
+
+@pytest.fixture()
+def role_admin_valid():
+    yield {'default': False, 'id': None, 'name': 'ROLE_ADMIN',
+           'permissions': [{'id': 'books:add', 'name': 'books:add'},
+                           {'id': 'books:read', 'name': 'books:read'},
+                           {'id': 'books:write', 'name': 'books:write'},
+                           {'id': 'users:profile', 'name': 'users:profile'}]}
 
 
 @pytest.fixture()

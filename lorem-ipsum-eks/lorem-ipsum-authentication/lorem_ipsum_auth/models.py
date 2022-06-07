@@ -55,6 +55,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(128))
     login_type = db.Column(db.String(64), default='basic')
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    role = db.relationship("Role", back_populates="users")
 
     @property
     def password(self):
@@ -91,8 +92,6 @@ class User(db.Model):
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
-        if self.role is None:
-            self.role = Role.query.filter_by(default=True).first()
 
     @staticmethod
     def get_basic_user(email: str):
@@ -157,7 +156,7 @@ class Role(db.Model):
     name = db.Column(db.String(64), unique=True)
     default = db.Column(db.Boolean, default=False, index=True)
     permissions = db.relationship('Permission', secondary=role_permissions, back_populates="roles")
-    users = db.relationship('User', backref='role', lazy='dynamic')
+    users = db.relationship('User', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super(Role, self).__init__(**kwargs)

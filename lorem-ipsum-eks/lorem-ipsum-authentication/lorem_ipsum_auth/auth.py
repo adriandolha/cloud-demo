@@ -314,6 +314,7 @@ def register():
     user = User(email=_request['email'],
                 username=_request['username'],
                 password=_request['password'])
+    user.role = Role.query.filter_by(default=True).first()
 
     db.session.add(user)
     db.session.commit()
@@ -486,7 +487,117 @@ def get_user(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return jsonify('Not found.'), 404
-    return jsonify(user.to_json()), 200
+    return jsonify(api.User.from_orm(user).dict()), 200
+
+
+@users.route('/', methods=['GET'], strict_slashes=False)
+@requires_permission([Permissions.USERS_ADMIN])
+def get_users():
+    """
+        Get users.
+        ---
+         definitions:
+          - schema:
+              id: GetUsersResult
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total number of items.
+                items:
+                  type: array
+                  description: List of users
+                  items:
+                    oneOf:
+                      - $ref: "#/definitions/User"
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                200:
+                    description: List of users.
+                    schema:
+                        $ref: '#/definitions/GetUsersResult'
+                401:
+                    description: Invalid token.
+    """
+
+    _users = list(map(lambda user: api.User.from_orm(user).dict(), User.query.all()))
+    return jsonify({'total': len(_users), 'items': _users}), 200
+
+
+@token_auth.route('/roles', methods=['GET'], strict_slashes=False)
+@requires_permission([Permissions.USERS_ADMIN])
+def get_roles():
+    """
+        Get roles.
+        ---
+         definitions:
+          - schema:
+              id: GetRolesResult
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total number of items.
+                items:
+                  type: array
+                  description: List of roles
+                  items:
+                    oneOf:
+                      - $ref: "#/definitions/Role"
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                200:
+                    description: List of roles.
+                    schema:
+                        $ref: '#/definitions/GetRolesResult'
+                401:
+                    description: Invalid token.
+    """
+
+    _roles = list(map(lambda user: api.Role.from_orm(user).dict(), Role.query.all()))
+    return jsonify({'total': len(_roles), 'items': _roles}), 200
+
+
+@token_auth.route('/roles/<name>', methods=['GET'])
+@requires_permission([Permissions.USERS_ADMIN])
+def get_role(name):
+    """
+        Get role.
+        ---
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+            - in: query
+              name: name
+              required: true
+              type: string
+              description: Role name
+        responses:
+                200:
+                    description: Role.
+                    schema:
+                        $ref: '#/definitions/User'
+                401:
+                    description: Invalid token.
+    """
+
+    role = Role.query.filter_by(name=name).first()
+    if not role:
+        return jsonify('Not found.'), 404
+    return jsonify(api.Role.from_orm(role).dict()), 200
 
 
 @token_auth.route('/roles', methods=['POST'])
@@ -541,6 +652,42 @@ def add_role():
     db.session.add(role)
     db.session.commit()
     return jsonify(api.Role.from_orm(role).dict()), 200
+
+
+@users.route('/<username>', methods=['PUT'])
+@requires_permission([Permissions.USERS_ADMIN])
+def update_user(username):
+    """
+        Update user.
+        ---
+
+        parameters:
+            - in: body
+              name: user
+              required: true
+              description: user
+              schema:
+                  $ref: "#/definitions/User"
+        responses:
+                200:
+                    description: Updated user.
+                    schema:
+                        $ref: '#/definitions/User'
+                401:
+                    description: Invalid username or password.
+    """
+    _request = from_json(request.data.decode('utf-8'))
+    api_user = api.User(**_request)
+    user = User.query.filter_by(username=api_user.username).first()
+    if not user:
+        return jsonify('User not found.'), 404
+    if user.username != username:
+        return jsonify('Invalid username.'), 404
+
+    role = Role.query.filter_by(name=api_user.role.name).first()
+    user.role = role
+    db.session.commit()
+    return jsonify(api.User.from_orm(user).dict()), 200
 
 
 @token_auth.route('/permissions', methods=['POST'])

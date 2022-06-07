@@ -92,3 +92,53 @@ class TestJWT:
         _response_data = from_json(_response.content.decode('utf-8'))
         assert _response_data['username'] == 'admin'
         assert _response_data['roles'] == ['ROLE_ADMIN']
+
+
+class TestUser:
+    def add_user(self, user: dict, admin_access_token, config_valid):
+        username = user['username']
+        _response = requests.delete(url=f'{config_valid["root_url"]}/api/users/{username}',
+                                    headers={'Content-Type': 'application/json',
+                                             'Authorization': f'Bearer {admin_access_token}'}, timeout=3)
+        assert _response.status_code == 204
+
+        _response = requests.post(url=f'{config_valid["root_url"]}/api/auth/signup',
+                                  headers={'Content-Type': 'application/json'}, timeout=5,
+                                  data=to_json(user).encode('utf-8'))
+        print(_response.content)
+        assert _response.status_code == 200
+        headers = {'Authorization': f'Bearer {admin_access_token}'}
+        _response = requests.get(url=f'{config_valid["root_url"]}/api/users/{username}',
+                                 headers=headers, timeout=5,
+                                 data=to_json(user).encode('utf-8'))
+        assert _response.status_code == 200
+        return from_json(_response.content.decode('utf-8'))
+
+    def test_update_user(self, config_valid, user_valid2, role_editor_valid, admin_access_token):
+        _user = self.add_user(user_valid2, admin_access_token, config_valid)
+        username = user_valid2['username']
+        headers = {'Authorization': f'Bearer {admin_access_token}'}
+
+        _user['role'] = role_editor_valid
+        _response = requests.put(url=f'{config_valid["root_url"]}/api/users/{username}',
+                                 headers=headers, timeout=5,
+                                 data=to_json(_user).encode('utf-8'))
+        print(_response.content)
+        assert _response.status_code == 200
+        _updated_user = from_json(_response.content.decode('utf-8'))
+        print(_updated_user)
+        assert _updated_user['role']['name'] == role_editor_valid['name']
+        assert _updated_user['role']['default'] == role_editor_valid['default']
+        for perm in _updated_user['role']['permissions']:
+            assert perm in role_editor_valid['permissions']
+
+    def test_get_users(self, config_valid, admin_access_token):
+        _response = requests.get(url=f'{config_valid["root_url"]}/api/users',
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': f'Bearer {admin_access_token}'}, timeout=3)
+        assert _response.status_code == 200
+        _response_data = from_json(_response.content.decode('utf-8'))
+        assert _response_data['total'] > 1
+        assert len(_response_data['items']) > 1
+        assert _response_data['items'][0].get('username')
+        assert _response_data['items'][0].get('role')

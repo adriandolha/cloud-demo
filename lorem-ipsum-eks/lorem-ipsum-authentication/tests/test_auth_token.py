@@ -13,6 +13,7 @@ class TestAuthToken:
                     permissions=[Permission.from_str(perm) for perm in role['permissions']])
         Role.query.filter_by.return_value.first.return_value = role
         user = User.from_dict(user)
+        user.role = role
         User.query.filter_by.return_value.filter_by.return_value.first.return_value = user
         User.query.filter_by.return_value.first.return_value = user
         return issue_token_for_user(user)

@@ -46,3 +46,81 @@ class TestAuthUser:
         assert _response.status_code == 400
         data = json.loads(_response.data.decode('utf-8'))
         assert data == 'User already registered'
+
+    def test_user_profile(self, client, config_valid, login_valid_request, user_valid, role_admin_valid,
+                          query_mock, user_access_token):
+        _response = client.get('/api/auth/profile', headers={'Authorization': f'Bearer {user_access_token}'})
+        assert _response.status_code == 200
+        data = json.loads(_response.data.decode('utf-8'))
+        # assert data['access_token']
+        assert data['username'] == user_valid['username']
+        assert len(data['roles']) == 1
+        assert role_admin_valid['name'] in data['roles']
+        assert len(data['permissions']) == 4
+        assert data['permissions'] == ['books:add', 'books:read', 'books:write', 'users:profile']
+
+    def test_user_get(self, client, config_valid, login_valid_request, user_valid, role_admin_valid,
+                      query_mock, admin_access_token):
+        _response = client.get(f'/api/users/{user_valid["username"]}',
+                               headers={'Authorization': f'Bearer {admin_access_token}'})
+        assert _response.status_code == 200
+        data = json.loads(_response.data.decode('utf-8'))
+        # assert data['access_token']
+        assert data['username'] == user_valid['username']
+        assert role_admin_valid['name'] == data['role']['name']
+        assert len(data['role']['permissions']) == 5
+        print(data['role']['permissions'])
+        assert data['role']['permissions'] == [{'id': 'books:add', 'name': 'books:add'},
+                                               {'id': 'books:read', 'name': 'books:read'},
+                                               {'id': 'books:write', 'name': 'books:write'},
+                                               {'id': 'users:profile', 'name': 'users:profile'},
+                                               {'id': 'users:admin', 'name': 'users:admin'}]
+
+    def test_get_users(self, client, config_valid, login_valid_request, user_valid, role_admin_valid,
+                       query_mock, admin_access_token):
+        from lorem_ipsum_auth.models import User
+        User.query.all.return_value = [login_valid_request]
+        _response = client.get(f'/api/users',
+                               headers={'Authorization': f'Bearer {admin_access_token}'})
+        assert _response.status_code == 200
+        data = json.loads(_response.data.decode('utf-8'))
+        assert data['total'] == 1
+        _user = data['items'][0]
+        # assert data['access_token']
+        assert _user['username'] == user_valid['username']
+        assert role_admin_valid['name'] == _user['role']['name']
+        assert len(_user['role']['permissions']) == 5
+        print(_user['role']['permissions'])
+        assert _user['role']['permissions'] == [{'id': 'books:add', 'name': 'books:add'},
+                                               {'id': 'books:read', 'name': 'books:read'},
+                                               {'id': 'books:write', 'name': 'books:write'},
+                                               {'id': 'users:profile', 'name': 'users:profile'},
+                                               {'id': 'users:admin', 'name': 'users:admin'}]
+
+    def test_user_update(self, client, config_valid, login_valid_request, user_valid, role_admin_valid,
+                         query_mock, admin_access_token, role_editor_valid):
+        user_valid['role'] = role_editor_valid
+        _response = client.put(f'/api/users/{user_valid["username"]}',
+                               headers={'Authorization': f'Bearer {admin_access_token}'}, json=user_valid)
+        assert _response.status_code == 200
+        data = json.loads(_response.data.decode('utf-8'))
+        # assert data['access_token']
+        assert data['username'] == user_valid['username']
+        assert role_admin_valid['name'] == data['role']['name']
+        assert len(data['role']['permissions']) == 5
+        print(data['role']['permissions'])
+        assert data['role']['permissions'] == [{'id': 'books:add', 'name': 'books:add'},
+                                               {'id': 'books:read', 'name': 'books:read'},
+                                               {'id': 'books:write', 'name': 'books:write'},
+                                               {'id': 'users:profile', 'name': 'users:profile'},
+                                               {'id': 'users:admin', 'name': 'users:admin'}]
+
+    def test_user_update_not_found(self, client, config_valid, update_user_request_not_found, user_valid1,
+                                   role_admin_valid,
+                                   admin_access_token, role_editor_valid):
+        from lorem_ipsum_auth.models import User
+        User.query.filter_by.return_value.first.return_value = None
+        user_valid1['role'] = role_editor_valid
+        _response = client.put(f'/api/users/{user_valid1["username"]}',
+                               headers={'Authorization': f'Bearer {admin_access_token}'}, json=user_valid1)
+        assert _response.status_code == 404
