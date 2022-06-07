@@ -45,3 +45,22 @@ class TestAuthPermission:
         _response = client.delete(f'/api/auth/permissions/fake', json=role_editor_valid,
                                   headers={'Authorization': f'Bearer {user_access_token}'})
         assert _response.status_code == 403
+
+    def test_get_permissions(self, client, config_valid, permission_add_valid_request, admin_access_token,
+                             permission_edit_books_valid):
+        from lorem_ipsum_auth.models import Permission
+        Permission.query.filter_by.return_value.first.return_value = None
+        Permission.query.all.return_value = [Permission.from_str(permission_edit_books_valid['name'])]
+        _response = client.get('/api/auth/permissions', headers={'Authorization': f'Bearer {admin_access_token}'})
+        assert _response.status_code == 200
+        data = json.loads(_response.data.decode('utf-8'))
+        assert data['total'] == 1
+        _perm = data['items'][0]
+        assert _perm['name'] == permission_edit_books_valid['name']
+        assert _perm['id'] == permission_edit_books_valid['id']
+
+    def test_get_permissions_requires_permission(self, client, config_valid, permission_add_valid_request,
+                                                 user_access_token,
+                                                 permission_edit_books_valid):
+        _response = client.get('/api/auth/permissions', headers={'Authorization': f'Bearer {user_access_token}'})
+        assert _response.status_code == 403

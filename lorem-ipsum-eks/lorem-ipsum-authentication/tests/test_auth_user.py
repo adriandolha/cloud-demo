@@ -92,10 +92,10 @@ class TestAuthUser:
         assert len(_user['role']['permissions']) == 5
         print(_user['role']['permissions'])
         assert _user['role']['permissions'] == [{'id': 'books:add', 'name': 'books:add'},
-                                               {'id': 'books:read', 'name': 'books:read'},
-                                               {'id': 'books:write', 'name': 'books:write'},
-                                               {'id': 'users:profile', 'name': 'users:profile'},
-                                               {'id': 'users:admin', 'name': 'users:admin'}]
+                                                {'id': 'books:read', 'name': 'books:read'},
+                                                {'id': 'books:write', 'name': 'books:write'},
+                                                {'id': 'users:profile', 'name': 'users:profile'},
+                                                {'id': 'users:admin', 'name': 'users:admin'}]
 
     def test_user_update(self, client, config_valid, login_valid_request, user_valid, role_admin_valid,
                          query_mock, admin_access_token, role_editor_valid):
@@ -124,3 +124,12 @@ class TestAuthUser:
         _response = client.put(f'/api/users/{user_valid1["username"]}',
                                headers={'Authorization': f'Bearer {admin_access_token}'}, json=user_valid1)
         assert _response.status_code == 404
+
+    def test_get_users_permission_required(self, client, config_valid, login_valid_request, user_valid,
+                                           role_admin_valid,
+                                           user_access_token, query_mock):
+        from lorem_ipsum_auth.models import User
+        User.query.all.return_value = [login_valid_request]
+
+        _response = client.get(f'/api/users', headers={'Authorization': f'Bearer {user_access_token}'})
+        assert _response.status_code == 403

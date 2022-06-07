@@ -207,7 +207,7 @@ def user_admin_valid():
            }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture()
 def user_valid():
     import werkzeug.security
     yield {"username": 'admin',
@@ -278,11 +278,11 @@ def issue_token(user: dict, role: dict) -> str:
     role = Role(id=user['id'], name=role['name'],
                 permissions=[Permission.from_str(perm) for perm in role['permissions']])
     Role.query.filter_by.return_value.first.return_value = role
-    user = User.from_dict(user)
-    user.role = role
-    User.query.filter_by.return_value.filter_by.return_value.first.return_value = user
-    User.query.filter_by.return_value.first.return_value = user
-    return issue_token_for_user(user)
+    _user = User.from_dict(user)
+    _user.role = role
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = _user
+    User.query.filter_by.return_value.first.return_value = _user
+    return issue_token_for_user(_user)
 
 
 @pytest.fixture()

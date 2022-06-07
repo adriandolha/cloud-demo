@@ -496,7 +496,7 @@ def get_users():
     """
         Get users.
         ---
-         definitions:
+        definitions:
           - schema:
               id: GetUsersResult
               type: object
@@ -535,7 +535,7 @@ def get_roles():
     """
         Get roles.
         ---
-         definitions:
+        definitions:
           - schema:
               id: GetRolesResult
               type: object
@@ -566,6 +566,45 @@ def get_roles():
 
     _roles = list(map(lambda user: api.Role.from_orm(user).dict(), Role.query.all()))
     return jsonify({'total': len(_roles), 'items': _roles}), 200
+
+
+@token_auth.route('/permissions', methods=['GET'], strict_slashes=False)
+@requires_permission([Permissions.USERS_ADMIN])
+def get_permissions():
+    """
+        Get permissions.
+        ---
+        definitions:
+          - schema:
+              id: GetPermissionsResult
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total number of items.
+                items:
+                  type: array
+                  description: List of permissions
+                  items:
+                    oneOf:
+                      - $ref: "#/definitions/Permission"
+        parameters:
+            - in: header
+              name: X-Token-String
+              required: true
+              type: string
+              description: Access token JWT.
+        responses:
+                200:
+                    description: List of permissions.
+                    schema:
+                        $ref: '#/definitions/GetPermissionsResult'
+                401:
+                    description: Invalid token.
+    """
+
+    _permissions = list(map(lambda user: api.Permission.from_orm(user).dict(), Permission.query.all()))
+    return jsonify({'total': len(_permissions), 'items': _permissions}), 200
 
 
 @token_auth.route('/roles/<name>', methods=['GET'])

@@ -115,6 +115,7 @@ def role_admin_valid():
            'permissions': [{'id': 'books:add', 'name': 'books:add'},
                            {'id': 'books:read', 'name': 'books:read'},
                            {'id': 'books:write', 'name': 'books:write'},
+                           {'id': 'users:admin', 'name': 'users:admin'},
                            {'id': 'users:profile', 'name': 'users:profile'}]}
 
 
