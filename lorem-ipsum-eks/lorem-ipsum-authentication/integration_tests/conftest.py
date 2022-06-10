@@ -61,6 +61,17 @@ def user_valid2():
 
 
 @pytest.fixture()
+def new_user_valid():
+    yield {"username": 'test_user3',
+           "password": 'valid_password',
+           "email": "test_user3@yahoo.com",
+           "login_type": "basic",
+           "role_id": 2,
+           "id": 2
+           }
+
+
+@pytest.fixture()
 def metrics_request_no_fields(config_valid):
     import app
     with app.app.test_request_context():
@@ -105,6 +116,13 @@ def admin_access_token_logout(config_valid):
 @pytest.fixture()
 def role_editor_valid():
     yield {'default': False, 'id': None, 'name': 'ROLE_EDITOR',
+           'permissions': [{'id': 'books:read', 'name': 'books:read'}, {'id': 'books:write', 'name': 'books:write'},
+                           {'id': 'books:add', 'name': 'books:add'}, {'id': 'users:profile', 'name': 'users:profile'}]}
+
+
+@pytest.fixture()
+def role_update_valid():
+    yield {'default': False, 'id': None, 'name': 'ROLE_TEST',
            'permissions': [{'id': 'books:read', 'name': 'books:read'}, {'id': 'books:write', 'name': 'books:write'},
                            {'id': 'books:add', 'name': 'books:add'}, {'id': 'users:profile', 'name': 'users:profile'}]}
 

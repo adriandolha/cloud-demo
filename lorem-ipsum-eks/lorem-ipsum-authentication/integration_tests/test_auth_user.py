@@ -95,7 +95,7 @@ class TestJWT:
 
 
 class TestUser:
-    def add_user(self, user: dict, admin_access_token, config_valid):
+    def register_user(self, user: dict, admin_access_token, config_valid):
         username = user['username']
         _response = requests.delete(url=f'{config_valid["root_url"]}/api/users/{username}',
                                     headers={'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ class TestUser:
         return from_json(_response.content.decode('utf-8'))
 
     def test_update_user(self, config_valid, user_valid2, role_editor_valid, admin_access_token):
-        _user = self.add_user(user_valid2, admin_access_token, config_valid)
+        _user = self.register_user(user_valid2, admin_access_token, config_valid)
         username = user_valid2['username']
         headers = {'Authorization': f'Bearer {admin_access_token}'}
 
@@ -142,3 +142,29 @@ class TestUser:
         assert len(_response_data['items']) > 1
         assert _response_data['items'][0].get('username')
         assert _response_data['items'][0].get('role')
+
+    def test_add_user_valid(self, config_valid, new_user_valid, role_editor_valid, admin_access_token):
+        username = new_user_valid['username']
+        headers = {'Authorization': f'Bearer {admin_access_token}'}
+        _response = requests.delete(url=f'{config_valid["root_url"]}/api/users/{username}',
+                                    headers={'Content-Type': 'application/json',
+                                             'Authorization': f'Bearer {admin_access_token}'}, timeout=3)
+        assert _response.status_code == 204
+
+        new_user_valid['role'] = role_editor_valid
+        _response = requests.post(url=f'{config_valid["root_url"]}/api/users',
+                                  headers=headers, timeout=5,
+                                  data=to_json(new_user_valid).encode('utf-8'))
+        print(_response.content)
+        assert _response.status_code == 200
+        _updated_user = from_json(_response.content.decode('utf-8'))
+        print(_updated_user)
+        assert _updated_user['username'] == new_user_valid['username']
+        assert _updated_user['email'] == new_user_valid['email']
+        assert _updated_user['login_type'] == 'basic'
+        assert not _updated_user.get('password')
+        assert not _updated_user.get('password_hash')
+        assert _updated_user['role']['name'] == role_editor_valid['name']
+        assert _updated_user['role']['default'] == role_editor_valid['default']
+        for perm in _updated_user['role']['permissions']:
+            assert perm in role_editor_valid['permissions']

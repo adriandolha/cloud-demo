@@ -13,4 +13,5 @@ requests
 flask_swagger==0.2.14
 flask_swagger_ui==3.36.0
 pydantic==1.9.1
+email-validator==1.2.1
 

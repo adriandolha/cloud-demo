@@ -54,3 +54,10 @@ spec:
             name: lorem-ipsum-auth
             port:
               number: 80
+      - pathType: Prefix
+        path: /api/users
+        backend:
+          service:
+            name: lorem-ipsum-auth
+            port:
+              number: 80

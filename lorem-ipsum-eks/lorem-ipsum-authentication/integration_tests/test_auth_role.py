@@ -21,6 +21,27 @@ class TestRole:
         assert len(data['permissions']) == 4
         assert data['permissions'] == role_editor_valid['permissions']
 
+    def test_role_update(self, config_valid, admin_access_token, role_update_valid):
+        _response = requests.delete(url=f'{config_valid["root_url"]}/api/auth/roles/{role_update_valid["name"]}',
+                                    headers={'Content-Type': 'application/json',
+                                             'Authorization': f'Bearer {admin_access_token}'}, timeout=5,
+                                    data=to_json(role_update_valid).encode('utf-8'))
+        assert _response.status_code == 204
+        _response = requests.post(url=f'{config_valid["root_url"]}/api/auth/roles',
+                                  headers={'Content-Type': 'application/json',
+                                           'Authorization': f'Bearer {admin_access_token}'}, timeout=5,
+                                  data=to_json(role_update_valid).encode('utf-8'))
+        print(_response.content)
+        assert _response.status_code == 200
+        role_update_valid['permissions'] = [{'id': 'books:read', 'name': 'books:read'}]
+        _response = requests.put(url=f'{config_valid["root_url"]}/api/auth/roles/{role_update_valid["name"]}',
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': f'Bearer {admin_access_token}'}, timeout=5,
+                                 data=to_json(role_update_valid).encode('utf-8'))
+        data = from_json(_response.content.decode('utf-8'))
+        assert len(data['permissions']) == 1
+        assert data['permissions'] == [{'id': 'books:read', 'name': 'books:read'}]
+
     def test_role_get(self, config_valid, admin_access_token, role_admin_valid):
         _response = requests.get(url=f'{config_valid["root_url"]}/api/auth/roles/{role_admin_valid["name"]}',
                                  headers={'Content-Type': 'application/json',

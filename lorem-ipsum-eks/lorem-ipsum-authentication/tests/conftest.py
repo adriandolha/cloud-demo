@@ -3,6 +3,8 @@ import os
 import pytest
 import mock
 
+import lorem_ipsum_auth
+
 
 @pytest.fixture(scope='session')
 def config_valid():
@@ -23,7 +25,8 @@ def db_session(config_valid):
             with mock.patch('flask_sqlalchemy.SQLAlchemy.create_session'):
                 with mock.patch('flask_sqlalchemy.SignallingSession'):
                     with mock.patch('flask_sqlalchemy.SQLAlchemy.create_scoped_session'):
-                        yield
+                        with mock.patch('lorem_ipsum_auth.db.session') as session:
+                            yield session
 
 
 @pytest.fixture()
@@ -62,6 +65,20 @@ def login_valid_request(query_mock, user_admin_valid, role_admin_valid):
     admin_user.role = role
     User.query.filter_by.return_value.filter_by.return_value.first.return_value = admin_user
     User.query.filter_by.return_value.first.return_value = admin_user
+    yield admin_user
+
+
+@pytest.fixture()
+def user_add_request_valid(query_mock, user_admin_valid, role_admin_valid):
+    from lorem_ipsum_auth.models import User, Role, Permission
+
+    role = Role(id=role_admin_valid['id'], name=role_admin_valid['name'], default=role_admin_valid['default'],
+                permissions=[Permission.from_str(perm) for perm in role_admin_valid['permissions']])
+    Role.query.filter_by.return_value.first.return_value = role
+    admin_user = User.from_dict(user_admin_valid)
+    admin_user.role = role
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = admin_user
+    User.query.filter.return_value.first.return_value = None
     yield admin_user
 
 
@@ -110,6 +127,29 @@ def role_add_valid_request(query_mock, user_admin_valid, role_editor_valid):
     User.query.filter_by.return_value.first.return_value = User.from_dict(
         user_admin_valid)
     yield user_admin_valid
+
+
+@pytest.fixture()
+def role_update_valid_request(query_mock, user_admin_valid, role_editor_valid):
+    from lorem_ipsum_auth.models import User, Role, Permission
+    orig_query = Role.query.filter_by.return_value
+    role = Role(id=role_editor_valid['id'], name=role_editor_valid['name'], default=role_editor_valid['default'],
+                permissions=[Permission.from_str(perm) for perm in role_editor_valid['permissions']])
+
+    def _filter_by(*args, **kwargs):
+        if kwargs.get('name') == role_editor_valid['name']:
+            _mock = mock.MagicMock()
+            _mock.first.return_value = role
+            return _mock
+        return orig_query
+
+    Role.query.filter_by.side_effect = _filter_by
+
+    User.query.filter_by.return_value.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    User.query.filter_by.return_value.first.return_value = User.from_dict(
+        user_admin_valid)
+    yield role
 
 
 @pytest.fixture()
@@ -224,6 +264,17 @@ def user_valid1():
     import werkzeug.security
     yield {"username": 'test_user1',
            "password_hash": werkzeug.security.generate_password_hash('fake_admin_password'),
+           "email": "test_user1@yahoo.com",
+           "login_type": "basic",
+           "role_id": 2,
+           "id": 2
+           }
+
+
+@pytest.fixture(scope='session')
+def new_user_valid():
+    yield {"username": 'test_user1',
+           "password": 'valid_password',
            "email": "test_user1@yahoo.com",
            "login_type": "basic",
            "role_id": 2,

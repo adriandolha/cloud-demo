@@ -5,6 +5,8 @@ import logging
 
 from authlib.jose import JsonWebKey, jwt
 from flask import g, jsonify, Blueprint, request, current_app as app, make_response
+from sqlalchemy import or_
+
 from lorem_ipsum_auth import db, create_app_context, api
 from lorem_ipsum_auth.models import LoginType, User, Permission, BlacklistToken, Permissions, Role, ValidationError
 from lorem_ipsum_auth.serializers import from_json, to_json
@@ -314,7 +316,10 @@ def register():
     user = User(email=_request['email'],
                 username=_request['username'],
                 password=_request['password'])
-    user.role = Role.query.filter_by(default=True).first()
+    default_role = Role.query.filter_by(default=True).first()
+    if not default_role:
+        raise ValidationError('Invalid role.')
+    user.role = default_role
 
     db.session.add(user)
     db.session.commit()
@@ -693,6 +698,82 @@ def add_role():
     return jsonify(api.Role.from_orm(role).dict()), 200
 
 
+@token_auth.route('/roles/<name>', methods=['PUT'])
+@requires_permission([Permissions.USERS_ADMIN])
+def update_role(name):
+    """
+        Update role permissions.
+        ---
+        parameters:
+            - in: body
+              name: role
+              required: true
+              description: role
+              schema:
+                  $ref: "#/definitions/Role"
+        responses:
+                200:
+                    description: Updated role.
+                    schema:
+                        $ref: '#/definitions/Role'
+                401:
+                    description: Invalid username or password.
+    """
+    _request = from_json(request.data.decode('utf-8'))
+    api_role = api.Role(**_request)
+    role = Role.query.filter_by(name=api_role.name).first()
+    if not role:
+        return jsonify('Role not found.'), 404
+    role.reset_permissions()
+    if role.name != name:
+        return jsonify('Invalid role name.'), 400
+    if (not api_role.permissions) or len(api_role.permissions) == 0:
+        raise ValidationError('Invalid permissions.')
+    for api_permission in api_role.permissions:
+        permission = Permission.query.filter_by(name=api_permission.name).first()
+        if not permission:
+            raise ValidationError(f'Permission {api_permission.name} not found.')
+        role.add_permission(permission)
+    db.session.commit()
+    return jsonify(api.Role.from_orm(role).dict()), 200
+
+
+@users.route('/', methods=['POST'], strict_slashes=False)
+@requires_permission([Permissions.USERS_ADMIN])
+def add_user():
+    """
+        Add user.
+        ---
+        parameters:
+            - in: body
+              name: user
+              required: true
+              description: role
+              schema:
+                  $ref: "#/definitions/User"
+        responses:
+                200:
+                    description: New user.
+                    schema:
+                        $ref: '#/definitions/User'
+                401:
+                    description: Invalid username or password.
+    """
+    _request = from_json(request.data.decode('utf-8'))
+    api_user = api.CreateUser(**_request)
+    user = User.query.filter(or_(User.username == api_user.username, User.email == api_user.email)).first()
+    if user:
+        raise ValidationError('User already registered.')
+    role = Role.query.filter_by(name=api_user.role.name).first()
+    if not role:
+        raise ValidationError('Invalid role.')
+    user = User(username=api_user.username, login_type=LoginType.BASIC, email=api_user.email, role=role,
+                password=api_user.password)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(api.User.from_orm(user).dict()), 200
+
+
 @users.route('/<username>', methods=['PUT'])
 @requires_permission([Permissions.USERS_ADMIN])
 def update_user(username):
@@ -722,8 +803,15 @@ def update_user(username):
         return jsonify('User not found.'), 404
     if user.username != username:
         return jsonify('Invalid username.'), 404
+    if api_user.email and user.email != api_user.email:
+        _user = User.query.filter_by(email=api_user.email).first()
+        if _user:
+            return jsonify('Email already assigned.'), 404
+        user.email = api_user.email
 
     role = Role.query.filter_by(name=api_user.role.name).first()
+    if not role:
+        return jsonify('Invalid role.'), 404
     user.role = role
     db.session.commit()
     return jsonify(api.User.from_orm(user).dict()), 200
@@ -775,7 +863,9 @@ def add_permission():
 
 
 @token_auth.after_request
+@users.after_request
 def apply_cors(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', '*')
+    response.headers.add('Access-Control-Allow-Methods', '*')
     return response

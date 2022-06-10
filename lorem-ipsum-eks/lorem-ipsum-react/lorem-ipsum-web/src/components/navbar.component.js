@@ -28,6 +28,22 @@ const NavBar = () => {
                     </li>
 
                     <li className="nav-item">
+                        <Link to={"/users"} className="nav-link">
+                            Users
+                        </Link>
+                    </li>
+
+                    <li className="nav-item">
+                        <Link to={"/roles"} className="nav-link">
+                            Roles
+                        </Link>
+                    </li>
+                    <li className="nav-item">
+                        <Link to={"/permissions"} className="nav-link">
+                            Permissions
+                        </Link>
+                    </li>
+                    <li className="nav-item">
                         <Link to={"/profile"} className="nav-link">
                             Profile
                         </Link>

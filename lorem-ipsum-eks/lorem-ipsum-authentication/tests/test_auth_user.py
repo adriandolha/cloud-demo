@@ -1,6 +1,10 @@
 import json
 import os
 
+from mock.mock import MagicMock
+
+from lorem_ipsum_auth.models import LoginType, User, Role
+
 os.environ['env'] = 'test'
 
 
@@ -132,4 +136,58 @@ class TestAuthUser:
         User.query.all.return_value = [login_valid_request]
 
         _response = client.get(f'/api/users', headers={'Authorization': f'Bearer {user_access_token}'})
+        assert _response.status_code == 403
+
+    def test_user_add(self, client, config_valid, user_add_request_valid, new_user_valid, role_admin_valid,
+                      query_mock, admin_access_token, role_editor_valid, db_session):
+        new_user_valid['role'] = role_editor_valid
+        _response = client.post(f'/api/users',
+                                headers={'Authorization': f'Bearer {admin_access_token}'}, json=new_user_valid)
+        assert _response.status_code == 200
+        data = json.loads(_response.data.decode('utf-8'))
+        # assert data['access_token']
+        assert data['username'] == new_user_valid['username']
+        assert role_admin_valid['name'] == data['role']['name']
+        assert len(data['role']['permissions']) == 5
+        print(data['role']['permissions'])
+        assert data['role']['permissions'] == [{'id': 'books:add', 'name': 'books:add'},
+                                               {'id': 'books:read', 'name': 'books:read'},
+                                               {'id': 'books:write', 'name': 'books:write'},
+                                               {'id': 'users:profile', 'name': 'users:profile'},
+                                               {'id': 'users:admin', 'name': 'users:admin'}]
+        new_user = db_session.add.call_args[0][0]
+        new_user.verify_password(new_user_valid['password'])
+        assert new_user.username == new_user_valid['username']
+        assert new_user.email == new_user_valid['email']
+        assert new_user.login_type == LoginType.BASIC
+
+    def test_user_add_already_registered(self, client, config_valid, user_add_request_valid, new_user_valid,
+                                         role_admin_valid,
+                                         query_mock, admin_access_token, role_editor_valid, db_session):
+        new_user_valid['role'] = role_editor_valid
+        User.query.filter.return_value.first.return_value = MagicMock()
+
+        _response = client.post(f'/api/users',
+                                headers={'Authorization': f'Bearer {admin_access_token}'}, json=new_user_valid)
+        assert _response.status_code == 400
+        data = json.loads(_response.data.decode('utf-8'))
+        assert data == 'User already registered.'
+
+    def test_user_add_role_not_found(self, client, config_valid, user_add_request_valid, new_user_valid, role_admin_valid,
+                                     query_mock, admin_access_token, role_editor_valid, db_session):
+        new_user_valid['role'] = role_editor_valid
+        Role.query.filter_by.return_value.first.return_value = None
+
+        _response = client.post(f'/api/users',
+                                headers={'Authorization': f'Bearer {admin_access_token}'}, json=new_user_valid)
+        assert _response.status_code == 400
+        data = json.loads(_response.data.decode('utf-8'))
+        assert data == 'Invalid role.'
+
+    def test_add_user_permission_required(self, client, config_valid, login_valid_request, user_valid,
+                      role_admin_valid,
+                      user_access_token, query_mock):
+        User.query.all.return_value = [login_valid_request]
+
+        _response = client.post(f'/api/users', headers={'Authorization': f'Bearer {user_access_token}'})
         assert _response.status_code == 403
