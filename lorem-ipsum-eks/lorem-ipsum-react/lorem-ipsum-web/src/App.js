@@ -18,6 +18,7 @@ import Sidebar from './components/sidebar.component';
 import NavBar from './components/navbar.component';
 import PermissionsView from "./pages/permissions-view.component";
 import RolesView from "./pages/roles-view.component";
+import NavBarBottom from "./components/navbar-bottom.component";
 
 class App extends Component {
   constructor(props) {
@@ -29,7 +30,10 @@ class App extends Component {
   render() {
     return (
       <div className="d-flex">
-        <Sidebar />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
+        <div className="d-none d-md-flex">
+          <Sidebar />
+        </div>
         <div className="flex-column ms-0 flex-fill">
           <NavBar></NavBar>
           <div className="container-fluid" style={{ "font-size": '0.83rem' }}>
@@ -46,6 +50,10 @@ class App extends Component {
               <Route path="*" element={<NotFoundPage />} />
 
             </Routes>
+
+          </div>
+          <div className="container-fluid" style={{ "font-size": '0.83rem' }}>
+            <NavBarBottom></NavBarBottom>
           </div>
         </div>
       </div>

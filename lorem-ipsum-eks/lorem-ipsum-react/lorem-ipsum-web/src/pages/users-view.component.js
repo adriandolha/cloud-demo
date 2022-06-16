@@ -3,12 +3,15 @@ import UserService from '../services/user.service';
 import Spinner from 'react-bootstrap/Spinner';
 import UsersTable from "../components/simple-table.component";
 import AddUser from "./add-user.component";
-import * as Yup from 'yup';
+import { Flash } from "../components/flash-component";
+import UsersViewList from "./user-view-list.component";
+import { UsersActions, UsersRole, UsersEmail } from "./user-view.component";
 
 function UsersView() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState();
     const [edit, setEdit] = useState({});
+    const [showAddUser, setShowAddUser] = useState(false);
     const [roles, setRoles] = useState();
     const [error, setError] = useState();
     const handleAdd = () => {
@@ -16,9 +19,9 @@ function UsersView() {
 
     }
     console.log('rendering')
-    const handleSave = (row) => {
+    const handleSave = (user) => {
         console.log(`Saving user...`);
-        const _user = row.original
+        const _user = user
         console.log(_user);
         UserService.update_user(_user)
             .then(res => {
@@ -34,9 +37,9 @@ function UsersView() {
                 setError(error);
             });
     }
-    const handleDelete = (row) => {
+    const handleDelete = (user) => {
         console.log(`Adding new user...`);
-        const _user = row.original
+        const _user = user
         console.log(_user);
         UserService.delete_user(_user.username)
             .then(res => {
@@ -87,106 +90,53 @@ function UsersView() {
         fetch_users()
         fetch_roles()
     }, []);
+    const UsersHeader = (props) => {
+        return <h3 className="mt-0 mt-md-1 ms-4 ms-md-0">Users
+            <span onClick={handleAdd}>
+                <span className="badge-secondary badge ml-2" >{data.items.length}</span>
+            </span>
+            <span className="btn btn-sm btn-rpimary-outline" onClick={() => {
+                setShowAddUser(true)
+            }}><i className="fas fa-plus action"></i></span>
+        </h3>
+    }
+
+
+
+
+
     const columns = useMemo(
         () => {
             return [
                 {
-                    Header: () => (
-                        <h3 className="mt-1">Users
-                            <span onClick={handleAdd}>
-                                <span className="badge-secondary badge ml-2" >{data.items.length}</span>
-                            </span>
-                            {error && <span className="ms-1 help-block fs-5 text-danger">{error.message}</span>}
-                        </h3>
-                    ),
+                    Header: () => <UsersHeader />,
                     id: 'Users',
                     columns: [
                         {
-                            Header: "username",
-                            accessor: "username"
+                            Header: "Username",
+                            accessor: "username",
+                            Cell: (props) => (
+                                <div className="">{props.row.original.username}</div>
+                            )
+
                         },
                         {
-                            Header: "email",
+                            Header: "Email",
                             accessor: "email",
                             Cell: (props) => {
                                 const row = props.row;
-                                const row_id = row.id
-                                const handleEmailChanged = (e) => {
+                                const user = row.original
+                                return <UsersEmail user={user} edit={edit} setEdit={setEdit} setError={setError} />
+                            }
 
-                                    if (e.key === 'Enter') {
-                                        const _email = e.target.value
-                                        console.log('entered');
-                                        console.log(_email)
-                                        const is_valid = Yup.string().email('Invalid email format').required('Email is required').isValidSync(_email)
-                                        if (!is_valid){
-                                            setError(Error('Invalid email'))    
-                                        } else{
-                                            row.original.email = _email
-                                            setEdit({})
-                                            setError(null)
-                                        }
-                                    }
-                                }
-
-                                if (edit && edit[row_id]) {
-                                    console.log('Editable email')
-                                    console.log(row_id)
-                                    console.log(edit[row_id])
-                                    console.log(edit)
-                                    return (
-                                        <input type="text" id={`${row_id}-email`} placeholder={row.original.email} onKeyDown={handleEmailChanged}></input>
-                                    )
-                                }
-                                return (
-                                    <span onClick={(e) => {
-                                        console.log(`Editing email ${row.original.email}`)
-                                        console.log(e.target.value)
-                                        const newEdit = {
-                                            ...edit,
-                                            [row_id]: { email: row.original.email }
-                                        };
-                                        setEdit(newEdit)
-                                        console.log(newEdit)
-
-                                    }
-                                    } className="text-primary" >
-                                        {props.row.values.email}
-                                    </span >
-                                );
-                            },
                         },
                         {
-                            Header: 'role',
+                            Header: 'Role',
                             id: 'role',
                             accessor: "role",
                             Cell: (props) => {
                                 const row = props.row;
-                                const _original_role = row.original.role
-                                return (
-                                    <span className="text-success">
-                                        <select onChange={(e) => {
-                                            const _role = e.target.value
-                                            const [existing_role] = roles.items.filter(role => role.name == _role)
-                                            if (existing_role) {
-                                                row.original.role = existing_role
-                                            }
-                                        }} className="custom-select-sm text-success mr-sm-2" id="inlineFormCustomSelect">
-                                            {roles && roles.items.map(role => {
-                                                const is_selected = role.name == _original_role.name
-                                                if (is_selected) {
-                                                    return (
-                                                        <option selected value={role.name} key={role.name}>{role.name}</option>
-                                                    )
-                                                } else {
-                                                    return (
-                                                        <option value={role.name} key={role.name}>{role.name}</option>
-                                                    )
-                                                }
-                                            })
-                                            }
-                                        </select>
-                                    </span>
-                                );
+                                return <UsersRole user={row.original} roles={roles} />
                             },
                         },
                         {
@@ -194,16 +144,8 @@ function UsersView() {
                             accessor: "actions",
                             Cell: (props) => {
                                 const row = props.row;
-                                return (
-                                    <>
-                                        <span className="me-2" onClick={() => { handleSave(row) }}>
-                                            <i className="fas fa-save action"></i>
-                                        </span>
-                                        <span onClick={() => { handleDelete(row) }}>
-                                            <i className="fas fa-trash action"></i>
-                                        </span>
-                                    </>
-                                );
+                                const user = row.original
+                                return <UsersActions user={user} handleDelete={handleDelete} handleSave={handleSave} />
                             },
                         }
                     ]
@@ -216,8 +158,28 @@ function UsersView() {
     if (roles && data && !loading) {
         return (
             <div className='row mt-4'>
-                <AddUser className='row mt-4' onSave={() => { fetch_users() }}></AddUser>
-                <UsersTable className='row mt-4' columns={columns} data={data.items}></UsersTable>
+                {error && <Flash message={error.message} onExit={() => { setError(null) }} />}
+
+                <AddUser className='row mt-4' show={showAddUser}
+                    handleClose={() => { setShowAddUser(false) }}
+                    onSave={() => { fetch_users() }} roles={roles}></AddUser>
+                <div className="d-none d-md-block">
+                    <UsersTable columns={columns} data={data.items}></UsersTable>
+                </div>
+                <div className="d-sm-block d-md-none" key="users-view-list">
+                    <div className="row">
+
+                        <UsersHeader />
+                    </div>
+                    <UsersViewList users={data.items}
+                        roles={roles}
+                        edit={edit}
+                        setEdit={setEdit}
+                        setError={setError}
+                        handleSave={handleSave}
+                        handleDelete={handleDelete}
+                    ></UsersViewList>
+                </div>
             </div>
         );
     } else {

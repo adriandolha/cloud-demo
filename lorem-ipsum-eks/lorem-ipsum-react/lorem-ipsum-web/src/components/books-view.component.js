@@ -101,7 +101,7 @@ function Books() {
         });
     }
     return (
-      <React.Fragment>
+      <>
         <AddBook onSave={() => {
           console.log('saveing...');
           BookService.get_all(_pageIndex, offset)
@@ -119,11 +119,17 @@ function Books() {
         }}></AddBook>
 
         {showBook()}
-        <input id="search" type="text" onChange={handleSearch} className="me-1" /><i className="fas fa-search"></i>
+        <form class="d-flex col-12 col-md-4 ps-0 mb-2">
+          <div className="input-group">
+            <input id="search" type="text" onChange={handleSearch} className="form-control"/>
+            <button type="button" className=" btn btn-secondary"><i className="fas fa-search fa-xs"></i></button>
+          </div>
+        </form>
+        
 
         <ReactTable columns={columns} data={items} totalCount={totalCount} tableMetadataState={[tableMetadata, setTableMetadata]}>
         </ReactTable>
-      </React.Fragment>
+      </>
     );
   }
   if (loading || deleted) {
@@ -133,14 +139,8 @@ function Books() {
 
 export default function BooksView() {
   return (
-    <ErrorBoundary>
-      <div className="alert alert-danger alert-dismissible fade show invisible fixed-bottom" role="alert">
-        <strong>Holy guacamole!</strong> You should check in on some of those fields below.
-        <button type="button" className="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <Books />
-    </ErrorBoundary>
+    // <ErrorBoundary>
+    <Books/>
+    // </ErrorBoundary>
   )
 }

@@ -10,6 +10,8 @@ function RolesView() {
     const [error, setError] = useState();
     const [message, setMessage] = useState();
     const [edit, setEdit] = useState({});
+    const [showAddRole, setShowAddRole] = useState(false);
+
 
     const handleSave = (row) => {
         console.log(`Saving role...`);
@@ -105,6 +107,9 @@ function RolesView() {
                     Header: () => (
                         <h3 className="mt-1">Roles<span>
                             <span className="badge-secondary badge ml-2" >{data.items.length}</span>
+                            <span className="btn btn-sm btn-rpimary-outline" onClick={() => {
+                                setShowAddRole(true)
+                            }}><i className="fas fa-plus action"></i></span>
                         </span>
                             {error && <span className="ms-1 help-block fs-5 text-danger">{error.message}</span>}
                             {message && <span className="ms-1 help-block fs-5 text-success">{message}</span>}
@@ -204,7 +209,9 @@ function RolesView() {
     if (data && !loading) {
         return (
             <div className='mt-4'>
-                <AddRole onSave={() => { fetch_roles() }}></AddRole>
+                <AddRole show={showAddRole}
+                    handleClose={() => { setShowAddRole(false) }}
+                onSave={() => { fetch_roles() }}></AddRole>
 
                 <SimpleTable columns={columns} data={data.items}></SimpleTable>
             </div>

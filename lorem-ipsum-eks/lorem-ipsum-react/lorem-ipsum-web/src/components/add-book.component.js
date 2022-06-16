@@ -55,14 +55,20 @@ function AddBookPage(props) {
     }
     return (
         <>
-            <div className="mb-2 me-1 d-inline-flex" >
-                <Form>
-                    <label htmlFor="noOfPages" className="me-2 flex-column">Pages:
-                        <Field type="text" name="noOfPages" />
-                    </label>
-                    <label htmlFor="noOfBooks" className="me-2">Books:
-                        <Field type="text" name="noOfBooks" />
-                    </label>
+            <div className="mb-2 me-1 " >
+                <Form className='form-inline'>
+                    <div className='form-group'>
+                        <label htmlFor="noOfPages" className="me-2 flex-column">Pages:
+                        </label>
+                        <Field type="text" name="noOfPages" className="form-control form-control-sm" />
+                    </div>
+                    <div className='form-group'>
+
+                        <label htmlFor="noOfBooks" className="me-2">Books:
+                        </label>
+
+                        <Field type="text" name="noOfBooks" className="form-control form-control-sm" />
+                    </div>
                     <button type="submit" className="btn btn-primary btn-sm ms-0 mb-3 mt-2">{shouldGenerateAndSave(values) ? "Generate & Save" : "Generate"}</button>
                     {touched.noOfPages && errors.noOfPages && <span className="ms-1 help-block text-danger">{errors.noOfPages}</span>}
                     {touched.noOfBooks && errors.noOfBooks && <span className="ms-1 help-block text-danger">{errors.noOfBooks}</span>}
@@ -158,8 +164,8 @@ const AddBookFormik = withFormik({
 
 
 
-export default function AddBook({onSave}) {
+export default function AddBook({ onSave }) {
     return (
-        <AddBookFormik onSave={onSave}/>
+        <AddBookFormik onSave={onSave} />
     )
 }

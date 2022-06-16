@@ -43,7 +43,7 @@ export default function ReactTable({ columns, data, totalCount, tableMetadataSta
 
   return (
     <>
-      <Table {...getTableProps()} hover>
+      <Table {...getTableProps()} hover className="book-table">
         <thead>
           {headerGroups.map(headerGroup => (
             <tr {...headerGroup.getHeaderGroupProps()}>
@@ -66,10 +66,6 @@ export default function ReactTable({ columns, data, totalCount, tableMetadataSta
           })}
         </tbody>
       </Table>
-      {/* 
-          Pagination can be built however you'd like. 
-          This is just a very basic UI implementation:
-        */}
       <div className="pagination">
         <button onClick={() => setTableMetadata({ ...tableMetadata, ...{ pageIndex: 1 } })} disabled={!canPreviousPage}>
           {'<<'}

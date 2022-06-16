@@ -36,9 +36,34 @@ html {
 }
 
 .fa-trash {
-  color : red;
+  color: red;
 }
 
 .fa-plus {
-  color : green;
+  color: green;
+}
+
+.simple-table {
+  height: 47rem;
+  /* max-height: 100px; */
+  overflow-y: scroll;
+}
+
+.simple-table table thead {
+  position: sticky;
+  top: 0px;
+  margin: 0 0 0 0;
+  /* With border-collapse, we must use box-shadow or psuedo elements
+  for the header borders */
+  box-shadow: 0px 0px 0 2px #e8e8e8;
+  background: #fdfdfe;
+}
+
+.users-view-list {
+  position: fixed;
+  top: 130px;
+  bottom: 50px;
+  left: 0;
+  right: 0;
+  overflow-y: scroll;
 }

@@ -2,6 +2,7 @@ import { withFormik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { useState, useEffect } from 'react';
 import UserService from '../services/user.service';
+import { Modal, Button } from "react-bootstrap"
 
 
 function AddUserPage(props) {
@@ -42,36 +43,60 @@ function AddUserPage(props) {
     }, []);
 
     return (
-        <>
-            <div className="mb-2 me-1 col-4 flex-column" >
+
+        <div className="row" >
+            <div className='col-2'></div>
+            <div className='col-8'>
                 <Form>
-                    <label htmlFor="username" className="me-2 d-block">Username:
-                        <Field type="text" name="username" className="ml-1 float-right" />
-                    </label>
-                    {touched.username && errors.username && <span className="ms-1 help-block text-danger">{errors.username}</span>}
+                    <div className="form-group row">
+                        <label htmlFor="username" className="col-4 col-form-label">Username
+                        </label>
+                        <div className="col-4">
+                            <Field type="text" name="username" className="form-control-sm" />
+                        </div>
+                        {touched.username && errors.username && <span className="ms-1 help-block text-danger">{errors.username}</span>}
+                    </div>
+                    <div className="form-group row">
+                        <label htmlFor="email" className="col-4 col-form-label">Email
+                        </label>
+                        <div className="col-4">
+                            <Field type="text" name="email" className="form-control-sm" />
+                        </div>
+                        {touched.email && errors.email && <span className="ms-1 help-block text-danger">{errors.email}</span>}
 
-                    <label htmlFor="email" className="me-2 d-block">Email:
-                        <Field type="text" name="email" className="ml-1 float-right" />
-                    </label>
-                    <label htmlFor="password" className="me-2 d-block">Password:
-                        <Field type="password" name="password" className="ml-1 float-right" />
-                    </label>
-                    {touched.password && errors.password && <span className="ms-1 help-block text-danger">{errors.password}</span>}
+                    </div>
+                    <div className="form-group row">
+                        <label htmlFor="password" className="col-4 col-form-label">Password</label>
+                        <div className="col-4">
+                            <Field type="password" name="password" className="form-control-sm" />
+                        </div>
+                        {touched.password && errors.password && <span className="ms-1 help-block text-danger">{errors.password}</span>}
+                    </div>
 
-                    <label htmlFor="role" className="me-2 d-block">Role:
-                        <Field as="select" name="role" className="float-right form-select-sm d-inline" >
-                            {roles && roles.items.map(role => (
-                                <option value={role} key={role.name}>{role.name}</option>
-                            ))}
-                        </Field>
-                    </label>
-                    {touched.role && errors.role && <span className="ms-1 help-block text-danger">{errors.role}</span>}
+                    <div className="form-group row">
+                        <label htmlFor="role" className="col-4 col-form-label">Role</label>
+                        <div className="col-4">
+                            <Field as="select" name="role" className="form-control-sm " >
+                                {roles && roles.items.map(role => (
+                                    <option value={role.name} key={role.name}>{role.name}</option>
+                                ))}
+                            </Field>
+                        </div>
+                        {touched.role && errors.role && <span className="ms-1 help-block text-danger">{errors.role}</span>}
+                    </div>
+                    <div className="form-group row">
+                        <div className="">
+                            <button type="submit" className="btn btn-primary">Add</button>
+                            <button type="secondary" onClick={props.onClose} className="ms-2 btn btn-secondary">Close</button>
 
-                    <button type="submit" className="btn btn-primary btn-sm ms-0 mb-3 mt-3">Add</button>
+
+                        </div>
+                    </div>
                 </Form>
+
                 {errors && errors.submit && <span className="d-block alert alert-danger mt-3 mb-3 ml-2 pb-1 pt-1" role="alert"> {errors.submit.message} </span>}
             </div>
-        </>
+        </div>
     )
 }
 
@@ -93,6 +118,9 @@ const AddUserFormik = withFormik({
     }),
     handleSubmit: (values, { setSubmitting, setErrors, setStatus, props }) => {
         console.log('Add user...')
+        console.log(values.role)
+        console.log(props.roles)
+
         const [existing_role] = props.roles.items.filter(role => role.name == values.role)
         const user = {
             username: values.username,
@@ -122,30 +150,17 @@ const AddUserFormik = withFormik({
 
 
 
-export default function AddUser({ onSave }) {
-    const [roles, setRoles] = useState()
+export default function AddUser({ onSave, roles, handleClose, show }) {
     const [error, setError] = useState()
-    const fetch_roles = () => {
-        UserService.get_roles()
-            .then(res => {
-                if (!res.ok) {
-                    return res.json().then(message => { throw new Error(message); });
-                }
-                return res.json();
-            })
-            .then((res) => {
-                setRoles(res)
-            })
-            .catch((error) => {
-                console.log(`Error: ${error}`);
-                setError(error);
-            });
-    }
 
-    useEffect(() => {
-        fetch_roles();
-    }, []);
     return (
-        <AddUserFormik onSave={onSave} roles={roles} />
+        <Modal show={show} onHide={handleClose} animation={false} size="md" aria-labelledby="contained-modal-title-vcenter" centered>
+            <Modal.Header className="flex-column text-left text-dark bg-light">
+                <Modal.Title className="col-md-11 ms-5">Add new user</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <AddUserFormik onSave={onSave} roles={roles} onClose={handleClose} />
+            </Modal.Body>
+        </Modal>
     )
 }

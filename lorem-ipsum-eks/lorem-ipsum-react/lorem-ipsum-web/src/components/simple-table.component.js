@@ -16,8 +16,8 @@ export default function SimpleTable({ columns, data }) {
   )
 
   return (
-    <>
-      <Table {...getTableProps()} hover>
+    <div className="simple-table">
+      <Table {...getTableProps()}  hover className="table thead-dark">
         <thead>
           {headerGroups.map(headerGroup => (
             <tr {...headerGroup.getHeaderGroupProps()}>
@@ -40,6 +40,6 @@ export default function SimpleTable({ columns, data }) {
           })}
         </tbody>
       </Table>
-    </>
+    </div>
   )
 }

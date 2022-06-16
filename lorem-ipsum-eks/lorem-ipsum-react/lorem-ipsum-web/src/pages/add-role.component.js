@@ -2,6 +2,7 @@ import { withFormik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import { useState, useEffect } from 'react';
 import UserService from '../services/user.service';
+import { Modal, Button } from "react-bootstrap"
 
 
 function AddRolePage(props) {
@@ -48,72 +49,80 @@ function AddRolePage(props) {
     }
     return (
         <>
-            <div className="mb-2 me-1 d-block col-6" >
-                <Form>
-                    <div>
-                        <label htmlFor="name" className="me-2">Name:</label>
-                        <Field type="text" name="name" className="ml-1" />
-                        {touched.name && errors.name && <span className="ms-1 help-block text-danger">{errors.name}</span>}
+            <div className="mb-2 me-1 d-block col-12" >
+                <div className='row'>
+                    {/* <div className='col-2'></div> */}
+                    <div className='col-12'>
+                        <Form>
+                            <div className='input-group row'>
+                                <label htmlFor="name" className="me-2">Name:</label>
+                                <Field type="text" name="name" className="ml-1 form-control" />
+                                {touched.name && errors.name && <span className="ms-1 help-block text-danger">{errors.name}</span>}
 
-                    </div>
-                    <div>
-                        <label htmlFor="default" className="me-2">Default:</label>
-                        <Field type="checkbox" name="default" />
-                    </div>
-                    <div>
-                        <label htmlFor="permissions" className="me-2">Permissions:</label>
-                        <FieldArray name="permissions"
-                            render={({ insert, remove, push }) => (
-                                <div>
-                                    <div className='d-inline-flex'>
-                                        <select onChange={(e) => {
-                                            setSelectedPermission(e.target.value)
-                                        }} onKeyPress={(e) => {
-                                            if (e.key === 'Enter') {
-                                                const _permission = e.target.value
-                                                console.log(`Enter triggered  ${_permission}`)
-                                                console.log(values.permissions)
-                                                // push({'id':_permission, 'name':_permission})
-                                                // insert(values.permissions.length, { 'id': _permission, 'name': _permission })
-                                                console.log(values.permissions)
-                                            }
-                                        }} className="custom-select mr-sm-2" id="inlineFormCustomSelect">
-                                            {perms && perms.items.map(perm => (
-                                                <option value={perm.name} key={perm.name}>{perm.name}</option>
-                                            ))}
-                                        </select>
-                                        <span className="btn btn-sm btn-rpimary-outline" onClick={() => {
-                                            console.log(`Add new role permission ${selectedPermission}`)
-                                            const existing_permissions = values.permissions.filter(val => val.name == selectedPermission)
-                                            if (existing_permissions.length > 0) {
-                                                console.log(`Found ${existing_permissions}`)
-                                            } else {
-                                                push({ 'id': selectedPermission, 'name': selectedPermission })
+                            </div>
+                            <div>
+                                <label htmlFor="default" className="me-2">Default:</label>
+                                <Field type="checkbox" name="default" />
+                            </div>
+                            <div>
+                                <label htmlFor="permissions" className="me-2">Permissions:</label>
+                                <FieldArray name="permissions"
+                                    render={({ insert, remove, push }) => (
+                                        <div>
+                                            <div className='d-inline-flex'>
+                                                <select onChange={(e) => {
+                                                    setSelectedPermission(e.target.value)
+                                                }} onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        const _permission = e.target.value
+                                                        console.log(`Enter triggered  ${_permission}`)
+                                                        console.log(values.permissions)
+                                                        // push({'id':_permission, 'name':_permission})
+                                                        // insert(values.permissions.length, { 'id': _permission, 'name': _permission })
+                                                        console.log(values.permissions)
+                                                    }
+                                                }} className="custom-select mr-sm-2" id="inlineFormCustomSelect">
+                                                    {perms && perms.items.map(perm => (
+                                                        <option value={perm.name} key={perm.name}>{perm.name}</option>
+                                                    ))}
+                                                </select>
+                                                <span className="btn btn-sm btn-rpimary-outline" onClick={() => {
+                                                    console.log(`Add new role permission ${selectedPermission}`)
+                                                    const existing_permissions = values.permissions.filter(val => val.name == selectedPermission)
+                                                    if (existing_permissions.length > 0) {
+                                                        console.log(`Found ${existing_permissions}`)
+                                                    } else {
+                                                        push({ 'id': selectedPermission, 'name': selectedPermission })
 
-                                            }
-                                        }}><i className="fas fa-plus action"></i></span>
-                                    </div>
-                                    <div className="d-flex-inline mt-2">
-                                        {values.permissions.length > 0 &&
-                                            values.permissions.map((permission, index) => (
-                                                <span key={index} className="btn btn-sm btn-primary text-light ms-1 mt-1 pl-1 pt-1 pb-1">
-                                                    <i className="fas fa-key action pe-1"></i> {permission.name}
-                                                    <button className="btn btn-sm btn-rpimary-outline" onClick={() => {
-                                                        remove(index)
-                                                    }}><i className="fas fa-trash action"></i></button>
-                                                </span>
-                                            ))}
-                                    </div>
+                                                    }
+                                                }}><i className="fas fa-plus action"></i></span>
+                                            </div>
+                                            <div className="d-flex-inline mt-2">
+                                                {values.permissions.length > 0 &&
+                                                    values.permissions.map((permission, index) => (
+                                                        <span key={index} className="btn btn-sm btn-primary text-light ms-1 mt-1 pl-1 pt-1 pb-1">
+                                                            <i className="fas fa-key action pe-1"></i> {permission.name}
+                                                            <button className="btn btn-sm btn-rpimary-outline" onClick={() => {
+                                                                remove(index)
+                                                            }}><i className="fas fa-trash action"></i></button>
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )} />
+                                {touched.permissions && errors.permissions && <span className="ms-1 help-block text-danger">{errors.permissions}</span>}
+
+                            </div>
+
+                            <div className="form-group row">
+                                <div className="">
+                                    <button type="submit" className="btn btn-primary">Add</button>
+                                    <button type="secondary" onClick={props.onClose} className="ms-2 btn btn-secondary">Close</button>
                                 </div>
-                            )} />
-                        {touched.permissions && errors.permissions && <span className="ms-1 help-block text-danger">{errors.permissions}</span>}
-
-                    </div>
-
-                    <button type="submit" className="btn btn-primary btn-sm ms-0 mb-3 mt-3"> Add </button>
-                </Form>
-                {errors && errors.submit && <span className="d-block alert alert-danger mt-3 mb-3 ml-2 pb-1 pt-1" role="alert"> {errors.submit.message} </span>}
-            </div>
+                            </div>
+                        </Form>
+                        {errors && errors.submit && <span className="d-block alert alert-danger mt-3 mb-3 ml-2 pb-1 pt-1" role="alert"> {errors.submit.message} </span>}
+                    </div></div></div>
         </>
     )
 }
@@ -164,8 +173,16 @@ const AddRoleFormik = withFormik({
 
 
 
-export default function AddRole({ onSave }) {
+export default function AddRole({ onSave, show, handleClose }) {
     return (
-        <AddRoleFormik onSave={onSave} />
+        <Modal show={show} onHide={handleClose} animation={false} size="md" aria-labelledby="contained-modal-title-vcenter" centered>
+            <Modal.Header className="flex-column text-left text-dark bg-light">
+                <Modal.Title className="col-12 ms-5">Add new role</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <AddRoleFormik onSave={onSave} onClose={handleClose} />
+
+            </Modal.Body>
+        </Modal>
     )
 }

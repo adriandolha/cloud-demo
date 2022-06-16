@@ -33,46 +33,44 @@ function BookView({ book_data, show, handleClose, handleSave }) {
     }
 
     return (
-        <>
-            <Modal show={show} onHide={handleClose} animation={false} size="xl" aria-labelledby="contained-modal-title-vcenter" centered>
-                <Modal.Header className="flex-column text-left text-dark bg-light">
-                    <Modal.Title className="col-md-11 ms-5">{book.title}</Modal.Title>
-                    {/* <h1 className="bg-light text-dark col-md-11 ms-5 ">{book.title}</h1> */}
-                    <h6 className=" font-italic col-md-11 ms-5 ">{book.author}</h6>
-                </Modal.Header>
-                <Modal.Body>
-                    <Carousel>
-                        {book.pages.map((page, index) =>
-                            <Carousel.Item className="p-5">
-                                <Row className="bg-dark text-light p-5">
-                                    <p>{page}</p>
-                                </Row>
-                                <Carousel.Caption className="mb-4">
-                                    <h3>Page {index + 1} of {pageCount} </h3>
-                                </Carousel.Caption>
-                            </Carousel.Item>
-                        )}
-                    </Carousel>
+        <Modal show={show} onHide={handleClose} animation={false} size="xl" aria-labelledby="contained-modal-title-vcenter" centered>
+            <Modal.Header className="flex-column text-left text-dark bg-light">
+                <Modal.Title className="col-md-11 ms-5">{book.title}</Modal.Title>
+                {/* <h1 className="bg-light text-dark col-md-11 ms-5 ">{book.title}</h1> */}
+                <h6 className=" font-italic col-md-11 ms-5 ">{book.author}</h6>
+            </Modal.Header>
+            <Modal.Body>
+                <Carousel>
+                    {book.pages.map((page, index) =>
+                        <Carousel.Item className="p-5">
+                            <Row className="bg-dark text-light p-5">
+                                <p>{page}</p>
+                            </Row>
+                            <Carousel.Caption className="mb-4">
+                                <h3>Page {index + 1} of {pageCount} </h3>
+                            </Carousel.Caption>
+                        </Carousel.Item>
+                    )}
+                </Carousel>
 
-                </Modal.Body>
-                <Modal.Footer>
-                    {error && <div className="alert alert-danger" role="alert"> {error.message} </div>}
-                    <span className={loading ? "visible" : "invisible"}>
-                        <i className="fas fa-spinner action fa-spin"></i>
-                    </span>
-                    <div className="btn-group" role="group" aria-label="Basic example">
-                        {handleSave &&
-                            <Button variant="primary" onClick={_handleSave}>
-                                Save
-                            </Button>
-                        }
-                        <Button variant="secondary" onClick={handleClose}>
-                            Close
+            </Modal.Body>
+            <Modal.Footer>
+                {error && <div className="alert alert-danger" role="alert"> {error.message} </div>}
+                <span className={loading ? "visible" : "invisible"}>
+                    <i className="fas fa-spinner action fa-spin"></i>
+                </span>
+                <div className="btn-group" role="group" aria-label="Basic example">
+                    {handleSave &&
+                        <Button variant="primary" onClick={_handleSave}>
+                            Save
                         </Button>
-                    </div>
-                </Modal.Footer>
-            </Modal>
-        </>
+                    }
+                    <Button variant="secondary" onClick={handleClose}>
+                        Close
+                    </Button>
+                </div>
+            </Modal.Footer>
+        </Modal>
     );
 }
 
