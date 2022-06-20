@@ -91,13 +91,13 @@ const UserView = ({ user, roles, edit, setEdit, setError, handleDelete, handleSa
             <div className='card-header mb-0 text-center bg-info'>
                 {user.username}
             </div>
-            <div class="card-body ps-1 pb-1 pt-1  bg-light">
-                <div className='row no-gutter'>
-                    <p class="card-text pt-1 pb-0 mb-0 mt-0">
-                        <span className=''><UsersEmail user={user} edit={edit} setEdit={setEdit} setError={setError} /></span>
-                        <span className='float-end'><UsersRole user={user} roles={roles} /></span>
-                    </p>
 
+            <div class="card-body ps-0 pb-1 pt-2 pe-3  bg-light">
+                <div className='row no-gutter ps-0'>
+                    <div className='col-sm-12 ms-0 me-0 pe-0 d-flex justify-content-between'>
+                        <UsersEmail user={user} edit={edit} setEdit={setEdit} setError={setError} />
+                        <UsersRole user={user} roles={roles} />
+                    </div>
                 </div>
                 <p class="card-text">
                     <UsersActions user={user} handleDelete={handleDelete} handleSave={handleSave} />
