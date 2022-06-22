@@ -1,5 +1,5 @@
-# Lorem Ipsum app to collect and monitor pacients data.
-An application to prove architectural concepts: 
+# An application to generate random books and see some reports.
+The application is actually used as a technical playground to prove architectural concepts: 
 * architecture styles: serverless, microservices
 * cloud: aws, azure
 * api gateway
@@ -7,6 +7,7 @@ An application to prove architectural concepts:
 * nosql
 * monitoring: prometheus, grafana
 * log aggregator: fluentd, elasticsearch, kibana
+* frontend: React, Bootstrap
 * etc.
 This example is focused on microservices in eks.
 Tech stack:
@@ -20,6 +21,15 @@ elasticsearch, fluentd, kibana
 flask, gunicorn, pytest, sqlalchemy
 docker
 
+## Achitecture diagrams
+### Local
+![img.png](design/lorem_ipsum_simple.png)
+### Cloud Native
+![img.png](design/lorem_ipsum_cloud_native.png)
+### Books service
+![img.png](design/lorem_ipsum_cloud_native_books_service.png)
+### CI/CD
+![img.png](design/lorem_ipsum_cloud_native_cidcd.png)
 
 ## Configuration and pre-requisites
 
