@@ -24,7 +24,7 @@ docker
 ## Achitecture diagrams!
 ### Local
 <picture>
-<img src="https://github.com/adriandolha/cloud-demo/blob/master/lorem-ipsum-eks/design/lorem_ipsum_cloud_native.png?raw=true" height="400px" width="400px">
+<img src="https://github.com/adriandolha/cloud-demo/blob/master/lorem-ipsum-eks/design/lorem_ipsum_cloud_native.png?raw=true" height="600px" width="600px">
 </picture>
 
 ![](design/lorem_ipsum_cloud_native.png)
