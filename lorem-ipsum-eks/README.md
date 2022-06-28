@@ -21,15 +21,20 @@ elasticsearch, fluentd, kibana
 flask, gunicorn, pytest, sqlalchemy
 docker
 
-## Achitecture diagrams
+## Achitecture diagrams!
 ### Local
-![img.png](design/lorem_ipsum_simple.png)
+<picture>
+<img src="https://github.com/adriandolha/cloud-demo/blob/master/lorem-ipsum-eks/design/lorem_ipsum_cloud_native.png?raw=true" height="200px" width="200px">
+</picture>
+
+![](design/lorem_ipsum_cloud_native.png)
+![img|500x500](design/lorem_ipsum_simple.png)
 ### Cloud Native
-![img.png](design/lorem_ipsum_cloud_native.png)
+![](design/lorem_ipsum_cloud_native.png)
 ### Books service
-![img.png](design/lorem_ipsum_cloud_native_books_service.png)
+![](design/lorem_ipsum_cloud_native_books_service.png)
 ### CI/CD
-![img.png](design/lorem_ipsum_cloud_native_cidcd.png)
+![](design/lorem_ipsum_cloud_native_cidcd.png)
 
 ## Configuration and pre-requisites
 
@@ -104,19 +109,3 @@ To cleanup aws resources, run the following command inside terraform folder:
  ## Testing
  Unit tests should mock the boundaries (sqlalchemy) and focus on APIs.
  
- ### Mocking tips
-Mocking is quite powerful, but not always straight forward, therefore you can find some tips below.
-Of course there are other ways/flavors to achieve the same goal, but this is one that works.
-
-#### Mocking chained function calls
-The key here is to use the return_value for the chained functions.
-```
-lorem_ipsum.repo.Transaction.session.query.return_value.filter.return_value.first.return_value = lorem_ipsum.repo.Book(
-            **book_valid)
-```
-#### Mocking attributes
-The key here is to use the return_value for the mocked object.
-```
-_pool = lorem_ipsum.repo.Transaction.pool
-_pool.return_value._max_overflow = 50
-```
