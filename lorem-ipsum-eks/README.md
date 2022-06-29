@@ -1,4 +1,8 @@
-# An application to generate random books and see some reports.
+# Lorem Ipsum
+This is a simple text generator, useful to generate books and get some random content to be used elsewhere.
+
+It uses faker library in the backend to generate books with a given number of pages, a random title and random author.
+
 The application is actually used as a technical playground to prove architectural concepts: 
 * architecture styles: serverless, microservices
 * cloud: aws, azure
@@ -9,25 +13,26 @@ The application is actually used as a technical playground to prove architectura
 * log aggregator: fluentd, elasticsearch, kibana
 * frontend: React, Bootstrap
 * etc.
-This example is focused on microservices in eks.
-Tech stack:
-python
-terraform (s3 backup)
-ambassador
-eks, ambassador
-parameter store
-prometheus, grafana
-elasticsearch, fluentd, kibana
-flask, gunicorn, pytest, sqlalchemy
-docker
 
-## Achitecture diagrams!
+Tech stack for the architecture described below:
+- python
+- terraform (s3 backup)
+- tekton, argocd
+- ambassador, aws api gw, istio
+- eks, kuberneteds
+- parameter store, kube secrets
+- prometheus, grafana
+- elasticsearch, fluentd, kibana
+- flask, gunicorn, pytest, sqlalchemy, authlib, flask-swagger, pydantic
+- faker
+- docker
+- react, bootstrap, cdbreact
+
+## Achitecture diagrams
+<details>
+  <summary>Architecure diagrams for local and cloud native deployments </summary>
+  
 ### Local
-<picture>
-<img src="https://github.com/adriandolha/cloud-demo/blob/master/lorem-ipsum-eks/design/lorem_ipsum_cloud_native.png?raw=true" height="600px" width="600px">
-</picture>
-
-![](design/lorem_ipsum_cloud_native.png)
 ![img|500x500](design/lorem_ipsum_simple.png)
 ### Cloud Native
 ![](design/lorem_ipsum_cloud_native.png)
@@ -35,10 +40,19 @@ docker
 ![](design/lorem_ipsum_cloud_native_books_service.png)
 ### CI/CD
 ![](design/lorem_ipsum_cloud_native_cidcd.png)
+</details>
+     
 
 ## Configuration and pre-requisites
+Pre-requisites:
+* docker
+* kubernetes
+* helm
+* npm
+* ~/.cloud-projects/oauth/public.key and ~/.cloud-projects/oauth/private.key (you can create these with openssl)
+* ~/.cloud-projects/lorem-ipsum-secrets.yaml
 
-Terraform secrets are stored in user's home folder under .terraform/<app_name>.json.
+You also need to define the secrets:
 E.g.
 ````
 {
@@ -46,10 +60,6 @@ E.g.
  "aurora_password":""
 }
 ````
-In order to be able tu use external data, you need to install terraform module in your python env:
-```
-pip install terraform_external_data
-``` 
 ### AWS Lambda connect to Postgres
 In order to connect to postgres we need psycopg2, which is C compiled and won't work in AWS Lambda if installed locally, 
 on MAC at least. To solve this, I've used a predefined layer:
@@ -63,30 +73,6 @@ Make sure the following are set on AWS database instance:
 
 ## Authentication and authorization
 Authentication and authorization is done using OAuth and OIDC.
-
-### Auth0
-* auth0 (https://auth0.com/docs/architecture-scenarios/spa-api)
-* use auth0 rules to add scope and custom role claim
-* JWT token contains roles and permissions
-````
-{
-  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role": [
-    "Admin"
-  ],
-  "iss": "https://dev-5z89rql0.eu.auth0.com/",
-  "sub": "google-oauth2|100541778233022946437",
-  "aud": [
-    "https://dev-5z89rql0.eu.auth0.com/api/v2/",
-    "https://dev-5z89rql0.eu.auth0.com/userinfo"
-  ],
-  "iat": 1616735582,
-  "exp": 1616821982,
-  "azp": "yZUy3dduMozo9pjFC6WLSwPySBgrBMFo",
-  "scope": "openid profile email read:books create:books update:books delete:books"
-}
-````
-### API Gateway
-* API Gateway validates token and enforces Bearer Token (JWT)
 
 ### Microservices
 * decodes and validates token, checks for expiration, etc. 
@@ -102,10 +88,8 @@ To cleanup aws resources, run the following command inside terraform folder:
 ````
 ./deploy.sh destroy
 ````
- ## Usage
+## Usage
  
- Once deployed you can start using the app and make requests.
+Once deployed you can start using the app and make requests.
  
- ## Testing
- Unit tests should mock the boundaries (sqlalchemy) and focus on APIs.
  

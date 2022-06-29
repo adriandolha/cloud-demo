@@ -6,7 +6,7 @@ from flask import current_app as app
 
 from lorem_ipsum_auth import AppContext, db
 from lorem_ipsum_auth.auth import issue_token_for_user
-from lorem_ipsum_auth.models import User, LoginType
+from lorem_ipsum_auth.models import User, Role, LoginType
 
 google_oauth = Blueprint('google_oauth', __name__)
 LOGGER = logging.getLogger('lorem-ipsum')

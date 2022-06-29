@@ -45,7 +45,7 @@ spec:
               valueFrom:
                 secretKeyRef:
 #                  name: existing-peahen-postgresql
-                  name: postgresql
+                  name: postgres-postgresql
                   key:  postgresql-password
             - name: admin_user
               valueFrom:
@@ -77,11 +77,6 @@ spec:
                 secretKeyRef:
                   name: lorem-ipsum-auth
                   key: google-client-secret
-            - name: password_encryption_key
-              valueFrom:
-                secretKeyRef:
-                  name: lorem-ipsum-auth
-                  key: password-encryption-key
           livenessProbe:
             httpGet:
               path: /health

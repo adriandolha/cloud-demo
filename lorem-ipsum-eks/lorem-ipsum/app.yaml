@@ -47,7 +47,7 @@ spec:
             - name: aurora_password
               valueFrom:
                 secretKeyRef:
-                  name: postgresql
+                  name: postgres-postgresql
                   key: postgresql-password
             - name: admin_user
               valueFrom:
@@ -59,15 +59,6 @@ spec:
                 secretKeyRef:
                   name: lorem-ipsum
                   key: admin-password
-            - name: password_encryption_key
-              valueFrom:
-                secretKeyRef:
-                  name: lorem-ipsum
-                  key: password-encryption-key
-            - name: pod_name
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           livenessProbe:
             httpGet:
               path: /books/health

@@ -21,7 +21,7 @@ spec:
     - hosts:
       - localhost
 #      secretName: nginx-tls
-  ingressClassName: nginx-dev
+  ingressClassName: nginx
   rules:
   - host: localhost
     http:
