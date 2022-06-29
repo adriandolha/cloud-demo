@@ -52,24 +52,50 @@ Pre-requisites:
 * ~/.cloud-projects/oauth/public.key and ~/.cloud-projects/oauth/private.key (you can create these with openssl)
 * ~/.cloud-projects/lorem-ipsum-secrets.yaml
 
-You also need to define the secrets:
-E.g.
+### Lorem Ipsum secrets example
+<details>
+  <summary>Secrets example for lorem ipsum and authentication service </summary>
+
 ````
-{
- "aurora_user":"",
- "aurora_password":""
-}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: lorem-ipsum
+  namespace: dev
+type: Opaque
+stringData:
+  aurora-host: "postgres-postgresql.platform.svc.cluster.local"
+  aurora-database: "lorem_ipsum_dev"
+  root-url: "http://lorem-ipsum.dev.svc.cluster.local"
+  aurora-user: "postgres"
+  aurora-port: "5432"
+  admin-user: admin
+  admin-password: <admin_password>
+  jwk-public-key-path: "/jwk/certs/public.key"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: lorem-ipsum-auth
+  namespace: dev
+type: Opaque
+stringData:
+  aurora-host: "postgres-postgresql.platform.svc.cluster.local"
+  aurora-database: "lorem_ipsum_dev"
+  root-url: "http://lorem-ipsum.dev.svc.cluster.local"
+  aurora-user: "postgres"
+  aurora-port: "5432"
+  admin-user: admin
+  admin-password: <admin_password>
+  guest-user: guest
+  guest-password: <guest_password>
+  jwk-public-key-path: "/jwk/certs/public.key"
+  jwk_private_key_path: "/jwk/certs/private.key"
+  google-client-id: "<google_client_id>"
+  google-client-secret: "<google_client_secret>"
+
 ````
-### AWS Lambda connect to Postgres
-In order to connect to postgres we need psycopg2, which is C compiled and won't work in AWS Lambda if installed locally, 
-on MAC at least. To solve this, I've used a predefined layer:
-arn:aws:lambda:eu-central-1:898466741470:layer:psycopg2-py37:6
-More details here:
-https://github.com/jetbridge/psycopg2-lambda-layer
-### Database connection from local
-Make sure the following are set on AWS database instance:
-* public accesibility: yes
-* Inbound rules: allow from local
+</details>
 
 ## Authentication and authorization
 Authentication and authorization is done using OAuth and OIDC.
@@ -82,11 +108,11 @@ Authentication and authorization is done using OAuth and OIDC.
 ## Install
 Run the following command inside terraform folder:
 ````
-./deploy.sh apply
+./boostrap.sh apply
 ````
-To cleanup aws resources, run the following command inside terraform folder:
+To cleanup resources, run the following command inside terraform folder:
 ````
-./deploy.sh destroy
+./destrpy.sh 
 ````
 ## Usage
  
