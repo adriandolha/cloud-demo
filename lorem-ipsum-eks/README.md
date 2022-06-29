@@ -33,7 +33,7 @@ Tech stack for the architecture described below:
   <summary>Architecure diagrams for local and cloud native deployments </summary>
   
 ### Local
-![img|500x500](design/lorem_ipsum_simple.png)
+![](design/lorem_ipsum_simple.png)
 ### Cloud Native
 ![](design/lorem_ipsum_cloud_native.png)
 ### Books service
@@ -101,21 +101,58 @@ stringData:
 Authentication and authorization is done using OAuth and OIDC.
 
 ### Microservices
-* decodes and validates token, checks for expiration, etc. 
-* use authlib jose (https://pypi.org/project/Authlib/) for oauth
-* enforces permissions using decorators
+
+There are 2 main microservices with the React frontend. Currently, both lorem-ipsum and lorem-ipsum-authentication share
+the same database, but this can be changed if need be.
+
+#### Lorem Ipsum
+This is a simple text generator, useful to generate books and get some random content to be used elsewhere.
+It uses faker library in the backend to generate books with a given number of pages, a random title and random author.
+Exposed APIs:
+* create, read, update, delete individual books
+* get all books with pagination and view (shared_books, my_books)
+* generate random books with given no of pages and no of books
+* search books
+* get all words indexed by search engine (thread running in background)
+* get stats: total no of books, words, pages and unique words
+* health and metrics (prometheus)
+
+#### Lorem Ipsum Authentication
+This service is responsible for authentication and authorization and it's based on AuthLib to generate JWTs.
+Exposed APIs:
+* register & signin user
+* social signin with google
+* create, get, update, delete user
+* get all users
+* create, get, update, delete roles
+* get all roles
+* create, get, update, delete permissions
+* get all permissions
+
+#### Lorem Ipsum Web
+React UI with Bootstrap. 
 
 ## Install
-Run the following command inside terraform folder:
+Run the following command from root folder:
 ````
 ./boostrap.sh apply
 ````
-To cleanup resources, run the following command inside terraform folder:
+To cleanup resources, run the following command from root folder:
 ````
 ./destrpy.sh 
 ````
 ## Usage
  
-Once deployed you can start using the app and make requests.
- 
+Once deployed you can start using the app by accessing local url http://localhost:8081/home.
+<details>
+  <summary>UI screenshots </summary>
+
+![img1.png](design/books.png)
+![img2.png](design/users.png)
+![img3.png](design/login.png)
+![img4.png](design/dashboard.png)
+![img5.png](design/users_mobile.png)
+
+</details>
+
  
