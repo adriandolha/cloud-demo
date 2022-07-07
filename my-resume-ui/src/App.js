@@ -2,12 +2,12 @@ import './App.css';
 import './index.css';
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/grid';
-import Item from '@material-ui/core/grid';
 import Typography from '@material-ui/core/Typography';
 import resumeTheme from './theme';
 import { useTheme, createStyles, makeStyles, ThemeProvider } from '@material-ui/core/styles';
 import DownloadPDF from './components/download-pdf';
 import Resume from './components/resume';
+import React, { useRef } from 'react';
 
 const useStyles = makeStyles((theme) =>
   createStyles({
@@ -17,7 +17,8 @@ const useStyles = makeStyles((theme) =>
       padding: '10px 0 10px 0',
       borderRadius: '10px',
       textTransform: 'uppercase',
-      fontSize: '50px'
+      fontSize: '50px',
+      color: 'white'
     },
     copyright: {
       color: theme.palette.info.main,
@@ -28,23 +29,19 @@ const useStyles = makeStyles((theme) =>
 
 function App() {
   const classes = useStyles(resumeTheme(useTheme()));
+  const componentRef = useRef(null);
 
   return (
-    <Container maxWidth="lg" className="App">
+    <Container className="App" disableGutters={true}>
       <Typography variant="h1" component="h1" className={classes.mainTitle}>
-        Professional Resume
+        Professional Resume - Adrian Dolha
       </Typography>
-      <Resume />
+      <Resume ref={componentRef} />
+
       <Grid container spacing={3}>
-        <Grid item lg={12} md={12}>
-          <Item>
-            <DownloadPDF />
-          </Item>
-        </Grid>
+        <DownloadPDF resumeRef={componentRef} />
         <Grid item lg={12} container justifyContent='flex-end'>
-          <Item>
-            <Typography variant='body1' className={classes.copyright}>Copyright © 2022 Adrian Dolha.</Typography>
-          </Item>
+          <Typography variant='body1' className={classes.copyright}>Copyright © 2022 Adrian Dolha.</Typography>
         </Grid>
       </Grid>
 

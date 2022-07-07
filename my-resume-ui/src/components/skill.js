@@ -8,9 +8,12 @@ const useStyles = makeStyles((theme) =>
         skill: {
             borderRadius: '10px',
             backgroundColor: theme.palette.primary.main,
-            // float: 'left',
-            padding: '3px 10px 3px 10px',
-            margin: '3px 5px 3px 5px',
+            // padding: theme.spacing(0.4),
+            // margin: theme.spacing(0.2),
+            padding: '1px 10px 1px 10px',
+            margin: '3px 3px 3px 3px',
+
+
             color: 'white'
         }
 
@@ -18,10 +21,24 @@ const useStyles = makeStyles((theme) =>
     }),
 );
 
-function Skill({skill}) {
+const useStyless = makeStyles({
+    skill: {
+        borderRadius: '10px',
+        backgroundColor: props=> props.color,
+        // padding: theme.spacing(0.4),
+        // margin: theme.spacing(0.2),
+        padding: '1px 10px 1px 10px',
+        margin: '3px 3px 3px 3px',
+
+
+        color: 'white'
+    }
+});
+
+function Skill({ skill, color }) {
     const theme = resumeTheme(useTheme());
     const classes = useStyles(theme);
-    const skillVariant = 'h6'
+    const skillVariant = 'body1'
     return (
         <Typography variant={skillVariant} className={classes.skill}>{skill}</Typography>
     );

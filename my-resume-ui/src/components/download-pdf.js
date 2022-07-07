@@ -1,21 +1,29 @@
 import { Button } from '@material-ui/core';
+import Grid from '@material-ui/core/grid';
 import resumeTheme from '../theme';
 import { useTheme, createStyles, makeStyles } from '@material-ui/core/styles';
 import JsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useReactToPrint } from 'react-to-print';
+
 const useStyles = makeStyles((theme) =>
     createStyles({
         downloadButton: {
             margin: '20px 0 0 0',
             padding: '0 10px 0 10px',
-            float: 'left'
+            float: 'left',
+            color: 'primary'
         }
 
 
     }),
 );
 
-function DownloadPDF() {
+function DownloadPDF({ resumeRef }) {
+    const handlePrint = useReactToPrint({
+        content: () => resumeRef.current,
+    });
+
     const theme = resumeTheme(useTheme());
     const classes = useStyles(theme);
     const handleDownloadPdf = async () => {
@@ -34,7 +42,16 @@ function DownloadPDF() {
 
 
     return (
-        <Button onClick={handleDownloadPdf} variant='contained' className={classes.downloadButton}>Download PDF</Button>
+        <Grid item container spacing={1}>
+            <Grid item>
+                <Button onClick={handleDownloadPdf} variant='contained' color='primary' className={classes.downloadButton}>Download PDF</Button>
+            </Grid>
+            <Grid item>
+                <Button onClick={handlePrint} variant='contained' className={classes.downloadButton}>Export to pdf</Button>
+            </Grid>
+
+        </Grid>
+
     );
 }
 

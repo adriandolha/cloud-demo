@@ -1,11 +1,12 @@
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import Item from '@material-ui/core/Grid';
-import { List, ListItem } from '@material-ui/core';
 import resumeTheme from '../theme';
 import { useTheme, createStyles, makeStyles } from '@material-ui/core/styles';
-import Skill from './skill';
 import WorkExperience from './work-experience';
+import Education from './education';
+import { Fragment } from 'react';
+import Skills from './skills';
+import MarkedComponent from './marked-component';
 const useStyles = makeStyles((theme) =>
     createStyles({
         root: {
@@ -17,9 +18,11 @@ const useStyles = makeStyles((theme) =>
         company: {
             float: 'left'
         },
-        workExperience: {
+        sectionTitle: {
+            fontWeight: 'bold',
             textTransform: 'uppercase',
-            float: 'left'
+            float: 'left',
+            marginTop: theme.spacing(2),
         },
         work: {
             marginTop: '10px'
@@ -36,77 +39,43 @@ const useStyles = makeStyles((theme) =>
         },
         taskList: {
             listStyle: 'circle',
-        },
-        skill: {
-            borderRadius: '10px',
-            backgroundColor: theme.palette.primary.main,
-            float: 'left',
-            padding: '3px 10px 3px 10px',
-            margin: '3px 5px 3px 5px',
-            color: 'white'
-        },
-        skillGroupTitle: {
-            // fontStyle: 'italic',
-            float: 'left',
-            color: theme.palette.success.main,
         }
     }),
 );
 
-function GroupSkill({ name, group, classes }) {
-    console.log(group)
-    if (group) {
-        return (
-            <Grid item container spacing={1} direction='column'>
-                <Grid item>
-                    <Typography variant='h5' className={classes.skillGroupTitle}>{name}</Typography>
-                </Grid>
-                <Grid item container spacing={1} direction='row'>
-                    {group.map(g => g.map(skill =>
-                        <Skill skill={skill} />
-                    ))
-                    }
-                </Grid>
-            </Grid>
-        )
-    }
-    return null
-}
-function ResumeBody({ resume }) {
+
+function ResumeBody({ resume, onResize }) {
     const theme = resumeTheme(useTheme());
     const classes = useStyles(theme);
-    const workExperiences = resume.workExperiences
-    const frontendSkills = resume.skills.frontend
-    const backendSkills = resume.skills.backend
-    const devopsSkills = resume.skills.devops
-    const cloudSkills = resume.skills.cloud
-
+    let workExperiences = resume.workExperiences
 
     return (
+        <Grid item container spacing={4} columns={{ sm: 3, md: 3, lg: 3 }} className={classes.work}>
+            <Grid item xs={6} md={6} lg={6} spacing={2} container direction='column'>
+                <Grid item>
+                    <MarkedComponent component={<Typography variant="h4" className={classes.sectionTitle}>
+                        {resume.workExperienceTitle}
+                    </Typography>} />
 
-        <Grid container spacing={1} columns={{ sm: 3, md: 3, lg: 3 }} className={classes.work}>
-            <Grid item xs={12} md={8} lg={8} container direction='column'>
-                <Item>
-                    <Typography variant="h3" className={classes.workExperience}>
-                        Work Experience
-                    </Typography>
-                </Item>
-                {workExperiences && workExperiences.map(work => {
-                    return <Item><WorkExperience data={work} /></Item>
+                </Grid>
+                {workExperiences && workExperiences.map((work, i) => {
+                    return (<Fragment key={i}>
+                        <Grid item>
+                            <WorkExperience resume={resume} data={work} onResize={onResize} />
+                        </Grid>
+                    </Fragment>)
+                })}
+                <Grid item>
+                    <MarkedComponent component={<Typography variant="h4" className={classes.sectionTitle}>
+                        {resume.educationTitle}
+                    </Typography>} />
+                </Grid>
+                {resume.education && resume.education.map((data, i) => {
+                    return <Fragment key={`edu-${i}`}><Grid item><Education data={data} /></Grid></Fragment>
                 })}
             </Grid>
-            <Grid item xs={12} md={4} lg={4} container direction='column'>
-                <Grid item>
-                    <Typography variant="h3" className={classes.workExperience}>
-                        Skills
-                    </Typography>
-                </Grid>
-                <Grid item>
-                    <GroupSkill name='Backend' group={backendSkills} classes={classes} />
-                    <GroupSkill name='Frontend' group={frontendSkills} classes={classes} />
-                    <GroupSkill name='Devops' group={devopsSkills} classes={classes} />
-                    <GroupSkill name='Cloud' group={cloudSkills} classes={classes} />
-                </Grid>
+            <Grid item xs={6} md={6} lg={6}>
+                <Skills resume={resume} />
             </Grid>
         </Grid>
     );

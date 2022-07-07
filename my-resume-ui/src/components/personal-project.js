@@ -1,22 +1,29 @@
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { List, ListItem } from '@material-ui/core';
+import { List, ListItem, Link } from '@material-ui/core';
 import resumeTheme from '../theme';
 import { useTheme, createStyles, makeStyles } from '@material-ui/core/styles';
 import CircleIcon from '@mui/icons-material/Circle';
-import MarkedComponent from './marked-component';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
+import GitHubIcon from '@mui/icons-material/GitHub';
+
 const useStyles = makeStyles((theme) =>
     createStyles({
-        jobTitle: {
+        projectTitle: {
             float: 'left',
             fontWeight: 'bold'
         },
-        company: {
-            float: 'left'
+        myLink: {
+            color: 'black',
+            fontSize: '18px',
+            // fontFamily: 'Ubuntu !important'
         },
-        workExperience: {
-            marginRight: theme.spacing(3)
+        myIcon: {
+            padding: '0 10px 0 0',
+            color: theme.palette.primary.main
+        },
+        personalProject: {
+            marginRight: theme.spacing(2)
         },
         work: {
             marginTop: '10px'
@@ -40,7 +47,7 @@ const useStyles = makeStyles((theme) =>
         },
         techStack: {
             borderRadius: '10px',
-            backgroundColor: theme.palette.primary.dark,
+            backgroundColor: theme.palette.primary.main,
             float: 'left',
             padding: '1px 10px 1px 10px',
             margin: '3px 3px 3px 3px',
@@ -49,36 +56,27 @@ const useStyles = makeStyles((theme) =>
     }),
 );
 
-function WorkExperience({ resume, data, onResize }) {
+function PersonalProject({ resume, data }) {
     const theme = resumeTheme(useTheme());
     const classes = useStyles(theme);
-    const wpId = data.id;
-    const Header = () => (
-        <Grid item container direction='column'>
-            <Grid item>
-                <Typography variant="h6" className={classes.jobTitle}>
-                    {data.jobTitle}
-                </Typography>
+
+    return (
+        <Grid item container xs={12} md={12} lg={12} direction='column' >
+            <Grid item container direction='column' >
+                <Grid item>
+                    <Typography variant="h6" className={classes.projectTitle}>
+                        {`${data.title} (${data.from} - ${data.to})`}
+                    </Typography>
+                </Grid>
+                <Grid item container direction='row' justifyContent='flex-start' alignItems='center'>
+                    <GitHubIcon className={classes.myIcon} />
+                    <Link href={data.github.link} className={classes.myLink}>
+                        <Typography variant='body1'>{data.github.placeholder}</Typography>
+                    </Link>
+                </Grid>
+
             </Grid>
-            <Grid item>
-                <Typography variant="h5" className={classes.company}>
-                    {data.company}
-                </Typography>
-            </Grid>
-        </Grid>
-    )
-    const WorkDetails = () => (
-        <Grid container direction='column'>
-            <Grid item>
-                <Typography variant="body1" align='left' className={classes.workDate}>
-                    {data.from} - {data.to}
-                </Typography>
-            </Grid>
-            <Grid item>
-                <Typography variant="body1" align='left' className={classes.tasks}>
-                    {resume.tasksTitle}
-                </Typography>
-            </Grid>
+
             <Grid item>
                 <List className={classes.taskList} dense={true} disablePadding={true}>
                     {data.tasks && data.tasks.map((task, i) => (
@@ -96,16 +94,7 @@ function WorkExperience({ resume, data, onResize }) {
 
             </Grid>
         </Grid>
-    )
-
-    return (
-        <Grid item container xs={12} md={12} lg={12} direction='column' className={classes.workExperience}>
-            <Grid item>
-                <MarkedComponent component={<Header />} markerColor={theme.palette.success.main} />
-            </Grid>
-            <MarkedComponent component={<WorkDetails />} />
-        </Grid>
     );
 }
 
-export default WorkExperience;
+export default PersonalProject;
