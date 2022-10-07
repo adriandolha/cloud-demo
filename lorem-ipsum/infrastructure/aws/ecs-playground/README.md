@@ -1,2 +1,3 @@
-#Deploys on AWS
-Deploy VPC with public and private subnet in AWS.
+# Deploys on AWS ECS
+
+Deploy lorem ipsum app using Terraform.
